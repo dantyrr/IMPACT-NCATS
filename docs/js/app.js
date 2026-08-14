@@ -24,6 +24,7 @@ class NCATSApp {
         this.renderSitesSummary();
         await this.setupSites();
         await this.setupPublications();
+        this.setupTrends();
         this.setupGrants();
         this.setupInvestigators();
         this.setupCompare();
@@ -171,11 +172,89 @@ class NCATSApp {
         });
     }
 
-    /** Render one card per selected site, stacked. */
+    /** View mode + year range controls, shown once at least one site is picked. */
+    renderSiteViewControls() {
+        const el = document.getElementById('sites-view-controls');
+        if (!this.selectedSites.length) { el.style.display = 'none'; return; }
+        if (el.dataset.built === '1') { el.style.display = 'block'; return; }
+
+        const years = new Set();
+        for (const d of Object.values(this.siteCache)) {
+            for (const m of d.metrics) if (m.year) years.add(m.year);
+        }
+        const all = [...years].sort((a, b) => a - b);
+        this.siteYearOptions = all;
+        const opts = all.map(y => `<option value="${y}">${y}</option>`).join('');
+
+        el.innerHTML = `
+            <div class="controls-row">
+                <label>View:
+                    <select id="sites-view">
+                        <option value="cards">Separate cards</option>
+                        <option value="combined">Combined chart</option>
+                        <option value="both" selected>Both</option>
+                    </select>
+                </label>
+                <label>Combined metric:
+                    <select id="sites-combined-metric">
+                        <option value="pub_count">Publications</option>
+                        <option value="citation_count">Citations</option>
+                        <option value="mean_rcr">Mean RCR</option>
+                        <option value="research_count">Research articles</option>
+                        <option value="award_total">Award dollars</option>
+                    </select>
+                </label>
+                <label>From: <select id="sites-year-from">${opts}</select></label>
+                <label>To: <select id="sites-year-to">${opts}</select></label>
+                <button class="download-btn" id="sites-year-reset">Reset years</button>
+            </div>`;
+        el.dataset.built = '1';
+        el.style.display = 'block';
+
+        const from = document.getElementById('sites-year-from');
+        const to = document.getElementById('sites-year-to');
+        from.value = String(Math.max(all[0], 2012));
+        to.value = String(all[all.length - 1]);
+
+        ['sites-view', 'sites-combined-metric', 'sites-year-from', 'sites-year-to']
+            .forEach(id => document.getElementById(id)
+                .addEventListener('input', () => this.renderSiteDetails()));
+        document.getElementById('sites-year-reset').addEventListener('click', () => {
+            from.value = String(Math.max(all[0], 2012));
+            to.value = String(all[all.length - 1]);
+            this.renderSiteDetails();
+        });
+
+        this._attachDownloadBar('sites-combined-downloads',
+            () => this.combinedChart,
+            () => this._combinedCsvRows(),
+            () => `ncats-sites-combined-${document.getElementById('sites-combined-metric').value}`);
+    }
+
+    /** The year window currently selected on the Sites tab. */
+    _siteYearRange() {
+        const fromEl = document.getElementById('sites-year-from');
+        const toEl = document.getElementById('sites-year-to');
+        if (!fromEl || !toEl) return this.siteYearOptions || [];
+        let from = parseInt(fromEl.value, 10);
+        let to = parseInt(toEl.value, 10);
+        // Tolerate a reversed range rather than silently drawing nothing.
+        if (from > to) [from, to] = [to, from];
+        return (this.siteYearOptions || []).filter(y => y >= from && y <= to);
+    }
+
+    /** Render selected sites as stacked cards, a combined chart, or both. */
     async renderSiteDetails() {
         this.renderSelectionBar();
         const panel = document.getElementById('site-detail');
-        if (!this.selectedSites.length) { panel.innerHTML = ''; return; }
+        const combinedWrap = document.getElementById('sites-combined');
+
+        if (!this.selectedSites.length) {
+            panel.innerHTML = '';
+            combinedWrap.style.display = 'none';
+            document.getElementById('sites-view-controls').style.display = 'none';
+            return;
+        }
 
         for (const slug of this.selectedSites) {
             if (!this.siteCache[slug]) {
@@ -183,13 +262,51 @@ class NCATSApp {
             }
         }
 
+        this.renderSiteViewControls();
+        const view = (document.getElementById('sites-view') || {}).value || 'both';
+        const years = this._siteYearRange();
+
+        combinedWrap.style.display = (view === 'combined' || view === 'both') ? 'block' : 'none';
+        if (view === 'combined' || view === 'both') this.renderCombinedChart(years);
+
+        if (view === 'combined') {
+            panel.innerHTML = '';
+            return;
+        }
+
         panel.innerHTML = this.selectedSites
             .map(slug => this._siteCardHtml(slug, this.siteCache[slug])).join('');
 
         // Charts must be built after the markup exists in the DOM.
         for (const slug of this.selectedSites) {
-            this._drawSiteCard(slug, this.siteCache[slug]);
+            this._drawSiteCard(slug, this.siteCache[slug], years);
         }
+    }
+
+    /** One grouped bar per year, one series per selected site. */
+    renderCombinedChart(years) {
+        const metric = document.getElementById('sites-combined-metric').value;
+        const label = document.getElementById('sites-combined-metric').selectedOptions[0].text;
+
+        this.combinedChart = ChartManager.barChart('sites-combined-chart', years,
+            this.selectedSites.map((slug, i) => ({
+                label: this.siteCache[slug].hub_name,
+                data: this._siteYearSeries(this.siteCache[slug], metric, 'all', years),
+                backgroundColor: ChartManager.color(i),
+                borderColor: ChartManager.color(i),
+            })),
+            { yLabel: label });   // not stacked: bars sit side by side
+    }
+
+    _combinedCsvRows() {
+        const years = this._siteYearRange();
+        const metric = document.getElementById('sites-combined-metric').value;
+        const rows = [['site', 'year', metric]];
+        for (const slug of this.selectedSites) {
+            const series = this._siteYearSeries(this.siteCache[slug], metric, 'all', years);
+            series.forEach((v, i) => rows.push([this.siteCache[slug].hub_name, years[i], v ?? '']));
+        }
+        return rows;
     }
 
     _siteCardHtml(slug, data) {
@@ -231,8 +348,12 @@ class NCATSApp {
         </div>`;
     }
 
-    _drawSiteCard(slug, data) {
-        const years = [...new Set(data.metrics.map(m => m.year))].sort();
+    _drawSiteCard(slug, data, yearFilter) {
+        let years = [...new Set(data.metrics.map(m => m.year))].sort();
+        if (yearFilter && yearFilter.length) {
+            const allowed = new Set(yearFilter);
+            years = years.filter(y => allowed.has(y));
+        }
         const groups = [...new Set(data.metrics.map(m => m.activity_group))].sort();
 
         const datasets = groups.map((g, i) => ({
@@ -266,6 +387,215 @@ class NCATSApp {
         });
         card.querySelector('.card-close').addEventListener('click',
             () => this.toggleSite(slug));
+    }
+
+    // ---------------- Shared helpers ----------------
+
+    /**
+     * Render a PNG/JPG/PDF/CSV download bar into `containerId`.
+     * `getChart` and `getCsvRows` are called at click time so the export always
+     * reflects the current state of the controls, not the state at wire-up.
+     */
+    _attachDownloadBar(containerId, getChart, getCsvRows, getFilename) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.innerHTML = `
+            <div class="download-bar">
+                <span>Download:</span>
+                <button class="download-btn" data-fmt="png">PNG</button>
+                <button class="download-btn" data-fmt="jpg">JPG</button>
+                <button class="download-btn" data-fmt="pdf">PDF</button>
+                <button class="download-btn" data-fmt="csv">CSV data</button>
+            </div>`;
+        el.querySelectorAll('.download-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const fmt = btn.dataset.fmt;
+                const name = getFilename();
+                if (fmt === 'csv') {
+                    ChartManager.downloadCSV(getCsvRows(), name);
+                    return;
+                }
+                const chart = getChart();
+                if (chart) ChartManager.download(chart, fmt, name);
+            });
+        });
+    }
+
+    /**
+     * Per-year values for one site and metric, optionally restricted to a
+     * single mechanism group. Rate metrics are weighted by publication count so
+     * a tiny mechanism cannot swing a site's value; count metrics are summed.
+     */
+    _siteYearSeries(siteData, metric, mechanism, years) {
+        const isRate = metric === 'mean_rcr' || metric === 'cost_per_pub' ||
+                       metric === 'cost_per_citation' || metric === 'mean_journal_if';
+        return years.map(y => {
+            const rows = siteData.metrics.filter(m =>
+                m.year === y && (mechanism === 'all' || m.activity_group === mechanism));
+            if (!rows.length) return null;
+            if (isRate) {
+                let num = 0, den = 0;
+                for (const r of rows) {
+                    if (r[metric] === null || r[metric] === undefined) continue;
+                    num += r[metric] * (r.pub_count || 0);
+                    den += r.pub_count || 0;
+                }
+                return den > 0 ? num / den : null;
+            }
+            return rows.reduce((s, r) => s + (r[metric] || 0), 0);
+        });
+    }
+
+    // ---------------- Trends ----------------
+
+    setupTrends() {
+        document.getElementById('trends-controls').innerHTML = `
+            <div class="controls-row">
+                <label>Metric:
+                    <select id="trends-metric">
+                        <option value="pub_count">Publications</option>
+                        <option value="citation_count">Citations</option>
+                        <option value="mean_rcr">Mean RCR</option>
+                        <option value="research_count">Research articles</option>
+                        <option value="award_total">Award dollars</option>
+                        <option value="cost_per_pub">Cost per publication</option>
+                    </select>
+                </label>
+                <label>Sites:
+                    <select id="trends-topn">
+                        <option value="5">Top 5</option>
+                        <option value="10" selected>Top 10</option>
+                        <option value="20">Top 20</option>
+                    </select>
+                </label>
+                <label>Mechanism:
+                    <select id="trends-mech">
+                        <option value="all">All</option>
+                        <option value="U">U (hub &amp; cooperative)</option>
+                        <option value="K">K (career development)</option>
+                        <option value="T">T (training)</option>
+                        <option value="R">R (research)</option>
+                    </select>
+                </label>
+                <label>From:
+                    <select id="trends-from"></select>
+                </label>
+                <label>To:
+                    <select id="trends-to"></select>
+                </label>
+                <label title="Later years are incomplete: papers are still being published and reported">
+                    <input type="checkbox" id="trends-drop-partial" checked> Hide incomplete recent years
+                </label>
+                <label title="One very large site can flatten every other line; a log scale keeps them all readable">
+                    <input type="checkbox" id="trends-log"> Log scale
+                </label>
+            </div>`;
+
+        // Year range comes from the data itself.
+        const allYears = new Set();
+        for (const d of Object.values(this.siteCache)) {
+            for (const m of d.metrics) if (m.year) allYears.add(m.year);
+        }
+        this.trendYears = [...allYears].sort((a, b) => a - b);
+        const from = document.getElementById('trends-from');
+        const to = document.getElementById('trends-to');
+        from.innerHTML = this.trendYears.map(y => `<option value="${y}">${y}</option>`).join('');
+        to.innerHTML = this.trendYears.map(y => `<option value="${y}">${y}</option>`).join('');
+        from.value = String(Math.max(this.trendYears[0], 2012));
+        to.value = String(this.trendYears[this.trendYears.length - 1]);
+
+        ['trends-metric', 'trends-topn', 'trends-mech', 'trends-from', 'trends-to',
+         'trends-drop-partial', 'trends-log'].forEach(id =>
+            document.getElementById(id).addEventListener('input', () => this.renderTrends()));
+
+        this._attachDownloadBar('trends-downloads',
+            () => this.trendsChart,
+            () => this._trendsCsvRows(),
+            () => `ncats-trends-${document.getElementById('trends-metric').value}`);
+
+        this.renderTrends();
+    }
+
+    _trendsState() {
+        const metric = document.getElementById('trends-metric').value;
+        const topN = parseInt(document.getElementById('trends-topn').value, 10);
+        const mech = document.getElementById('trends-mech').value;
+        const from = parseInt(document.getElementById('trends-from').value, 10);
+        const to = parseInt(document.getElementById('trends-to').value, 10);
+        const dropPartial = document.getElementById('trends-drop-partial').checked;
+
+        // The current and next calendar year are always incomplete.
+        const cutoff = new Date().getFullYear() - 1;
+        let years = this.trendYears.filter(y => y >= from && y <= to);
+        if (dropPartial) years = years.filter(y => y <= cutoff);
+
+        // Rank sites by their total over the visible window.
+        const ranked = this.index.sites
+            .map(s => {
+                const data = this.siteCache[s.slug];
+                if (!data) return null;
+                const series = this._siteYearSeries(data, metric, mech, years);
+                const vals = series.filter(v => v !== null);
+                if (!vals.length) return null;
+                const isRate = metric === 'mean_rcr' || metric === 'cost_per_pub';
+                const score = isRate
+                    ? vals.reduce((a, b) => a + b, 0) / vals.length
+                    : vals.reduce((a, b) => a + b, 0);
+                return { slug: s.slug, hub_name: s.hub_name, series, score };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, topN);
+
+        return { metric, mech, years, ranked, cutoff, dropPartial };
+    }
+
+    renderTrends() {
+        const { metric, years, ranked, cutoff, dropPartial } = this._trendsState();
+        const label = document.getElementById('trends-metric').selectedOptions[0].text;
+
+        const useLog = document.getElementById('trends-log').checked;
+        this.trendsChart = ChartManager.lineChart('trends-chart', years,
+            ranked.map((r, i) => ({
+                label: r.hub_name,
+                // A log axis cannot plot zero; treat it as a gap instead.
+                data: useLog ? r.series.map(v => (v === 0 ? null : v)) : r.series,
+                borderColor: ChartManager.color(i),
+                backgroundColor: ChartManager.color(i),
+                spanGaps: true,
+                tension: 0.25,
+                pointRadius: 2,
+            })),
+            {
+                xLabel: 'Year', yLabel: label,
+                chartOptions: useLog ? {
+                    scales: {
+                        y: { type: 'logarithmic', title: { display: true, text: `${label} (log scale)` } },
+                        x: { title: { display: true, text: 'Year' } },
+                    },
+                } : undefined,
+            });
+
+        document.getElementById('trends-note').innerHTML = `
+            <p class="data-note">
+                Showing the top ${ranked.length} sites by ${label.toLowerCase()} over
+                ${years[0]}–${years[years.length - 1]}.
+                ${dropPartial
+                    ? `Years after ${cutoff} are hidden because they are still filling in — papers keep being published and reported against a grant for years.`
+                    : `<strong>Recent years are incomplete</strong> and will understate output.`}
+                Sites are ranked within the selected window, so changing the year range can
+                change which sites appear.
+            </p>`;
+    }
+
+    _trendsCsvRows() {
+        const { years, ranked } = this._trendsState();
+        const metric = document.getElementById('trends-metric').value;
+        const rows = [['site', 'year', metric]];
+        for (const r of ranked) {
+            r.series.forEach((v, i) => rows.push([r.hub_name, years[i], v ?? '']));
+        }
+        return rows;
     }
 
     // ---------------- Publications ----------------
@@ -321,6 +651,24 @@ class NCATSApp {
         ['pub-paper-metric', 'pub-research-only', 'pub-paper-search'].forEach(id =>
             document.getElementById(id).addEventListener('input', () => this.renderPubPapers()));
 
+        this._attachDownloadBar('pub-chart-downloads',
+            () => this.pubChart,
+            () => {
+                const metric = document.getElementById('pub-metric').value;
+                return [['site', 'state', 'publications', 'rcr_scored_papers', metric],
+                        ...this.pubChartRows.map(r =>
+                            [r.hub_name, r.state, r.pub_count, r.rcr_n, r[metric]])];
+            },
+            () => `ncats-sites-by-${document.getElementById('pub-metric').value}`);
+
+        this._attachDownloadBar('pub-paper-downloads',
+            () => null,   // the paper list is a table, not a chart
+            () => [['rank', 'pmid', 'title', 'journal', 'year', 'rcr', 'citations', 'sites'],
+                   ...this.pubPapersShown.map((p, i) =>
+                       [i + 1, p.pmid, p.title, p.journal, p.year, p.rcr,
+                        p.citations, p.sites.join('; ')])],
+            () => `ncats-top-papers-${document.getElementById('pub-paper-metric').value}`);
+
         this.renderPubChart();
         this.renderPubPapers();
     }
@@ -337,9 +685,10 @@ class NCATSApp {
 
         rows.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
         if (topN > 0) rows = rows.slice(0, topN);
+        this.pubChartRows = rows;
 
         const label = document.getElementById('pub-metric').selectedOptions[0].text;
-        ChartManager.barChart('pub-site-chart',
+        this.pubChart = ChartManager.barChart('pub-site-chart',
             rows.map(r => r.hub_name),
             [{
                 label,
@@ -388,6 +737,7 @@ class NCATSApp {
                 `${p.title || ''} ${p.journal || ''} ${p.sites.join(' ')}`.toLowerCase().includes(term));
         }
 
+        this.pubPapersShown = papers;
         document.getElementById('pub-paper-count').textContent =
             `${papers.length.toLocaleString()} papers`;
 
