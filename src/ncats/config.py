@@ -26,6 +26,9 @@ ICITE_BASE_URL = "https://icite.od.nih.gov/api/pubs"
 # RePORTER documents a 1 req/sec ceiling.
 REPORTER_RATE_LIMIT = 1.0
 REPORTER_PAGE_SIZE = 500
+# RePORTER returns HTTP 400 for offset >= 10000. Verified empirically:
+# offset 9000 succeeds, 10000 fails.
+REPORTER_OFFSET_CAP = 10000
 ICITE_RATE_LIMIT = 5.0
 ICITE_MAX_BATCH = 200
 
