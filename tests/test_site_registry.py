@@ -2,7 +2,9 @@ import json
 import sqlite3
 import pytest
 from src.ncats.schema import create_schema
-from src.ncats.site_registry import slugify, mark_ctsa_hubs, export_registry
+from src.ncats.site_registry import (
+    slugify, mark_ctsa_hubs, export_registry, canonicalize_ipf_codes,
+)
 
 
 @pytest.fixture
@@ -48,6 +50,50 @@ def test_funded_year_span_covers_all_renewals(conn):
         "SELECT first_funded_year, last_funded_year FROM sites WHERE ipf_code=1"
     ).fetchone()
     assert (first, last) == (2012, 2024)
+
+
+def test_canonicalize_merges_alias_ipf_into_one_site(conn):
+    """One institution re-registered under a new IPF must collapse to one site."""
+    # IPF 3 is the same institution as IPF 1, registered later.
+    conn.execute("INSERT INTO sites (ipf_code, org_name) VALUES (3, 'UCLA INC')")
+    conn.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code, is_hub_award) "
+                 "VALUES ('UL1TR009999',3,'UL1',1)")
+    conn.execute("INSERT INTO grant_years (core_project_num, fiscal_year, project_num) "
+                 "VALUES ('UL1TR009999',2030,'z')")
+
+    moved = canonicalize_ipf_codes(conn, {3: 1})
+    assert moved == 1
+
+    # The alias site is gone and its grant now belongs to the canonical site.
+    assert conn.execute("SELECT COUNT(*) FROM sites WHERE ipf_code=3").fetchone()[0] == 0
+    assert conn.execute(
+        "SELECT ipf_code FROM grants WHERE core_project_num='UL1TR009999'"
+    ).fetchone()[0] == 1
+
+    mark_ctsa_hubs(conn)
+    assert conn.execute("SELECT COUNT(*) FROM sites WHERE is_ctsa_hub=1").fetchone()[0] == 1
+    first, last = conn.execute(
+        "SELECT first_funded_year, last_funded_year FROM sites WHERE ipf_code=1"
+    ).fetchone()
+    assert (first, last) == (2012, 2030)
+
+
+def test_canonicalize_is_idempotent(conn):
+    conn.execute("INSERT INTO sites (ipf_code, org_name) VALUES (3, 'UCLA INC')")
+    conn.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code, is_hub_award) "
+                 "VALUES ('UL1TR009999',3,'UL1',1)")
+    canonicalize_ipf_codes(conn, {3: 1})
+    assert canonicalize_ipf_codes(conn, {3: 1}) == 0
+
+
+def test_export_raises_on_duplicate_slug(conn, tmp_path):
+    """A slug collision must fail loudly, never silently overwrite a hub file."""
+    conn.execute("INSERT INTO sites (ipf_code, org_name) VALUES (9, 'UNIVERSITY OF CALIFORNIA LOS ANGELES')")
+    conn.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code, is_hub_award) "
+                 "VALUES ('UL1TR008888',9,'UL1',1)")
+    mark_ctsa_hubs(conn)
+    with pytest.raises(ValueError, match="[Dd]uplicate slug"):
+        export_registry(conn, tmp_path / "ctsa_registry.json")
 
 
 def test_export_preserves_hand_edited_hub_name(conn, tmp_path):

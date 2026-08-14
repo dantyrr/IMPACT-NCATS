@@ -1,0 +1,5 @@
+{
+  "_comment": "Maps alias IPF codes to a canonical IPF code, for institutions that re-registered with NIH under a new IPF over time. Without this, one continuous CTSA hub appears as several separate sites and their slugs collide on export. Keys are alias IPFs; values are the canonical (usually most recent) IPF. Verify any addition by hand: same institution, contiguous funding, same city/state.",
+  "9433501": 10053556,
+  "10039582": 10053556
+}

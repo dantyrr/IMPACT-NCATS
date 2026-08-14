@@ -1,42 +1,18 @@
 [
   {
-    "ipf_code": 9433501,
-    "org_name": "ALBERT EINSTEIN COLLEGE OF MEDICINE",
-    "slug": "albert-einstein-college-of-medicine",
-    "hub_name": "Albert Einstein College Of Medicine",
-    "city": "BRONX",
-    "state": "NY",
-    "first_funded_year": 2012,
-    "last_funded_year": 2013,
-    "core_project_nums": [
-      "UL1TR000086"
-    ]
-  },
-  {
     "ipf_code": 10053556,
     "org_name": "ALBERT EINSTEIN COLLEGE OF MEDICINE",
     "slug": "albert-einstein-college-of-medicine",
     "hub_name": "Albert Einstein College Of Medicine",
     "city": "BRONX",
     "state": "NY",
-    "first_funded_year": 2018,
+    "first_funded_year": 2012,
     "last_funded_year": 2026,
     "core_project_nums": [
+      "UL1TR000086",
+      "UL1TR001073",
       "UL1TR002556",
       "UM1TR004400"
-    ]
-  },
-  {
-    "ipf_code": 10039582,
-    "org_name": "ALBERT EINSTEIN COLLEGE OF MEDICINE, INC",
-    "slug": "albert-einstein-college-of-medicine-inc",
-    "hub_name": "Albert Einstein College Of Medicine, Inc",
-    "city": "BRONX",
-    "state": "NY",
-    "first_funded_year": 2013,
-    "last_funded_year": 2017,
-    "core_project_nums": [
-      "UL1TR001073"
     ]
   },
   {
