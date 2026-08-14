@@ -13,6 +13,26 @@ def _write(path: Path, payload) -> Path:
     return path
 
 
+def _prune_dir(directory: Path, keep: set) -> int:
+    """Delete JSON files in `directory` whose stem is not in `keep`.
+
+    Without this, a record removed from the database leaves its exported file
+    behind, and the stale file keeps being uploaded and served indefinitely.
+    Returns the number of files deleted.
+    """
+    directory = Path(directory)
+    if not directory.exists():
+        return 0
+    removed = 0
+    for path in directory.glob("*.json"):
+        if path.stem not in keep:
+            path.unlink()
+            removed += 1
+    if removed:
+        logger.info("Pruned %d stale files from %s", removed, directory)
+    return removed
+
+
 def export_index(conn, out_dir) -> Path:
     """Top-level index: hub site list plus portfolio-wide totals."""
     out_dir = Path(out_dir)
@@ -51,6 +71,7 @@ def export_sites(conn, out_dir) -> int:
     """One JSON file per CTSA hub site."""
     out_dir = Path(out_dir)
     n = 0
+    written = set()
     for ipf, slug, hub_name, org, city, state in conn.execute(
         "SELECT ipf_code, slug, hub_name, org_name, city, state "
         "FROM sites WHERE is_ctsa_hub=1"
@@ -82,7 +103,9 @@ def export_sites(conn, out_dir) -> int:
             "org_name": org, "city": city, "state": state,
             "metrics": metrics, "grants": grants,
         })
+        written.add(slug)
         n += 1
+    _prune_dir(out_dir / "sites", written)
     return n
 
 
@@ -159,6 +182,7 @@ def export_investigators(conn, out_dir) -> int:
     """One JSON file per PI, listing their grants and publication totals."""
     out_dir = Path(out_dir)
     n = 0
+    written = set()
     for pid, name in conn.execute(
         "SELECT profile_id, full_name FROM investigators"
     ).fetchall():
@@ -182,5 +206,7 @@ def export_investigators(conn, out_dir) -> int:
             "profile_id": pid, "full_name": name, "grants": grants,
             "pub_count": pub_count, "citation_count": cites,
         })
+        written.add(str(pid))
         n += 1
+    _prune_dir(out_dir / "investigators", written)
     return n

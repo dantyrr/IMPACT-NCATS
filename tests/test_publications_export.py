@@ -61,3 +61,30 @@ def test_small_sites_are_flagged_not_hidden(conn, tmp_path):
     assert flags["Hub B"] == 1   # 1 paper, below threshold of 2
     assert flags["Hub A"] == 0   # 2 papers, meets it
     assert len(d["site_rankings"]) == 2, "flagged sites must still be present"
+
+
+def test_export_prunes_stale_investigator_files(conn, tmp_path):
+    """A record removed from the DB must not leave its JSON behind, or the
+    stale file keeps being uploaded and served forever."""
+    from src.ncats.json_exporter import export_investigators
+    inv_dir = tmp_path / "investigators"
+    inv_dir.mkdir()
+    (inv_dir / "999999.json").write_text('{"stale": true}')
+
+    conn.execute("INSERT INTO investigators (profile_id, full_name) VALUES (1,'A')")
+    conn.execute("INSERT INTO grant_pis (core_project_num, profile_id) VALUES ('UL1TR000001',1)")
+    export_investigators(conn, tmp_path)
+
+    assert (inv_dir / "1.json").exists()
+    assert not (inv_dir / "999999.json").exists(), "stale file must be removed"
+
+
+def test_export_prunes_stale_site_files(conn, tmp_path):
+    from src.ncats.json_exporter import export_sites
+    sites_dir = tmp_path / "sites"
+    sites_dir.mkdir()
+    (sites_dir / "defunct-hub.json").write_text('{"stale": true}')
+
+    export_sites(conn, tmp_path)
+    assert (sites_dir / "a.json").exists()
+    assert not (sites_dir / "defunct-hub.json").exists()

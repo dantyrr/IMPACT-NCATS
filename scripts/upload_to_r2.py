@@ -94,6 +94,9 @@ def main():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--prune-remote", action="store_true",
+                        help="Delete objects under the prefix that no longer exist "
+                             "locally. Only ever touches keys under R2_PREFIX.")
     args = parser.parse_args()
 
     prefix = (R2_PREFIX or "").strip("/")
@@ -171,6 +174,24 @@ def main():
                     time.sleep(2 ** attempt)
 
     logger.info(f"Done. {uploaded:,} uploaded, {errors} errors.")
+
+    if args.prune_remote:
+        local_keys = {build_key(p, data_dir, prefix) for p in local_files}
+        remote_now = remote_etags or list_remote_etags(client, prefix)
+        stale = sorted(set(remote_now) - local_keys)
+        # Belt and braces: never delete anything outside our own prefix.
+        stale = [k for k in stale if k.startswith(f"{prefix}/")]
+        if not stale:
+            logger.info("No stale remote objects.")
+        else:
+            logger.info("Deleting %d stale objects under %s/", len(stale), prefix)
+            for i in range(0, len(stale), 1000):
+                client.delete_objects(
+                    Bucket=R2_BUCKET_NAME,
+                    Delete={"Objects": [{"Key": k} for k in stale[i:i + 1000]]},
+                )
+            logger.info("Deleted %d stale objects.", len(stale))
+
     if errors:
         sys.exit(1)
 
