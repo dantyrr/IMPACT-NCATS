@@ -8,7 +8,7 @@ from scripts.validate_ncats import run_checks
 def conn():
     c = sqlite3.connect(":memory:")
     create_schema(c)
-    c.execute("INSERT INTO sites (ipf_code, org_name, slug, is_ctsa_hub) VALUES (1,'A','a',1)")
+    c.execute("INSERT INTO sites (ipf_code, org_name, slug, hub_name, is_ctsa_hub) VALUES (1,'A','a','Hub A',1)")
     c.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code, is_hub_award) VALUES ('UL1TR000001',1,'UL1',1)")
     c.execute("INSERT INTO grant_pubs VALUES ('UL1TR000001',100)")
     c.execute("INSERT INTO pub_metrics (pmid, in_impact_db, n_linked_hubs) VALUES (100,1,1)")
@@ -48,5 +48,11 @@ def test_hub_without_slug_fails(conn):
 
 
 def test_duplicate_hub_slug_fails(conn):
-    conn.execute("INSERT INTO sites (ipf_code, org_name, slug, is_ctsa_hub) VALUES (2,'B','a',1)")
+    conn.execute("INSERT INTO sites (ipf_code, org_name, slug, hub_name, is_ctsa_hub) VALUES (2,'B','a','Hub B',1)")
     assert _result(run_checks(conn), "hub_slugs_unique")[1] is False
+
+
+def test_hub_without_display_name_fails(conn):
+    """Regression: null hub_name rendered as the literal string 'null' in the UI."""
+    conn.execute("UPDATE sites SET hub_name=NULL WHERE ipf_code=1")
+    assert _result(run_checks(conn), "all_hubs_have_name")[1] is False

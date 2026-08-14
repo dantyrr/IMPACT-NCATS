@@ -44,6 +44,11 @@ def run_checks(conn) -> list[tuple[str, bool, str]]:
     results.append(("all_hubs_have_slug", no_slug == 0,
                     f"{no_slug} hubs missing a slug"))
 
+    no_name = q("SELECT COUNT(*) FROM sites WHERE is_ctsa_hub=1 "
+                "AND (hub_name IS NULL OR hub_name='')")
+    results.append(("all_hubs_have_name", no_name == 0,
+                    f"{no_name} hubs missing a display name"))
+
     dup_slug = q(
         "SELECT COUNT(*) FROM (SELECT slug FROM sites WHERE is_ctsa_hub=1 "
         "GROUP BY slug HAVING COUNT(*)>1)")

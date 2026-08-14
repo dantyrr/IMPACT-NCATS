@@ -96,6 +96,14 @@ def test_export_raises_on_duplicate_slug(conn, tmp_path):
         export_registry(conn, tmp_path / "ctsa_registry.json")
 
 
+def test_export_writes_hub_name_back_to_sites_table(conn, tmp_path):
+    """export_index() reads sites.hub_name, so the registry must populate it."""
+    mark_ctsa_hubs(conn)
+    export_registry(conn, tmp_path / "ctsa_registry.json")
+    name = conn.execute("SELECT hub_name FROM sites WHERE ipf_code=1").fetchone()[0]
+    assert name, "hub_name must not be null after export_registry"
+
+
 def test_export_preserves_hand_edited_hub_name(conn, tmp_path):
     mark_ctsa_hubs(conn)
     path = tmp_path / "ctsa_registry.json"

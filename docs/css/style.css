@@ -1,0 +1,1537 @@
+/* ============================================================
+   IMPACT — Styles
+   ============================================================ */
+
+:root {
+    --primary: #1a5276;
+    --primary-light: #2e86c1;
+    --primary-dark: #0e2f44;
+    --accent: #27ae60;
+    --accent-light: #2ecc71;
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --text: #2c3e50;
+    --text-light: #7f8c8d;
+    --border: #e0e0e0;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --radius: 8px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text);
+    background-color: var(--bg);
+}
+
+/* ---- Header ---- */
+
+header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: white;
+    text-align: center;
+    padding: 2.5rem 1rem 0;
+}
+
+.header-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    margin-bottom: 0.25rem;
+}
+
+.subtitle {
+    font-size: 1rem;
+    opacity: 0.85;
+    font-weight: 300;
+}
+
+.tagline {
+    font-size: 0.9rem;
+    opacity: 0.65;
+    margin-top: 0.25rem;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-top: 1.5rem;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.nav-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+    color: white;
+    border-bottom-color: var(--accent);
+}
+
+/* ---- Main ---- */
+
+main {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+h2 {
+    color: var(--primary);
+    font-size: 1.6rem;
+    margin-bottom: 0.25rem;
+}
+
+.section-desc {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+/* ---- Search ---- */
+
+.search-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-bar input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.search-bar input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+}
+
+.search-bar button {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.search-bar button:hover {
+    background: var(--primary-light);
+}
+
+/* ---- Journal List ---- */
+
+.journal-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    margin-bottom: 2rem;
+}
+
+.journal-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.journal-list-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--primary);
+    color: white;
+    z-index: 1;
+}
+
+.journal-list-table th {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.journal-list-row {
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.journal-list-row:hover {
+    background: #f0f6fc;
+}
+
+.journal-list-row td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.jl-name {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.jl-rate, .jl-papers {
+    text-align: right;
+    white-space: nowrap;
+    color: var(--text);
+}
+
+/* ---- Detail Panel ---- */
+
+.detail-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.back-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    transition: color 0.2s;
+}
+
+.back-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.detail-panel h3 {
+    font-size: 1.4rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+/* ---- Metrics Row ---- */
+
+.metrics-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.metric-card {
+    flex: 1;
+    min-width: 100px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+}
+
+.metric-sublabel {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    opacity: 0.75;
+}
+
+.compare-metrics-journal {
+    margin-bottom: 1rem;
+}
+
+.compare-metrics-journal .metrics-row {
+    margin-bottom: 0.5rem;
+}
+
+.compare-metrics-header {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--primary);
+    margin-bottom: 0.4rem;
+}
+
+.metric-info {
+    cursor: help;
+    color: var(--primary-light);
+    font-size: 0.85em;
+}
+
+/* ---- Charts ---- */
+
+.chart-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+canvas {
+    max-width: 100%;
+}
+
+/* ---- Chart Controls ---- */
+
+.chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.chart-controls-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.toggle-group {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.toggle-btn {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.82rem;
+    border: none;
+    background: var(--surface);
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.toggle-btn:last-child {
+    border-right: none;
+}
+
+.toggle-btn:hover {
+    background: #f0f6fc;
+    color: var(--text);
+}
+
+.toggle-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* ---- Author Utilities ---- */
+
+.loading-text {
+    color: var(--text-light);
+    font-style: italic;
+    padding: 0.75rem 0;
+}
+
+.error-text {
+    color: var(--danger);
+    padding: 0.75rem 0;
+}
+
+.data-note {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.75rem;
+    line-height: 1.5;
+}
+
+/* ---- Author Info ---- */
+
+.author-info-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.author-info-box p {
+    margin-bottom: 0.5rem;
+}
+
+.author-info-box pre {
+    background: var(--primary-dark);
+    color: #e0e0e0;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+}
+
+/* ---- Compare Section ---- */
+
+.checkbox-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.checkbox-grid label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.checkbox-grid label:has(input:checked) {
+    border-color: var(--primary);
+    background: #eaf2f8;
+}
+
+.checkbox-grid input[type="checkbox"] {
+    accent-color: var(--primary);
+}
+
+/* ---- Journal Trends Comparison Panel ---- */
+
+.jc-selector-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.jc-selector-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.jc-selector-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.color-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    vertical-align: middle;
+    margin: 0 3px 1px 3px;
+}
+
+.section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+}
+
+/* ---- Journal Picker ---- */
+
+.journal-picker {
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+.picker-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.picker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.4rem 0.3rem 0.65rem;
+    background: #eaf2f8;
+    border: 1px solid var(--primary-light);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--primary-dark);
+}
+
+.picker-chip-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--text-light);
+    padding: 0 0.15rem;
+    margin-left: 0.1rem;
+    transition: color 0.15s;
+}
+
+.picker-chip-remove:hover {
+    color: var(--danger);
+}
+
+.picker-input-wrap {
+    position: relative;
+}
+
+.picker-input {
+    width: 100%;
+    padding: 0.55rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.picker-input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+}
+
+.picker-dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hover);
+    z-index: 200;
+    display: none;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.picker-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.1s;
+}
+
+.picker-option:hover {
+    background: #f0f6fc;
+}
+
+/* ---- About ---- */
+
+.about-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.about-content h3 {
+    color: var(--primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.about-content h3:first-child {
+    margin-top: 0;
+}
+
+.about-content p {
+    margin-bottom: 0.75rem;
+}
+
+.about-content a {
+    color: var(--primary-light);
+}
+
+.formula-box {
+    background: var(--bg);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    color: var(--primary-dark);
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ---- Table ---- */
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.data-table thead {
+    background: var(--primary);
+    color: white;
+}
+
+.data-table th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.data-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table tbody tr:hover {
+    background: #f0f6fc;
+}
+
+/* ---- Footer ---- */
+
+footer {
+    background: var(--primary-dark);
+    color: rgba(255, 255, 255, 0.75);
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: 3rem;
+    font-size: 0.9rem;
+}
+
+footer a {
+    color: var(--accent-light);
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* ---- Section label ---- */
+
+.section-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* ---- Single Journal Picker ---- */
+
+.single-journal-picker {
+    margin-bottom: 1.25rem;
+}
+
+.single-journal-picker .picker-input-wrap {
+    max-width: 480px;
+}
+
+.single-picker-clear {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    line-height: 1;
+}
+
+.single-picker-clear:hover {
+    color: var(--text);
+}
+
+.picker-option-selected {
+    background: #e8f4fd;
+    font-weight: 600;
+}
+
+/* ---- Papers toolbar ---- */
+
+.papers-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.papers-search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.papers-search-input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+}
+
+.papers-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.papers-filter-label {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.papers-select {
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    color: var(--text);
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.papers-count-label {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+/* ---- Papers table scroll & sortable ---- */
+
+.table-scroll {
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
+}
+
+.sortable-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.sortable-table th.sortable:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.sortable-table th.sortable::after {
+    content: ' ↕';
+    opacity: 0.35;
+    font-size: 0.8em;
+}
+
+.sortable-table th.sort-active::after {
+    opacity: 1;
+}
+
+.sortable-table th.sort-asc::after {
+    content: ' ↑';
+}
+
+.sortable-table th.sort-desc::after {
+    content: ' ↓';
+}
+
+.papers-row-link {
+    cursor: pointer;
+}
+
+.papers-row-link:hover td {
+    background: #e8f4fd;
+}
+
+/* ---- Authors tab buttons ---- */
+
+.authors-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.5rem;
+}
+
+.authors-tab-btn {
+    padding: 0.6rem 1.5rem;
+    border: none;
+    background: none;
+    color: var(--text-light);
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s;
+}
+
+.authors-tab-btn:hover {
+    color: var(--text);
+}
+
+.authors-tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+}
+
+
+/* ---- Authors breakdown charts ---- */
+
+.authors-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.authors-chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    box-shadow: var(--shadow);
+}
+
+.authors-chart-card h4 {
+    color: var(--primary);
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+}
+
+.authors-chart-card .chart-container {
+    height: 360px;
+}
+
+/* ---- Geography placeholder ---- */
+
+.geo-placeholder {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3rem 2rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    max-width: 620px;
+    margin: 2rem auto;
+}
+
+.geo-placeholder-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.geo-placeholder h3 {
+    color: var(--primary);
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.geo-placeholder p {
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.geo-feature-list {
+    text-align: left;
+    max-width: 440px;
+    margin: 0 auto 1rem;
+    padding-left: 1.5rem;
+    color: var(--text);
+    line-height: 1.9;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2rem;
+    }
+
+    nav {
+        flex-wrap: wrap;
+    }
+
+    .nav-link {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .metrics-row {
+        flex-direction: column;
+    }
+
+    .journal-list {
+        max-height: 50vh;
+    }
+
+    .authors-charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .single-journal-picker .picker-input-wrap {
+        max-width: 100%;
+    }
+}
+
+/* ---- Download bar ---- */
+
+.download-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.download-label {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.download-btn {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
+    border: 1px solid #c8d6e5;
+    border-radius: 4px;
+    background: #f0f4f8;
+    color: #2e4a6d;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.download-btn:hover {
+    background: #dce8f3;
+    border-color: #2e86c1;
+}
+
+/* ---- Author search modes ---- */
+
+.author-search-modes {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.author-mode-block {
+    flex: 1;
+    min-width: 260px;
+}
+
+.author-mode-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    color: #1a2e44;
+}
+
+.author-mode-hint {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0 0 0.6rem;
+}
+
+.author-mode-divider {
+    align-self: center;
+    font-size: 0.85rem;
+    color: #999;
+    font-style: italic;
+    padding-top: 2rem;
+}
+
+.cb-cell {
+    width: 2rem;
+    text-align: center;
+    cursor: default;
+}
+
+.cb-cell input[type=checkbox] {
+    cursor: pointer;
+    width: 15px;
+    height: 15px;
+}
+
+.sort-header {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.sort-header:hover {
+    background: #dce8f3;
+}
+
+tr.row-excluded td {
+    opacity: 0.4;
+    text-decoration: line-through;
+    color: #999;
+}
+
+/* ---- Author Profile ---- */
+.author-profile-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.profile-save-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-share-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-label {
+    font-size: 0.82rem;
+    color: #666;
+    white-space: nowrap;
+}
+
+.profile-name-input {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.82rem;
+    border: 1px solid #c8d6e5;
+    border-radius: 6px;
+    background: #fff;
+    color: #1a2e44;
+    width: 180px;
+    outline: none;
+}
+
+.profile-name-input:focus { border-color: #3498db; }
+
+.save-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.9rem;
+    background: #27ae60;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+
+.save-profile-btn:hover { opacity: 0.85; }
+
+.share-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.9rem;
+    background: #f0f4f8;
+    border: 1px solid #c8d6e5;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: #1a2e44;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.share-profile-btn:hover { background: #dce8f3; }
+
+.share-confirm {
+    font-size: 0.82rem;
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.profile-status {
+    font-size: 0.8rem;
+    width: 100%;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    background: #f0f4f8;
+    border: 1px solid #c8d6e5;
+}
+
+.profile-status-ok { color: #27ae60; border-color: #27ae60; background: #f0fff5; }
+.profile-status-error { color: #e74c3c; border-color: #e74c3c; background: #fff5f5; }
+
+.profile-tip {
+    font-size: 0.78rem;
+    color: #888;
+    font-style: italic;
+    margin: -0.25rem 0 0.75rem;
+}
+
+/* ---- Network controls ---- */
+
+.network-selected-panel {
+    background: #f0f4f8;
+    border: 1px solid #c8d6e5;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-top: 0.75rem;
+}
+
+.network-selected-panel h4 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: #1a3a52;
+    line-height: 1.4;
+}
+
+.network-selected-panel p {
+    margin: 0 0 0.5rem;
+    color: #555;
+    font-size: 0.88rem;
+}
+
+.pubmed-link {
+    color: #2e86c1;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.pubmed-link:hover {
+    text-decoration: underline;
+}
+
+/* ---- Influence Section ---- */
+
+.influence-ctrl-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+.influence-picker-wrap {
+    flex: 2;
+    min-width: 280px;
+}
+
+.influence-pmid-wrap {
+    flex: 1;
+    min-width: 240px;
+}
+
+.influence-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    color: #1a2e44;
+}
+
+.influence-toggle-row {
+    margin: 0.75rem 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.influence-toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: var(--text);
+}
+
+.inf-paper-row {
+    padding: 0.25rem 0;
+}
+
+.inf-paper-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1a3a52;
+    margin-bottom: 0.2rem;
+    line-height: 1.4;
+}
+
+.inf-paper-meta {
+    font-size: 0.83rem;
+    color: #555;
+}
+
+.inf-paper-divider {
+    border: none;
+    border-top: 1px solid #d0dce8;
+    margin: 0.6rem 0;
+}
+
+.inf-not-in-journal {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 3px;
+    background: #fef3cd;
+    color: #856404;
+    border: 1px solid #ffd666;
+    vertical-align: middle;
+}
+
+/* ---- Card header row (title + inline download buttons) ---- */
+
+.card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.card-header-row h4 {
+    margin-bottom: 0;
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+
+.card-dl-bar {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.dl-btn-sm {
+    padding: 0.18rem 0.48rem;
+    font-size: 0.72rem;
+    border: 1px solid #c8d6e5;
+    border-radius: 3px;
+    background: #f0f4f8;
+    color: #2e4a6d;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.dl-btn-sm:hover {
+    background: #dce8f3;
+    border-color: #2e86c1;
+}
+
+/* ---- Custom CSS tooltip for h-index info icon ---- */
+
+.metric-info {
+    position: relative;
+    cursor: help;
+    color: var(--primary-light);
+    font-size: 0.85em;
+    display: inline-block;
+}
+
+.metric-info::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a2e44;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 400;
+    padding: 0.5rem 0.7rem;
+    border-radius: 5px;
+    width: 260px;
+    white-space: normal;
+    text-align: left;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 500;
+    line-height: 1.45;
+}
+
+.metric-info:hover::after {
+    opacity: 1;
+}
+
+/* ---- Article type filter pills ---- */
+
+.type-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.filter-label {
+    font-size: 0.82rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.type-pill {
+    padding: 0.2rem 0.65rem;
+    font-size: 0.78rem;
+    border: 1px solid #c8d6e5;
+    border-radius: 12px;
+    background: #f0f4f8;
+    color: #2e4a6d;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.type-pill.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.type-pill:hover:not(.active) {
+    background: #dce8f3;
+    border-color: #2e86c1;
+}
+
+/* ---- Influence view mode toggle ---- */
+
+.influence-view-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 0.5rem 0 0.75rem;
+    font-size: 0.88rem;
+    color: var(--text);
+    flex-wrap: wrap;
+}
+
+.influence-view-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+}
+
+/* ---- Paste PMIDs textarea ---- */
+
+.paste-pmid-area {
+    width: 100%;
+    font-family: monospace;
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.5rem;
+    resize: vertical;
+    color: var(--text);
+    background: white;
+    box-sizing: border-box;
+    margin-bottom: 0.4rem;
+}
+
+.paste-pmid-area:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* ---- Chart range controls (zoom) ---- */
+
+.chart-range-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1.2rem;
+    margin: 0.5rem 0 0.75rem;
+    padding: 0.55rem 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.83rem;
+    color: var(--text);
+}
+
+.range-control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+}
+
+.range-label {
+    font-weight: 500;
+    color: #555;
+    white-space: nowrap;
+}
+
+.range-separator {
+    color: #888;
+    padding: 0 0.1rem;
+}
+
+.range-select {
+    max-width: 120px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.range-select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.range-input {
+    width: 72px;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    text-align: center;
+    color: var(--text);
+    background: white;
+}
+
+.range-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.range-reset-btn {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.78rem;
+    border: 1px solid #c8d6e5;
+    border-radius: 4px;
+    background: #f0f4f8;
+    color: #2e4a6d;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.range-reset-btn:hover {
+    background: #dce8f3;
+    border-color: #2e86c1;
+}
+
+@media (max-width: 768px) {
+    .chart-range-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ============================================================
+   IMPACT-NCATS additions
+   ============================================================ */
+
+/* ---- Data tables ---- */
+.data-table { width: 100%; border-collapse: collapse; background: var(--surface);
+              border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.data-table th, .data-table td { padding: 0.6rem 0.8rem; text-align: left;
+                                 border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+.data-table th { background: var(--primary); color: #fff; font-weight: 600; }
+.data-table th.sortable { cursor: pointer; user-select: none; }
+.data-table th.sortable:hover { background: var(--primary-light); }
+.data-table tbody tr:hover { background: #f1f6fa; }
+.site-row, .pi-row { cursor: pointer; }
+
+/* ---- Metric tiles ---- */
+.metric-row { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+.metric { background: var(--surface); border-radius: var(--radius); padding: 0.8rem 1.2rem;
+          box-shadow: var(--shadow); min-width: 130px; }
+.metric-value { display: block; font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+.metric-label { display: block; font-size: 0.8rem; color: var(--text-light); }
+
+/* ---- Control rows ---- */
+.controls-row { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.8rem; }
+.controls-row input[type="text"], .controls-row select {
+    padding: 0.5rem 0.7rem; border: 1px solid var(--border);
+    border-radius: var(--radius); font-size: 0.9rem; }
+.controls-row input[type="text"] { flex: 1; min-width: 220px; }
+#investigator-search { width: 100%; padding: 0.5rem 0.7rem; border: 1px solid var(--border);
+                       border-radius: var(--radius); font-size: 0.9rem; margin-bottom: 0.8rem; }
+
+/* ---- Site picker ---- */
+.picker { position: relative; margin-bottom: 0.8rem; }
+.picker-input { width: 100%; padding: 0.5rem 0.7rem; border: 1px solid var(--border);
+                border-radius: var(--radius); font-size: 0.9rem; }
+.picker-results { position: absolute; z-index: 20; width: 100%; max-height: 260px;
+                  overflow-y: auto; background: var(--surface); border: 1px solid var(--border);
+                  border-radius: var(--radius); box-shadow: var(--shadow-hover); }
+.picker-option { padding: 0.5rem 0.7rem; cursor: pointer; font-size: 0.9rem; }
+.picker-option:hover { background: #f1f6fa; }
+.picker-meta { color: var(--text-light); font-size: 0.8rem; margin-left: 0.4rem; }
+.picker-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+.picker-chip { color: #fff; padding: 0.25rem 0.5rem; border-radius: 999px;
+               font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.3rem; }
+.chip-remove { background: none; border: none; color: #fff; cursor: pointer;
+               font-size: 1rem; line-height: 1; padding: 0; }

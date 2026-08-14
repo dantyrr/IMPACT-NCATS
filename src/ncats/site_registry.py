@@ -131,6 +131,14 @@ def export_registry(conn: sqlite3.Connection, path: Path) -> list[dict]:
             )
         seen[e["slug"]] = e["ipf_code"]
 
+    # Write hub_name back into the sites table. The JSON registry is the
+    # curated source of truth, but export_index() reads the database, so the
+    # two must agree or every site renders with a null name.
+    for e in entries:
+        conn.execute("UPDATE sites SET hub_name=? WHERE ipf_code=?",
+                     (e["hub_name"], e["ipf_code"]))
+    conn.commit()
+
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(entries, indent=2))
     return entries

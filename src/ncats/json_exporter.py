@@ -25,8 +25,18 @@ def export_index(conn, out_dir) -> Path:
             "       first_funded_year, last_funded_year "
             "FROM sites WHERE is_ctsa_hub=1 ORDER BY hub_name")
     ]
+    investigators = [
+        {"profile_id": r[0], "full_name": r[1], "n_grants": r[2]}
+        for r in conn.execute(
+            "SELECT i.profile_id, i.full_name, COUNT(gp.core_project_num) "
+            "FROM investigators i "
+            "JOIN grant_pis gp ON gp.profile_id = i.profile_id "
+            "GROUP BY i.profile_id, i.full_name "
+            "ORDER BY i.full_name")
+    ]
     payload = {
         "sites": sites,
+        "investigators": investigators,
         "total_sites": len(sites),
         "total_grants": conn.execute("SELECT COUNT(*) FROM grants").fetchone()[0],
         "total_publications": conn.execute(
