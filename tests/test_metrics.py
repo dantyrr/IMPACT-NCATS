@@ -9,6 +9,7 @@ from src.ncats.metrics import (
 @pytest.fixture
 def conn():
     c = sqlite3.connect(":memory:")
+    c.execute("PRAGMA foreign_keys=ON")
     create_schema(c)
     for ipf, name in [(1, "HUB A"), (2, "HUB B")]:
         c.execute("INSERT INTO sites (ipf_code, org_name, is_ctsa_hub) VALUES (?,?,1)", (ipf, name))
@@ -27,13 +28,13 @@ def impact_conn():
     c.executescript("""
         CREATE TABLE journals (id INTEGER PRIMARY KEY, name TEXT);
         CREATE TABLE papers (pmid INTEGER PRIMARY KEY, journal_id INTEGER,
-                             pub_year INTEGER, is_research INTEGER);
+                             pub_year INTEGER, is_research INTEGER, title TEXT);
         CREATE TABLE citations (id INTEGER PRIMARY KEY, cited_pmid INTEGER,
                                 citing_pmid INTEGER);
     """)
     c.execute("INSERT INTO journals VALUES (10,'Nature')")
-    c.execute("INSERT INTO papers VALUES (100,10,2020,1)")
-    c.execute("INSERT INTO papers VALUES (200,10,2020,1)")
+    c.execute("INSERT INTO papers VALUES (100,10,2020,1,'Paper 100')")
+    c.execute("INSERT INTO papers VALUES (200,10,2020,1,'Paper 200')")
     c.execute("INSERT INTO citations VALUES (1,100,901)")
     c.execute("INSERT INTO citations VALUES (2,100,902)")
     yield c

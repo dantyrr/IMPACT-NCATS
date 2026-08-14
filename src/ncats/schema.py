@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS grant_pubs (
 
 CREATE TABLE IF NOT EXISTS pub_metrics (
     pmid               INTEGER PRIMARY KEY,
+    title              TEXT,
     rcr                REAL,
     citation_count     INTEGER DEFAULT 0,
     journal_id         INTEGER,
@@ -92,9 +93,20 @@ CREATE INDEX IF NOT EXISTS idx_site_metrics_site ON site_metrics(ipf_code, year)
 """
 
 
+# Columns added after the initial release. Applied to existing databases so a
+# schema change never requires rebuilding ncats.db from scratch.
+MIGRATIONS = [
+    ("pub_metrics", "title", "TEXT"),
+]
+
+
 def create_schema(conn: sqlite3.Connection) -> None:
-    """Create all tables and indexes. Safe to call repeatedly."""
+    """Create all tables and indexes, then apply migrations. Safe to repeat."""
     conn.executescript(SCHEMA_SQL)
+    for table, column, coltype in MIGRATIONS:
+        existing = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
     conn.commit()
 
 

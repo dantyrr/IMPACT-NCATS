@@ -3,9 +3,53 @@
 import logging
 import sqlite3
 
-from src.ncats.config import HUB_ACTIVITY_CODES
+from src.ncats.config import HUB_ACTIVITY_CODES, EXCLUDED_ACTIVITY_CODES
 
 logger = logging.getLogger(__name__)
+
+
+def prune_excluded_grants(conn: sqlite3.Connection) -> dict:
+    """Remove already-ingested grants whose mechanism is now excluded.
+
+    Lets a scope change take effect without re-fetching everything. Deletes the
+    grants and their dependent rows, then drops any site left with no grants.
+    Idempotent.
+    """
+    codes = tuple(EXCLUDED_ACTIVITY_CODES)
+    marks = ",".join("?" * len(codes))
+    cores = [r[0] for r in conn.execute(
+        f"SELECT core_project_num FROM grants WHERE activity_code IN ({marks})", codes)]
+    if not cores:
+        return {"grants": 0, "links": 0, "sites": 0}
+
+    cmarks = ",".join("?" * len(cores))
+    links = conn.execute(
+        f"DELETE FROM grant_pubs WHERE core_project_num IN ({cmarks})", cores).rowcount
+    conn.execute(f"DELETE FROM grant_pis   WHERE core_project_num IN ({cmarks})", cores)
+    conn.execute(f"DELETE FROM grant_years WHERE core_project_num IN ({cmarks})", cores)
+    grants = conn.execute(
+        f"DELETE FROM grants WHERE core_project_num IN ({cmarks})", cores).rowcount
+
+    # site_metrics references sites, so it must go first or the delete below
+    # trips the foreign key. It is fully recomputed by compute_site_metrics().
+    conn.execute(
+        "DELETE FROM site_metrics WHERE ipf_code NOT IN "
+        "(SELECT DISTINCT ipf_code FROM grants)")
+
+    # Sites and investigators that now have nothing attached.
+    sites = conn.execute(
+        "DELETE FROM sites WHERE ipf_code NOT IN (SELECT DISTINCT ipf_code FROM grants)"
+    ).rowcount
+    conn.execute(
+        "DELETE FROM investigators WHERE profile_id NOT IN "
+        "(SELECT DISTINCT profile_id FROM grant_pis)")
+    # Publications no longer linked to any surviving grant.
+    conn.execute(
+        "DELETE FROM pub_metrics WHERE pmid NOT IN (SELECT DISTINCT pmid FROM grant_pubs)")
+    conn.commit()
+    logger.info("Pruned %d excluded grants, %d links, %d orphan sites",
+                grants, links, sites)
+    return {"grants": grants, "links": links, "sites": sites}
 
 
 def ingest_projects(conn: sqlite3.Connection, records: list[dict]) -> dict:
@@ -14,7 +58,8 @@ def ingest_projects(conn: sqlite3.Connection, records: list[dict]) -> dict:
     Idempotent: award totals and FY ranges are recomputed from grant_years,
     never accumulated in place.
     """
-    counts = {"sites": 0, "grants": 0, "grant_years": 0, "investigators": 0}
+    counts = {"sites": 0, "grants": 0, "grant_years": 0, "investigators": 0,
+              "excluded": 0}
     touched_cores = set()
 
     for rec in records:
@@ -23,6 +68,10 @@ def ingest_projects(conn: sqlite3.Connection, records: list[dict]) -> dict:
         core = rec.get("core_project_num")
         if not ipf or not core:
             logger.warning("Skipping record with no IPF or core project: %s", core)
+            continue
+
+        if rec.get("activity_code") in EXCLUDED_ACTIVITY_CODES:
+            counts["excluded"] += 1
             continue
 
         cur = conn.execute(

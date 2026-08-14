@@ -14,6 +14,29 @@ mean. Read this before quoting any figure from this project.
 4. Those PMIDs are joined against `impact.db` to pick up journal, publication year, article
    type, and citation counts. RCR comes from iCite.
 
+## Which awards are included
+
+All NCATS awards FY2012–present whose activity code maps to a standard NIH mechanism
+letter — **R, K, U, T, F, P**. In practice the portfolio contains R, U, K and T awards
+(1,639 grants).
+
+The following are **excluded** by scope decision (41 records, $108.6M):
+
+| Codes | What they are | Why excluded |
+|---|---|---|
+| OT2, OT3 | Other Transactions | Not grants — a separate funding instrument |
+| N01, N03, N43, N44 | R&D contracts | Not grants |
+| SB1 | SBIR-related | One-off mechanism in this portfolio |
+| DP2 | NIH Director's New Innovator | One-off mechanism in this portfolio |
+
+Excluding these means every remaining award maps cleanly to a mechanism letter, so the
+per-mechanism breakdowns on the site are complete rather than carrying an unexplained
+"other" bucket. It also means **the dollar totals here are not the full NCATS obligation** —
+$108.6M of contracts, Other Transactions and one-off awards sit outside this analysis.
+
+Note that R01, R21, R03 and all other R-series *research grants* are fully included; only
+the mechanisms listed above are dropped.
+
 ## Site definition
 
 A site is keyed on RePORTER's `org_ipf_code`, a stable institutional identifier. This

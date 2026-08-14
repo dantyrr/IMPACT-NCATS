@@ -47,7 +47,7 @@ def enrich_from_impact(conn, impact_conn, batch_size: int = 5000) -> dict:
         marks = ",".join("?" * len(batch))
 
         rows = impact_conn.execute(
-            f"SELECT p.pmid, p.journal_id, j.name, p.pub_year, p.is_research, "
+            f"SELECT p.pmid, p.journal_id, j.name, p.pub_year, p.is_research, p.title, "
             f"       (SELECT COUNT(*) FROM citations c WHERE c.cited_pmid = p.pmid) "
             f"FROM papers p LEFT JOIN journals j ON j.id = p.journal_id "
             f"WHERE p.pmid IN ({marks})",
@@ -56,9 +56,9 @@ def enrich_from_impact(conn, impact_conn, batch_size: int = 5000) -> dict:
 
         conn.executemany(
             "UPDATE pub_metrics SET journal_id=?, journal_name=?, pub_year=?, "
-            "  is_research=?, citation_count=?, in_impact_db=1 WHERE pmid=?",
-            [(jid, jname, yr, isr, cites, pmid)
-             for pmid, jid, jname, yr, isr, cites in rows],
+            "  is_research=?, title=?, citation_count=?, in_impact_db=1 WHERE pmid=?",
+            [(jid, jname, yr, isr, title, cites, pmid)
+             for pmid, jid, jname, yr, isr, title, cites in rows],
         )
         stats["matched"] += len(rows)
         conn.commit()

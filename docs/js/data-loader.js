@@ -22,6 +22,10 @@ class DataLoader {
         return this._fetch(`${this.baseUrl}/index.json`);
     }
 
+    async loadPublications() {
+        return this._fetch(`${this.baseUrl}/publications.json`);
+    }
+
     async loadSite(slug) {
         return this._fetch(`${this.baseUrl}/sites/${slug}.json`);
     }

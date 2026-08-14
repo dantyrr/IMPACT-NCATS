@@ -7,6 +7,7 @@ from scripts.fetch_publications import ingest_pubs_for_grant
 @pytest.fixture
 def conn():
     c = sqlite3.connect(":memory:")
+    c.execute("PRAGMA foreign_keys=ON")
     create_schema(c)
     c.execute("INSERT INTO sites (ipf_code, org_name) VALUES (1,'X')")
     c.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code) VALUES ('UL1TR000090',1,'UL1')")

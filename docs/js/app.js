@@ -23,6 +23,7 @@ class NCATSApp {
         }
         this.renderSitesSummary();
         await this.setupSites();
+        await this.setupPublications();
         this.setupGrants();
         this.setupInvestigators();
         this.setupCompare();
@@ -69,6 +70,7 @@ class NCATSApp {
             return { ...s, ...this._siteTotals(data) };
         });
         this.sitesSort = { key: 'pubCount', dir: 'desc' };
+        this.selectedSites = [];
         this.renderSitesTable();
     }
 
@@ -114,7 +116,7 @@ class NCATSApp {
                     `<th class="sortable" data-key="${k}">${label}${key === k ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`
                 ).join('')}</tr></thead>
                 <tbody>${rows.map(r => `
-                    <tr class="site-row" data-slug="${r.slug}">
+                    <tr class="site-row${this.selectedSites.includes(r.slug) ? ' selected' : ''}" data-slug="${r.slug}">
                         <td><a href="#" class="site-link">${r.hub_name}</a></td>
                         <td>${r.state || '—'}</td>
                         <td>${r.pubCount.toLocaleString()}</td>
@@ -138,15 +140,98 @@ class NCATSApp {
         container.querySelectorAll('.site-row').forEach(tr => {
             tr.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSiteDetail(tr.dataset.slug);
+                this.toggleSite(tr.dataset.slug);
             });
         });
     }
 
-    async showSiteDetail(slug) {
-        const data = this.siteCache[slug] || await this.loader.loadSite(slug);
-        this.siteCache[slug] = data;
+    /** Add or remove a site from the stacked detail cards. */
+    async toggleSite(slug) {
+        const i = this.selectedSites.indexOf(slug);
+        if (i >= 0) this.selectedSites.splice(i, 1);
+        else this.selectedSites.push(slug);
+        this.renderSitesTable();
+        await this.renderSiteDetails();
+    }
 
+    renderSelectionBar() {
+        const bar = document.getElementById('sites-selection-bar');
+        if (!this.selectedSites.length) { bar.style.display = 'none'; return; }
+        bar.style.display = 'block';
+        bar.innerHTML = `
+            <div class="controls-row">
+                <strong>${this.selectedSites.length} site${this.selectedSites.length > 1 ? 's' : ''} selected</strong>
+                <button class="download-btn" id="sites-clear">Clear all</button>
+                <span class="data-note">Click any row to add or remove it.</span>
+            </div>`;
+        document.getElementById('sites-clear').addEventListener('click', () => {
+            this.selectedSites = [];
+            this.renderSitesTable();
+            this.renderSiteDetails();
+        });
+    }
+
+    /** Render one card per selected site, stacked. */
+    async renderSiteDetails() {
+        this.renderSelectionBar();
+        const panel = document.getElementById('site-detail');
+        if (!this.selectedSites.length) { panel.innerHTML = ''; return; }
+
+        for (const slug of this.selectedSites) {
+            if (!this.siteCache[slug]) {
+                this.siteCache[slug] = await this.loader.loadSite(slug);
+            }
+        }
+
+        panel.innerHTML = this.selectedSites
+            .map(slug => this._siteCardHtml(slug, this.siteCache[slug])).join('');
+
+        // Charts must be built after the markup exists in the DOM.
+        for (const slug of this.selectedSites) {
+            this._drawSiteCard(slug, this.siteCache[slug]);
+        }
+    }
+
+    _siteCardHtml(slug, data) {
+        const totals = this._siteTotals(data);
+        return `
+        <div class="detail-panel site-card" data-slug="${slug}">
+            <button class="card-close" data-slug="${slug}" title="Remove">×</button>
+            <h3>${data.hub_name}</h3>
+            <p class="data-note">${data.org_name} · ${data.city || ''} ${data.state || ''}</p>
+            <div class="metric-row">
+                <div class="metric"><span class="metric-value">${totals.pubCount.toLocaleString()}</span><span class="metric-label">Publications</span></div>
+                <div class="metric"><span class="metric-value">${totals.citationCount.toLocaleString()}</span><span class="metric-label">Citations</span></div>
+                <div class="metric"><span class="metric-value">${fmt(totals.meanRcr)}</span><span class="metric-label">Mean RCR</span></div>
+                <div class="metric"><span class="metric-value">${fmtMoney(totals.awardTotal)}</span><span class="metric-label">Awarded</span></div>
+            </div>
+            <div class="chart-container"><canvas id="site-chart-${slug}"></canvas></div>
+            <div class="download-bar">
+                <span>Download:</span>
+                <button class="download-btn" data-slug="${slug}" data-fmt="png">PNG</button>
+                <button class="download-btn" data-slug="${slug}" data-fmt="jpg">JPG</button>
+                <button class="download-btn" data-slug="${slug}" data-fmt="pdf">PDF</button>
+                <button class="download-btn" data-slug="${slug}" data-fmt="csv">CSV data</button>
+            </div>
+            <details>
+                <summary>Grants (${data.grants.length})</summary>
+                <table class="data-table">
+                    <thead><tr><th>Core project</th><th>Activity</th><th>Title</th><th>Years</th><th>Awarded</th></tr></thead>
+                    <tbody>${data.grants.map(g => `
+                        <tr>
+                            <td><a href="https://reporter.nih.gov/search/?projectNums=${g.core_project_num}" target="_blank" rel="noopener">${g.core_project_num}</a></td>
+                            <td>${g.activity_code || '—'}</td>
+                            <td>${g.title || '—'}</td>
+                            <td>${g.first_fy}–${g.last_fy}</td>
+                            <td>${fmtMoney(g.total_award_amount)}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </details>
+        </div>`;
+    }
+
+    _drawSiteCard(slug, data) {
         const years = [...new Set(data.metrics.map(m => m.year))].sort();
         const groups = [...new Set(data.metrics.map(m => m.activity_group))].sort();
 
@@ -160,44 +245,13 @@ class NCATSApp {
             borderColor: ChartManager.color(i),
         }));
 
-        const totals = this._siteTotals(data);
-        const panel = document.getElementById('site-detail');
-        panel.style.display = 'block';
-        panel.innerHTML = `
-            <h3>${data.hub_name}</h3>
-            <p class="data-note">${data.org_name} · ${data.city || ''} ${data.state || ''}</p>
-            <div class="metric-row">
-                <div class="metric"><span class="metric-value">${totals.pubCount.toLocaleString()}</span><span class="metric-label">Publications</span></div>
-                <div class="metric"><span class="metric-value">${totals.citationCount.toLocaleString()}</span><span class="metric-label">Citations</span></div>
-                <div class="metric"><span class="metric-value">${fmt(totals.meanRcr)}</span><span class="metric-label">Mean RCR</span></div>
-                <div class="metric"><span class="metric-value">${fmtMoney(totals.awardTotal)}</span><span class="metric-label">Awarded</span></div>
-            </div>
-            <div class="chart-container"><canvas id="site-detail-chart"></canvas></div>
-            <div class="download-bar">
-                <span>Download:</span>
-                <button class="download-btn" data-fmt="png">PNG</button>
-                <button class="download-btn" data-fmt="jpg">JPG</button>
-                <button class="download-btn" data-fmt="pdf">PDF</button>
-                <button class="download-btn" data-fmt="csv">CSV data</button>
-            </div>
-            <h4>Grants (${data.grants.length})</h4>
-            <table class="data-table">
-                <thead><tr><th>Core project</th><th>Activity</th><th>Title</th><th>Years</th><th>Awarded</th></tr></thead>
-                <tbody>${data.grants.map(g => `
-                    <tr>
-                        <td><a href="https://reporter.nih.gov/search/?projectNums=${g.core_project_num}" target="_blank" rel="noopener">${g.core_project_num}</a></td>
-                        <td>${g.activity_code || '—'}</td>
-                        <td>${g.title || '—'}</td>
-                        <td>${g.first_fy}–${g.last_fy}</td>
-                        <td>${fmtMoney(g.total_award_amount)}</td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>`;
-
-        const chart = ChartManager.barChart('site-detail-chart', years, datasets,
+        const chart = ChartManager.barChart(`site-chart-${slug}`, years, datasets,
             { stacked: true, yLabel: 'Publications' });
 
-        panel.querySelectorAll('.download-btn').forEach(btn => {
+        const card = document.querySelector(`.site-card[data-slug="${slug}"]`);
+        if (!card) return;
+
+        card.querySelectorAll('.download-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const f = btn.dataset.fmt;
                 if (f === 'csv') {
@@ -210,7 +264,150 @@ class NCATSApp {
                 }
             });
         });
-        panel.scrollIntoView({ behavior: 'smooth' });
+        card.querySelector('.card-close').addEventListener('click',
+            () => this.toggleSite(slug));
+    }
+
+    // ---------------- Publications ----------------
+
+    async setupPublications() {
+        try {
+            this.pubs = await this.loader.loadPublications();
+        } catch (e) {
+            document.getElementById('pub-controls').innerHTML =
+                '<p class="data-note">Could not load publications data.</p>';
+            console.error('Failed to load publications.json', e);
+            return;
+        }
+
+        const thr = this.pubs.min_pubs_threshold;
+        document.getElementById('pub-controls').innerHTML = `
+            <div class="controls-row">
+                <label>Rank sites by:
+                    <select id="pub-metric">
+                        <option value="mean_rcr">Mean RCR</option>
+                        <option value="citation_count">Total citations</option>
+                        <option value="mean_citations">Mean citations per paper</option>
+                        <option value="pub_count">Publications</option>
+                    </select>
+                </label>
+                <label>Show:
+                    <select id="pub-topn">
+                        <option value="10">Top 10</option>
+                        <option value="20">Top 20</option>
+                        <option value="0">All sites</option>
+                    </select>
+                </label>
+                <label title="A site with very few scored papers can post an extreme mean RCR">
+                    <input type="checkbox" id="pub-min" checked>
+                    Only sites with ≥${thr} scored papers
+                </label>
+            </div>`;
+        ['pub-metric', 'pub-topn', 'pub-min'].forEach(id =>
+            document.getElementById(id).addEventListener('input', () => this.renderPubChart()));
+
+        document.getElementById('pub-paper-controls').innerHTML = `
+            <div class="controls-row">
+                <label>Rank papers by:
+                    <select id="pub-paper-metric">
+                        <option value="top_by_rcr">RCR</option>
+                        <option value="top_by_citations">Citations</option>
+                    </select>
+                </label>
+                <label><input type="checkbox" id="pub-research-only"> Research articles only</label>
+                <input type="text" id="pub-paper-search" placeholder="Filter by title, journal, or site…">
+            </div>
+            <p class="data-note" id="pub-paper-count"></p>`;
+        ['pub-paper-metric', 'pub-research-only', 'pub-paper-search'].forEach(id =>
+            document.getElementById(id).addEventListener('input', () => this.renderPubPapers()));
+
+        this.renderPubChart();
+        this.renderPubPapers();
+    }
+
+    renderPubChart() {
+        const metric = document.getElementById('pub-metric').value;
+        const topN = parseInt(document.getElementById('pub-topn').value, 10);
+        const applyMin = document.getElementById('pub-min').checked;
+        const thr = this.pubs.min_pubs_threshold;
+
+        let rows = this.pubs.site_rankings.filter(r => r[metric] !== null && r[metric] !== undefined);
+        const excluded = applyMin ? rows.filter(r => r.below_threshold).length : 0;
+        if (applyMin) rows = rows.filter(r => !r.below_threshold);
+
+        rows.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+        if (topN > 0) rows = rows.slice(0, topN);
+
+        const label = document.getElementById('pub-metric').selectedOptions[0].text;
+        ChartManager.barChart('pub-site-chart',
+            rows.map(r => r.hub_name),
+            [{
+                label,
+                data: rows.map(r => r[metric]),
+                backgroundColor: rows.map((_, i) => ChartManager.color(i)),
+            }],
+            {
+                yLabel: label,
+                chartOptions: {
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: (ctx) => {
+                                    const r = rows[ctx.dataIndex];
+                                    return `${r.pub_count.toLocaleString()} publications · ` +
+                                           `${r.rcr_n.toLocaleString()} with an RCR`;
+                                },
+                            },
+                        },
+                    },
+                    scales: { y: { ticks: { autoSkip: false } }, x: { beginAtZero: true } },
+                },
+            });
+
+        document.getElementById('pub-chart-note').innerHTML = `
+            <p class="data-note">
+                ${applyMin
+                    ? `${excluded} site${excluded === 1 ? '' : 's'} with fewer than ${thr} RCR-scored papers ${excluded === 1 ? 'is' : 'are'} hidden — small samples produce unstable averages.`
+                    : `<strong>Showing all sites, including those with very few scored papers.</strong> A site with a handful of publications can post an extreme mean RCR that is not meaningful.`}
+                Mean RCR counts each site's linked publications in full, so a paper shared by
+                several hubs contributes to each. See <a href="#about">About</a>.
+            </p>`;
+    }
+
+    renderPubPapers() {
+        const which = document.getElementById('pub-paper-metric').value;
+        const researchOnly = document.getElementById('pub-research-only').checked;
+        const term = document.getElementById('pub-paper-search').value.toLowerCase().trim();
+
+        let papers = this.pubs[which];
+        if (researchOnly) papers = papers.filter(p => p.is_research === 1);
+        if (term) {
+            papers = papers.filter(p =>
+                `${p.title || ''} ${p.journal || ''} ${p.sites.join(' ')}`.toLowerCase().includes(term));
+        }
+
+        document.getElementById('pub-paper-count').textContent =
+            `${papers.length.toLocaleString()} papers`;
+
+        document.getElementById('pub-papers-container').innerHTML = `
+            <table class="data-table">
+                <thead><tr><th>#</th><th>Title</th><th>Journal</th><th>Year</th>
+                           <th>RCR</th><th>Citations</th><th>Site(s)</th></tr></thead>
+                <tbody>${papers.map((p, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td><a href="https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/" target="_blank" rel="noopener">${p.title || '(untitled)'}</a></td>
+                        <td>${p.journal || '—'}</td>
+                        <td>${p.year || '—'}</td>
+                        <td>${fmt(p.rcr, 1)}</td>
+                        <td>${(p.citations || 0).toLocaleString()}</td>
+                        <td>${p.sites.length ? p.sites.join(', ') : '—'}
+                            ${p.n_linked_hubs > 1 ? `<span class="badge">${p.n_linked_hubs} hubs</span>` : ''}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
     }
 
     // ---------------- Grants ----------------
@@ -487,12 +684,25 @@ class NCATSApp {
                 <li><strong>IMPACT</strong> — journals, citation events, and article types for 24.9M papers.</li>
             </ul>
 
+            <h3>Which awards are included</h3>
+            <p>
+                Every NCATS award FY2012 onward whose activity code maps to a standard NIH
+                mechanism letter (R, K, U, T). R01, R21, R03 and the rest of the R series are
+                fully included. Excluded by scope: Other Transactions (OT2/OT3), R&amp;D contracts
+                (N01/N03/N43/N44), SB1 and DP2 — 41 records totalling $108.6M. <strong>The dollar
+                figures here are therefore not the full NCATS obligation.</strong>
+            </p>
+
             <h3>What these numbers do not mean</h3>
             <ol>
                 <li>
                     <strong>Publication counts are a floor, not a census.</strong> RePORTER knows about a
                     paper only if it was reported against the award. Hubs differ in how diligently they
                     report, so cross-site comparisons partly measure reporting practice.
+                    <em>Yale is the clearest example: its hub award carries roughly six times more
+                    publications per year than any peer, despite a shorter award period and almost no
+                    pre-award tagging. That gap reflects how broadly a hub attributes papers to its
+                    CTSA, not how much research it does.</em>
                 </li>
                 <li>
                     <strong>The timeline starts at FY2012.</strong> NCATS was created in December 2011.

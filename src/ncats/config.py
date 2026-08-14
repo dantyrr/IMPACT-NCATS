@@ -37,6 +37,18 @@ AGENCY = "NCATS"
 FIRST_FISCAL_YEAR = 2012
 HUB_ACTIVITY_CODES = ["UL1", "UM1"]
 
+# Non-grant and one-off funding instruments, excluded by scope decision.
+# OT2/OT3 are Other Transactions and N-series are R&D contracts - neither is a
+# grant. SB1 and DP2 are grants but are one-off mechanisms in this portfolio and
+# are excluded so every remaining award maps to a standard NIH mechanism letter
+# (R, K, U, T, F, P). Documented in METHODS_ncats.md.
+EXCLUDED_ACTIVITY_CODES = {
+    "OT2", "OT3",                  # Other Transactions
+    "N01", "N03", "N43", "N44",    # R&D contracts
+    "SB1",                         # SBIR-related
+    "DP2",                         # NIH Director's New Innovator
+}
+
 # --- R2 ---
 R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID", "")
 R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "impact-data")

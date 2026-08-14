@@ -8,6 +8,7 @@ from src.ncats.json_exporter import export_index, export_sites
 @pytest.fixture
 def conn():
     c = sqlite3.connect(":memory:")
+    c.execute("PRAGMA foreign_keys=ON")
     create_schema(c)
     c.execute("INSERT INTO sites (ipf_code, org_name, slug, hub_name, city, state, is_ctsa_hub, first_funded_year, last_funded_year) "
               "VALUES (1,'HUB A','hub-a','Hub A CTSI','BOSTON','MA',1,2012,2025)")

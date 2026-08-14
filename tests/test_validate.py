@@ -6,6 +6,8 @@ from scripts.validate_ncats import run_checks
 
 @pytest.fixture
 def conn():
+    # Foreign keys deliberately OFF: these tests construct the orphaned
+    # rows that run_checks() exists to detect.
     c = sqlite3.connect(":memory:")
     create_schema(c)
     c.execute("INSERT INTO sites (ipf_code, org_name, slug, hub_name, is_ctsa_hub) VALUES (1,'A','a','Hub A',1)")

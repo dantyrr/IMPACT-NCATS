@@ -11,6 +11,7 @@ EXPECTED_TABLES = {
 @pytest.fixture
 def conn():
     c = sqlite3.connect(":memory:")
+    c.execute("PRAGMA foreign_keys=ON")
     create_schema(c)
     yield c
     c.close()

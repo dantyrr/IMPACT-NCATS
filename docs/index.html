@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=1">
+    <link rel="stylesheet" href="css/style.css?v=2">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -17,6 +17,7 @@
     </div>
     <nav>
         <a href="#sites" class="nav-link active" data-section="sites">Sites</a>
+        <a href="#publications" class="nav-link" data-section="publications">Publications</a>
         <a href="#grants" class="nav-link" data-section="grants">Grants</a>
         <a href="#investigators" class="nav-link" data-section="investigators">Investigators</a>
         <a href="#compare" class="nav-link" data-section="compare">Compare</a>
@@ -28,8 +29,21 @@
     <section id="sites" class="section active">
         <h2>CTSA Sites</h2>
         <p class="data-note" id="sites-summary">Loading…</p>
+        <div id="sites-selection-bar" style="display:none;"></div>
         <div id="sites-table-container"></div>
-        <div id="site-detail" class="detail-panel" style="display:none;"></div>
+        <div id="site-detail"></div>
+    </section>
+
+    <section id="publications" class="section">
+        <h2>Publications</h2>
+        <div id="pub-controls"></div>
+        <div class="chart-container" id="pub-chart-container">
+            <canvas id="pub-site-chart"></canvas>
+        </div>
+        <div id="pub-chart-note"></div>
+        <h3>Top papers</h3>
+        <div id="pub-paper-controls"></div>
+        <div id="pub-papers-container"></div>
     </section>
 
     <section id="grants" class="section">
@@ -61,9 +75,9 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=1"></script>
-<script src="js/site-picker.js?v=1"></script>
-<script src="js/chart-manager.js?v=1"></script>
-<script src="js/app.js?v=1"></script>
+<script src="js/data-loader.js?v=2"></script>
+<script src="js/site-picker.js?v=2"></script>
+<script src="js/chart-manager.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
 </body>
 </html>

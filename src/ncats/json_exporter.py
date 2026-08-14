@@ -86,6 +86,75 @@ def export_sites(conn, out_dir) -> int:
     return n
 
 
+def export_publications(conn, out_dir, top_n: int = 250, min_pubs: int = 25) -> Path:
+    """Top papers plus per-site publication rankings.
+
+    Powers the Publications tab, which answers 'which site has the highest
+    RCR' and 'what are the top papers' without drilling into each site.
+
+    `min_pubs` guards the site rankings: a site with a handful of papers can
+    post an extreme mean RCR that means nothing. Sites below the threshold are
+    still returned, flagged `below_threshold`, so the UI can exclude them by
+    default without hiding their existence.
+    """
+    out_dir = Path(out_dir)
+
+    def papers(order_by):
+        rows = conn.execute(f"""
+            SELECT pm.pmid, pm.title, pm.journal_name, pm.pub_year, pm.rcr,
+                   pm.citation_count, pm.is_research, pm.n_linked_hubs
+            FROM pub_metrics pm
+            WHERE pm.in_impact_db = 1 AND {order_by} IS NOT NULL
+            ORDER BY {order_by} DESC
+            LIMIT ?""", (top_n,)).fetchall()
+        out = []
+        for pmid, title, journal, year, rcr, cites, is_res, n_hubs in rows:
+            sites = [r[0] for r in conn.execute("""
+                SELECT DISTINCT s.hub_name
+                FROM grant_pubs gp
+                JOIN grants g ON g.core_project_num = gp.core_project_num
+                JOIN sites  s ON s.ipf_code = g.ipf_code
+                WHERE gp.pmid = ? AND s.is_ctsa_hub = 1
+                ORDER BY s.hub_name""", (pmid,))]
+            out.append({
+                "pmid": pmid, "title": title, "journal": journal, "year": year,
+                "rcr": rcr, "citations": cites, "is_research": is_res,
+                "n_linked_hubs": n_hubs, "sites": sites,
+            })
+        return out
+
+    rankings = []
+    for row in conn.execute("""
+        SELECT s.slug, s.hub_name, s.state,
+               COUNT(DISTINCT pm.pmid)                                   AS pub_count,
+               AVG(pm.rcr)                                               AS mean_rcr,
+               SUM(pm.citation_count)                                    AS citation_count,
+               AVG(CAST(pm.citation_count AS REAL))                      AS mean_citations,
+               COUNT(DISTINCT CASE WHEN pm.rcr IS NOT NULL THEN pm.pmid END) AS rcr_n
+        FROM sites s
+        JOIN grants g       ON g.ipf_code = s.ipf_code
+        JOIN grant_pubs gp  ON gp.core_project_num = g.core_project_num
+        JOIN pub_metrics pm ON pm.pmid = gp.pmid
+        WHERE s.is_ctsa_hub = 1 AND pm.in_impact_db = 1
+        GROUP BY s.slug, s.hub_name, s.state"""):
+        slug, hub, state, pubs, mean_rcr, cites, mean_cites, rcr_n = row
+        rankings.append({
+            "slug": slug, "hub_name": hub, "state": state,
+            "pub_count": pubs, "mean_rcr": mean_rcr,
+            "citation_count": cites, "mean_citations": mean_cites,
+            "rcr_n": rcr_n,
+            "below_threshold": 1 if (rcr_n or 0) < min_pubs else 0,
+        })
+    rankings.sort(key=lambda r: (r["mean_rcr"] is None, -(r["mean_rcr"] or 0)))
+
+    return _write(out_dir / "publications.json", {
+        "top_by_rcr": papers("pm.rcr"),
+        "top_by_citations": papers("pm.citation_count"),
+        "site_rankings": rankings,
+        "min_pubs_threshold": min_pubs,
+    })
+
+
 def export_investigators(conn, out_dir) -> int:
     """One JSON file per PI, listing their grants and publication totals."""
     out_dir = Path(out_dir)

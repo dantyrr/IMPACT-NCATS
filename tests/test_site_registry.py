@@ -10,6 +10,7 @@ from src.ncats.site_registry import (
 @pytest.fixture
 def conn():
     c = sqlite3.connect(":memory:")
+    c.execute("PRAGMA foreign_keys=ON")
     create_schema(c)
     c.execute("INSERT INTO sites (ipf_code, org_name) VALUES (1, 'UNIVERSITY OF CALIFORNIA LOS ANGELES')")
     c.execute("INSERT INTO sites (ipf_code, org_name) VALUES (2, 'INSIGHTFIL')")

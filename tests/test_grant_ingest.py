@@ -27,6 +27,7 @@ def _record(core="UL1TR001881", fy=2024, amount=1000.0, ipf=577504,
 @pytest.fixture
 def conn():
     c = sqlite3.connect(":memory:")
+    c.execute("PRAGMA foreign_keys=ON")
     create_schema(c)
     yield c
     c.close()
@@ -78,3 +79,39 @@ def test_record_with_no_ipf_code_is_skipped(conn):
     counts = ingest_projects(conn, [bad])
     assert counts["grants"] == 0
     assert conn.execute("SELECT COUNT(*) FROM grants").fetchone()[0] == 0
+
+
+def test_excluded_activity_codes_are_not_ingested(conn):
+    """Other Transactions, contracts, SB1 and DP2 are out of scope."""
+    ingest_projects(conn, [
+        _record(core="UL1TR000001", act="UL1"),
+        _record(core="OT2TR000002", act="OT2", ipf=2, org="X"),
+        _record(core="N01TR000003", act="N01", ipf=3, org="Y"),
+        _record(core="DP2TR002776", act="DP2", ipf=4, org="Z"),
+        _record(core="SB1TR000005", act="SB1", ipf=5, org="W"),
+    ])
+    codes = {r[0] for r in conn.execute("SELECT activity_code FROM grants")}
+    assert codes == {"UL1"}
+
+
+def test_prune_removes_previously_ingested_excluded_grants(conn):
+    """A scope change must not require re-fetching the whole portfolio."""
+    from src.ncats.config import EXCLUDED_ACTIVITY_CODES
+    from src.ncats.grant_ingest import prune_excluded_grants
+
+    ingest_projects(conn, [_record(core="UL1TR000001", act="UL1")])
+    # Simulate rows ingested before the exclusion rule existed.
+    conn.execute("INSERT INTO sites (ipf_code, org_name) VALUES (99,'Old Org')")
+    conn.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code) "
+                 "VALUES ('OT2TR009999',99,'OT2')")
+    conn.execute("INSERT INTO grant_pubs VALUES ('OT2TR009999', 555)")
+    conn.execute("INSERT INTO pub_metrics (pmid) VALUES (555)")
+
+    stats = prune_excluded_grants(conn)
+    assert stats["grants"] == 1
+    assert stats["links"] == 1
+    assert conn.execute("SELECT COUNT(*) FROM grants WHERE activity_code='OT2'").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM sites WHERE ipf_code=99").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM pub_metrics WHERE pmid=555").fetchone()[0] == 0
+    # Idempotent
+    assert prune_excluded_grants(conn)["grants"] == 0
