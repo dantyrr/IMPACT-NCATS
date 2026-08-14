@@ -1,0 +1,1084 @@
+[
+  {
+    "ipf_code": 9433501,
+    "org_name": "ALBERT EINSTEIN COLLEGE OF MEDICINE",
+    "slug": "albert-einstein-college-of-medicine",
+    "hub_name": "Albert Einstein College Of Medicine",
+    "city": "BRONX",
+    "state": "NY",
+    "first_funded_year": 2012,
+    "last_funded_year": 2013,
+    "core_project_nums": [
+      "UL1TR000086"
+    ]
+  },
+  {
+    "ipf_code": 10053556,
+    "org_name": "ALBERT EINSTEIN COLLEGE OF MEDICINE",
+    "slug": "albert-einstein-college-of-medicine",
+    "hub_name": "Albert Einstein College Of Medicine",
+    "city": "BRONX",
+    "state": "NY",
+    "first_funded_year": 2018,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR002556",
+      "UM1TR004400"
+    ]
+  },
+  {
+    "ipf_code": 10039582,
+    "org_name": "ALBERT EINSTEIN COLLEGE OF MEDICINE, INC",
+    "slug": "albert-einstein-college-of-medicine-inc",
+    "hub_name": "Albert Einstein College Of Medicine, Inc",
+    "city": "BRONX",
+    "state": "NY",
+    "first_funded_year": 2013,
+    "last_funded_year": 2017,
+    "core_project_nums": [
+      "UL1TR001073"
+    ]
+  },
+  {
+    "ipf_code": 481201,
+    "org_name": "BAYLOR COLLEGE OF MEDICINE",
+    "slug": "baylor-college-of-medicine",
+    "hub_name": "Baylor College Of Medicine",
+    "city": "HOUSTON",
+    "state": "TX",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UM1TR004539"
+    ]
+  },
+  {
+    "ipf_code": 894901,
+    "org_name": "BOSTON UNIVERSITY MEDICAL CAMPUS",
+    "slug": "boston-university-medical-campus",
+    "hub_name": "Boston University Medical Campus",
+    "city": "BOSTON",
+    "state": "MA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000157",
+      "UL1TR001430"
+    ]
+  },
+  {
+    "ipf_code": 1080401,
+    "org_name": "BRIGHAM AND WOMEN'S HOSPITAL",
+    "slug": "brigham-and-womens-hospital",
+    "hub_name": "Brigham And Women'S Hospital",
+    "city": "BOSTON",
+    "state": "MA",
+    "first_funded_year": 2013,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UM1TR006047"
+    ]
+  },
+  {
+    "ipf_code": 218601,
+    "org_name": "CASE WESTERN RESERVE UNIVERSITY",
+    "slug": "case-western-reserve-university",
+    "hub_name": "Case Western Reserve University",
+    "city": "CLEVELAND",
+    "state": "OH",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000439",
+      "UL1TR002548",
+      "UM1TR004528"
+    ]
+  },
+  {
+    "ipf_code": 1518602,
+    "org_name": "CHILDREN'S RESEARCH INSTITUTE",
+    "slug": "childrens-research-institute",
+    "hub_name": "Children'S Research Institute",
+    "city": "WASHINGTON",
+    "state": "DC",
+    "first_funded_year": 2012,
+    "last_funded_year": 2023,
+    "core_project_nums": [
+      "UL1TR000075",
+      "UL1TR001876"
+    ]
+  },
+  {
+    "ipf_code": 615001,
+    "org_name": "CINCINNATI CHILDRENS HOSP MED CTR",
+    "slug": "cincinnati-childrens-hosp-med-ctr",
+    "hub_name": "Cincinnati Childrens Hosp Med Ctr",
+    "city": "CINCINNATI",
+    "state": "OH",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UM1TR006070"
+    ]
+  },
+  {
+    "ipf_code": 1833205,
+    "org_name": "COLUMBIA UNIVERSITY HEALTH SCIENCES",
+    "slug": "columbia-university-health-sciences",
+    "hub_name": "Columbia University Health Sciences",
+    "city": "NEW YORK",
+    "state": "NY",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000040",
+      "UL1TR001873",
+      "UM1TR006153"
+    ]
+  },
+  {
+    "ipf_code": 2021601,
+    "org_name": "DARTMOUTH COLLEGE",
+    "slug": "dartmouth-college",
+    "hub_name": "Dartmouth College",
+    "city": "HANOVER",
+    "state": "NH",
+    "first_funded_year": 2013,
+    "last_funded_year": 2024,
+    "core_project_nums": [
+      "UL1TR001086"
+    ]
+  },
+  {
+    "ipf_code": 10051750,
+    "org_name": "DARTMOUTH-HITCHCOCK CLINIC",
+    "slug": "dartmouth-hitchcock-clinic",
+    "hub_name": "Dartmouth-Hitchcock Clinic",
+    "city": "LEBANON",
+    "state": "NH",
+    "first_funded_year": 2024,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UM1TR004772"
+    ]
+  },
+  {
+    "ipf_code": 2221101,
+    "org_name": "DUKE UNIVERSITY",
+    "slug": "duke-university",
+    "hub_name": "Duke University",
+    "city": "DURHAM",
+    "state": "NC",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000436",
+      "UL1TR001117",
+      "UL1TR002553",
+      "UM1TR005436"
+    ]
+  },
+  {
+    "ipf_code": 2384501,
+    "org_name": "EMORY UNIVERSITY",
+    "slug": "emory-university",
+    "hub_name": "Emory University",
+    "city": "ATLANTA",
+    "state": "GA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000454",
+      "UL1TR002378"
+    ]
+  },
+  {
+    "ipf_code": 2869001,
+    "org_name": "GEORGETOWN UNIVERSITY",
+    "slug": "georgetown-university",
+    "hub_name": "Georgetown University",
+    "city": "WASHINGTON",
+    "state": "DC",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000101",
+      "UL1TR001409",
+      "UM1TR005465"
+    ]
+  },
+  {
+    "ipf_code": 3212902,
+    "org_name": "HARVARD MEDICAL SCHOOL",
+    "slug": "harvard-medical-school",
+    "hub_name": "Harvard Medical School",
+    "city": "BOSTON",
+    "state": "MA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000170",
+      "UL1TR001102",
+      "UL1TR002541",
+      "UM1TR004408"
+    ]
+  },
+  {
+    "ipf_code": 3839801,
+    "org_name": "ICAHN SCHOOL OF MEDICINE AT MOUNT SINAI",
+    "slug": "icahn-school-of-medicine-at-mount-sinai",
+    "hub_name": "Icahn School Of Medicine At Mount Sinai",
+    "city": "NEW YORK",
+    "state": "NY",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000067",
+      "UL1TR001433",
+      "UL1TR004419"
+    ]
+  },
+  {
+    "ipf_code": 577806,
+    "org_name": "INDIANA UNIVERSITY INDIANAPOLIS",
+    "slug": "indiana-university-indianapolis",
+    "hub_name": "Indiana University Indianapolis",
+    "city": "INDIANAPOLIS",
+    "state": "IN",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000006",
+      "UL1TR001108",
+      "UL1TR002529",
+      "UM1TR004402"
+    ]
+  },
+  {
+    "ipf_code": 4134401,
+    "org_name": "JOHNS HOPKINS UNIVERSITY",
+    "slug": "johns-hopkins-university",
+    "hub_name": "Johns Hopkins University",
+    "city": "BALTIMORE",
+    "state": "MD",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000424",
+      "UL1TR001079",
+      "UL1TR003098",
+      "UM1TR004926",
+      "UM1TR006046"
+    ]
+  },
+  {
+    "ipf_code": 4911501,
+    "org_name": "MASSACHUSETTS INSTITUTE OF TECHNOLOGY",
+    "slug": "massachusetts-institute-of-technology",
+    "hub_name": "Massachusetts Institute Of Technology",
+    "city": "CAMBRIDGE",
+    "state": "MA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UM1TR006029"
+    ]
+  },
+  {
+    "ipf_code": 4976101,
+    "org_name": "MAYO CLINIC ROCHESTER",
+    "slug": "mayo-clinic-rochester",
+    "hub_name": "Mayo Clinic Rochester",
+    "city": "ROCHESTER",
+    "state": "MN",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000135",
+      "UL1TR002377"
+    ]
+  },
+  {
+    "ipf_code": 46001,
+    "org_name": "MEDICAL COLLEGE OF WISCONSIN",
+    "slug": "medical-college-of-wisconsin",
+    "hub_name": "Medical College Of Wisconsin",
+    "city": "MILWAUKEE",
+    "state": "WI",
+    "first_funded_year": 2012,
+    "last_funded_year": 2025,
+    "core_project_nums": [
+      "UL1TR000055",
+      "UL1TR001436"
+    ]
+  },
+  {
+    "ipf_code": 7575301,
+    "org_name": "MEDICAL UNIVERSITY OF SOUTH CAROLINA",
+    "slug": "medical-university-of-south-carolina",
+    "hub_name": "Medical University Of South Carolina",
+    "city": "CHARLESTON",
+    "state": "SC",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000062",
+      "UL1TR001450",
+      "UM1TR005294"
+    ]
+  },
+  {
+    "ipf_code": 5998304,
+    "org_name": "NEW YORK UNIVERSITY SCHOOL OF MEDICINE",
+    "slug": "new-york-university-school-of-medicine",
+    "hub_name": "New York University School Of Medicine",
+    "city": "NEW YORK",
+    "state": "NY",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000038",
+      "UL1TR001445",
+      "UM1TR005769"
+    ]
+  },
+  {
+    "ipf_code": 6144650,
+    "org_name": "NORTHWESTERN UNIVERSITY",
+    "slug": "northwestern-university",
+    "hub_name": "Northwestern University",
+    "city": "CHICAGO",
+    "state": "IL",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000150",
+      "UL1TR001422",
+      "UM1TR005121"
+    ]
+  },
+  {
+    "ipf_code": 6218701,
+    "org_name": "OHIO STATE UNIVERSITY",
+    "slug": "ohio-state-university",
+    "hub_name": "Ohio State University",
+    "city": "Columbus",
+    "state": "OH",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000090",
+      "UL1TR001070",
+      "UL1TR002733",
+      "UM1TR004548"
+    ]
+  },
+  {
+    "ipf_code": 6297007,
+    "org_name": "OREGON HEALTH & SCIENCE UNIVERSITY",
+    "slug": "oregon-health-science-university",
+    "hub_name": "Oregon Health & Science University",
+    "city": "PORTLAND",
+    "state": "OR",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000128",
+      "UL1TR002369"
+    ]
+  },
+  {
+    "ipf_code": 1524204,
+    "org_name": "PENNSYLVANIA STATE UNIV HERSHEY MED CTR",
+    "slug": "pennsylvania-state-univ-hershey-med-ctr",
+    "hub_name": "Pennsylvania State Univ Hershey Med Ctr",
+    "city": "HERSHEY",
+    "state": "PA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000127",
+      "UL1TR002014",
+      "UM1TR006339"
+    ]
+  },
+  {
+    "ipf_code": 7056601,
+    "org_name": "ROCKEFELLER UNIVERSITY",
+    "slug": "rockefeller-university",
+    "hub_name": "Rockefeller University",
+    "city": "NEW YORK",
+    "state": "NY",
+    "first_funded_year": 2012,
+    "last_funded_year": 2025,
+    "core_project_nums": [
+      "UL1TR000043",
+      "UL1TR001866"
+    ]
+  },
+  {
+    "ipf_code": 10034168,
+    "org_name": "RUTGERS BIOMEDICAL AND HEALTH SCIENCES",
+    "slug": "rutgers-biomedical-and-health-sciences",
+    "hub_name": "Rutgers Biomedical And Health Sciences",
+    "city": "Newark",
+    "state": "NJ",
+    "first_funded_year": 2019,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR003017",
+      "UM1TR004789"
+    ]
+  },
+  {
+    "ipf_code": 7375802,
+    "org_name": "SCRIPPS RESEARCH INSTITUTE, THE",
+    "slug": "scripps-research-institute-the",
+    "hub_name": "Scripps Research Institute, The",
+    "city": "LA JOLLA",
+    "state": "CA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000109",
+      "UL1TR001114",
+      "UL1TR002550",
+      "UM1TR004407"
+    ]
+  },
+  {
+    "ipf_code": 8046501,
+    "org_name": "STANFORD UNIVERSITY",
+    "slug": "stanford-university",
+    "hub_name": "Stanford University",
+    "city": "STANFORD",
+    "state": "CA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000093",
+      "UL1TR001085",
+      "UL1TR003142",
+      "UM1TR004921",
+      "UM1TR006031"
+    ]
+  },
+  {
+    "ipf_code": 5992614,
+    "org_name": "STATE UNIVERSITY OF NEW YORK AT BUFFALO",
+    "slug": "state-university-of-new-york-at-buffalo",
+    "hub_name": "State University Of New York At Buffalo",
+    "city": "AMHERST",
+    "state": "NY",
+    "first_funded_year": 2015,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR001412",
+      "UM1TR005296"
+    ]
+  },
+  {
+    "ipf_code": 8266920,
+    "org_name": "TEXAS A&M AGRILIFE RESEARCH",
+    "slug": "texas-a-m-agrilife-research",
+    "hub_name": "Texas A&M Agrilife Research",
+    "city": "College Station",
+    "state": "TX",
+    "first_funded_year": 2026,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UM1TR006055"
+    ]
+  },
+  {
+    "ipf_code": 8422704,
+    "org_name": "TUFTS UNIVERSITY BOSTON",
+    "slug": "tufts-university-boston",
+    "hub_name": "Tufts University Boston",
+    "city": "BOSTON",
+    "state": "MA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000073",
+      "UL1TR001064",
+      "UL1TR002544",
+      "UM1TR004398"
+    ]
+  },
+  {
+    "ipf_code": 1471106,
+    "org_name": "UNIV OF ARKANSAS FOR MED SCIS",
+    "slug": "univ-of-arkansas-for-med-scis",
+    "hub_name": "Univ Of Arkansas For Med Scis",
+    "city": "LITTLE ROCK",
+    "state": "AR",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000039",
+      "UL1TR003107",
+      "UM1TR004909"
+    ]
+  },
+  {
+    "ipf_code": 850903,
+    "org_name": "UNIV OF MASSACHUSETTS MED SCH WORCESTER",
+    "slug": "univ-of-massachusetts-med-sch-worcester",
+    "hub_name": "Univ Of Massachusetts Med Sch Worcester",
+    "city": "WORCESTER",
+    "state": "MA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000161",
+      "UL1TR001453",
+      "UM1TR005454"
+    ]
+  },
+  {
+    "ipf_code": 578206,
+    "org_name": "UNIV OF NORTH CAROLINA CHAPEL HILL",
+    "slug": "univ-of-north-carolina-chapel-hill",
+    "hub_name": "Univ Of North Carolina Chapel Hill",
+    "city": "CHAPEL HILL",
+    "state": "NC",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000083",
+      "UL1TR001111",
+      "UL1TR002489",
+      "UM1TR004406"
+    ]
+  },
+  {
+    "ipf_code": 1288803,
+    "org_name": "UNIVERSITY OF ALABAMA AT BIRMINGHAM",
+    "slug": "university-of-alabama-at-birmingham",
+    "hub_name": "University Of Alabama At Birmingham",
+    "city": "BIRMINGHAM",
+    "state": "AL",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000165",
+      "UL1TR001417",
+      "UL1TR003096",
+      "UM1TR004771"
+    ]
+  },
+  {
+    "ipf_code": 577503,
+    "org_name": "UNIVERSITY OF CALIFORNIA AT DAVIS",
+    "slug": "university-of-california-at-davis",
+    "hub_name": "University Of California At Davis",
+    "city": "DAVIS",
+    "state": "CA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000002",
+      "UL1TR001860",
+      "UM1TR005995"
+    ]
+  },
+  {
+    "ipf_code": 577505,
+    "org_name": "UNIVERSITY OF CALIFORNIA LOS ANGELES",
+    "slug": "university-of-california-los-angeles",
+    "hub_name": "University Of California Los Angeles",
+    "city": "LOS ANGELES",
+    "state": "CA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000124",
+      "UL1TR001881"
+    ]
+  },
+  {
+    "ipf_code": 577507,
+    "org_name": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+    "slug": "university-of-california-san-diego",
+    "hub_name": "University Of California, San Diego",
+    "city": "LA JOLLA",
+    "state": "CA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000100",
+      "UL1TR001442",
+      "UM1TR005449"
+    ]
+  },
+  {
+    "ipf_code": 577508,
+    "org_name": "UNIVERSITY OF CALIFORNIA, SAN FRANCISCO",
+    "slug": "university-of-california-san-francisco",
+    "hub_name": "University Of California, San Francisco",
+    "city": "SAN FRANCISCO",
+    "state": "CA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2025,
+    "core_project_nums": [
+      "UL1TR000004",
+      "UL1TR001872"
+    ]
+  },
+  {
+    "ipf_code": 577504,
+    "org_name": "UNIVERSITY OF CALIFORNIA-IRVINE",
+    "slug": "university-of-california-irvine",
+    "hub_name": "University Of California-Irvine",
+    "city": "IRVINE",
+    "state": "CA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000153",
+      "UL1TR001414",
+      "UM1TR004927"
+    ]
+  },
+  {
+    "ipf_code": 1413601,
+    "org_name": "UNIVERSITY OF CHICAGO",
+    "slug": "university-of-chicago",
+    "hub_name": "University Of Chicago",
+    "city": "CHICAGO",
+    "state": "IL",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000430",
+      "UL1TR002389"
+    ]
+  },
+  {
+    "ipf_code": 1523902,
+    "org_name": "UNIVERSITY OF CINCINNATI",
+    "slug": "university-of-cincinnati",
+    "hub_name": "University Of Cincinnati",
+    "city": "CINCINNATI",
+    "state": "OH",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000077",
+      "UL1TR001425",
+      "UM1TR005265"
+    ]
+  },
+  {
+    "ipf_code": 1199905,
+    "org_name": "UNIVERSITY OF COLORADO DENVER",
+    "slug": "university-of-colorado-denver",
+    "hub_name": "University Of Colorado Denver",
+    "city": "Aurora",
+    "state": "CO",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000154",
+      "UL1TR001082",
+      "UL1TR002535",
+      "UM1TR004399"
+    ]
+  },
+  {
+    "ipf_code": 513806,
+    "org_name": "UNIVERSITY OF FLORIDA",
+    "slug": "university-of-florida",
+    "hub_name": "University Of Florida",
+    "city": "GAINESVILLE",
+    "state": "FL",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000064",
+      "UL1TR001427",
+      "UM1TR005128"
+    ]
+  },
+  {
+    "ipf_code": 577703,
+    "org_name": "UNIVERSITY OF ILLINOIS AT CHICAGO",
+    "slug": "university-of-illinois-at-chicago",
+    "hub_name": "University Of Illinois At Chicago",
+    "city": "Chicago",
+    "state": "IL",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000050",
+      "UL1TR002003",
+      "UM1TR005438"
+    ]
+  },
+  {
+    "ipf_code": 3972901,
+    "org_name": "UNIVERSITY OF IOWA",
+    "slug": "university-of-iowa",
+    "hub_name": "University Of Iowa",
+    "city": "IOWA CITY",
+    "state": "IA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000442",
+      "UL1TR002537",
+      "UM1TR004403"
+    ]
+  },
+  {
+    "ipf_code": 1484303,
+    "org_name": "UNIVERSITY OF KANSAS MEDICAL CENTER",
+    "slug": "university-of-kansas-medical-center",
+    "hub_name": "University Of Kansas Medical Center",
+    "city": "KANSAS CITY",
+    "state": "KS",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000001",
+      "UL1TR002366"
+    ]
+  },
+  {
+    "ipf_code": 2793601,
+    "org_name": "UNIVERSITY OF KENTUCKY",
+    "slug": "university-of-kentucky",
+    "hub_name": "University Of Kentucky",
+    "city": "LEXINGTON",
+    "state": "KY",
+    "first_funded_year": 2012,
+    "last_funded_year": 2025,
+    "core_project_nums": [
+      "UL1TR000117",
+      "UL1TR001998"
+    ]
+  },
+  {
+    "ipf_code": 5221250,
+    "org_name": "UNIVERSITY OF MIAMI SCHOOL OF MEDICINE",
+    "slug": "university-of-miami-school-of-medicine",
+    "hub_name": "University Of Miami School Of Medicine",
+    "city": "CORAL GABLES",
+    "state": "FL",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000460",
+      "UL1TR002736",
+      "UM1TR004556"
+    ]
+  },
+  {
+    "ipf_code": 1506502,
+    "org_name": "UNIVERSITY OF MICHIGAN AT ANN ARBOR",
+    "slug": "university-of-michigan-at-ann-arbor",
+    "hub_name": "University Of Michigan At Ann Arbor",
+    "city": "ANN ARBOR",
+    "state": "MI",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000433",
+      "UL1TR002240",
+      "UM1TR004404"
+    ]
+  },
+  {
+    "ipf_code": 1450402,
+    "org_name": "UNIVERSITY OF MINNESOTA",
+    "slug": "university-of-minnesota",
+    "hub_name": "University Of Minnesota",
+    "city": "MINNEAPOLIS",
+    "state": "MN",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000114",
+      "UL1TR002494",
+      "UM1TR004405"
+    ]
+  },
+  {
+    "ipf_code": 10021612,
+    "org_name": "UNIVERSITY OF NEW MEXICO HEALTH SCIS CTR",
+    "slug": "university-of-new-mexico-health-scis-ctr",
+    "hub_name": "University Of New Mexico Health Scis Ctr",
+    "city": "ALBUQUERQUE",
+    "state": "NM",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000041",
+      "UL1TR001449",
+      "UM1TR005466"
+    ]
+  },
+  {
+    "ipf_code": 6463801,
+    "org_name": "UNIVERSITY OF PENNSYLVANIA",
+    "slug": "university-of-pennsylvania",
+    "hub_name": "University Of Pennsylvania",
+    "city": "PHILADELPHIA",
+    "state": "PA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000003",
+      "UL1TR001878",
+      "UM1TR006155"
+    ]
+  },
+  {
+    "ipf_code": 2059802,
+    "org_name": "UNIVERSITY OF PITTSBURGH AT PITTSBURGH",
+    "slug": "university-of-pittsburgh-at-pittsburgh",
+    "hub_name": "University Of Pittsburgh At Pittsburgh",
+    "city": "PITTSBURGH",
+    "state": "PA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000005",
+      "UL1TR001857",
+      "UM1TR005993"
+    ]
+  },
+  {
+    "ipf_code": 7047101,
+    "org_name": "UNIVERSITY OF ROCHESTER",
+    "slug": "university-of-rochester",
+    "hub_name": "University Of Rochester",
+    "city": "ROCHESTER",
+    "state": "NY",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000042",
+      "UL1TR002001",
+      "UM1TR005451"
+    ]
+  },
+  {
+    "ipf_code": 7636101,
+    "org_name": "UNIVERSITY OF SOUTHERN CALIFORNIA",
+    "slug": "university-of-southern-california",
+    "hub_name": "University Of Southern California",
+    "city": "Los Angeles",
+    "state": "CA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000130",
+      "UL1TR001855"
+    ]
+  },
+  {
+    "ipf_code": 578417,
+    "org_name": "UNIVERSITY OF TEXAS HLTH SCI CTR HOUSTON",
+    "slug": "university-of-texas-hlth-sci-ctr-houston",
+    "hub_name": "University Of Texas Hlth Sci Ctr Houston",
+    "city": "HOUSTON",
+    "state": "TX",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000371",
+      "UL1TR003167",
+      "UM1TR004906"
+    ]
+  },
+  {
+    "ipf_code": 578418,
+    "org_name": "UNIVERSITY OF TEXAS HLTH SCIENCE CENTER",
+    "slug": "university-of-texas-hlth-science-center",
+    "hub_name": "University Of Texas Hlth Science Center",
+    "city": "SAN ANTONIO",
+    "state": "TX",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000149",
+      "UL1TR001120",
+      "UL1TR002645",
+      "UM1TR004538"
+    ]
+  },
+  {
+    "ipf_code": 578406,
+    "org_name": "UNIVERSITY OF TEXAS MED BR GALVESTON",
+    "slug": "university-of-texas-med-br-galveston",
+    "hub_name": "University Of Texas Med Br Galveston",
+    "city": "GALVESTON",
+    "state": "TX",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000071",
+      "UL1TR001439",
+      "UM1TR005443"
+    ]
+  },
+  {
+    "ipf_code": 1526402,
+    "org_name": "UNIVERSITY OF VIRGINIA",
+    "slug": "university-of-virginia",
+    "hub_name": "University Of Virginia",
+    "city": "CHARLOTTESVILLE",
+    "state": "VA",
+    "first_funded_year": 2013,
+    "last_funded_year": 2024,
+    "core_project_nums": [
+      "UL1TR003015"
+    ]
+  },
+  {
+    "ipf_code": 9087701,
+    "org_name": "UNIVERSITY OF WASHINGTON",
+    "slug": "university-of-washington",
+    "hub_name": "University Of Washington",
+    "city": "SEATTLE",
+    "state": "WA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000423",
+      "UL1TR002319"
+    ]
+  },
+  {
+    "ipf_code": 578503,
+    "org_name": "UNIVERSITY OF WISCONSIN-MADISON",
+    "slug": "university-of-wisconsin-madison",
+    "hub_name": "University Of Wisconsin-Madison",
+    "city": "MADISON",
+    "state": "WI",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000427",
+      "UL1TR002373"
+    ]
+  },
+  {
+    "ipf_code": 578404,
+    "org_name": "UT SOUTHWESTERN MEDICAL CENTER",
+    "slug": "ut-southwestern-medical-center",
+    "hub_name": "Ut Southwestern Medical Center",
+    "city": "DALLAS",
+    "state": "TX",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000451",
+      "UL1TR001105",
+      "UL1TR003163"
+    ]
+  },
+  {
+    "ipf_code": 514002,
+    "org_name": "UTAH STATE HIGHER EDUCATION SYSTEM--UNIVERSITY OF UTAH",
+    "slug": "utah-state-higher-education-system-university-of-utah",
+    "hub_name": "Utah State Higher Education System--University Of Utah",
+    "city": "SALT LAKE CITY",
+    "state": "UT",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000105",
+      "UL1TR001067",
+      "UL1TR002538",
+      "UM1TR004409"
+    ]
+  },
+  {
+    "ipf_code": 10040927,
+    "org_name": "VANDERBILT UNIVERSITY MEDICAL CENTER",
+    "slug": "vanderbilt-university-medical-center",
+    "hub_name": "Vanderbilt University Medical Center",
+    "city": "NASHVILLE",
+    "state": "TN",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000445",
+      "UL1TR002243"
+    ]
+  },
+  {
+    "ipf_code": 353201,
+    "org_name": "VIRGINIA COMMONWEALTH UNIVERSITY",
+    "slug": "virginia-commonwealth-university",
+    "hub_name": "Virginia Commonwealth University",
+    "city": "RICHMOND",
+    "state": "VA",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000058",
+      "UL1TR002649",
+      "UM1TR004360"
+    ]
+  },
+  {
+    "ipf_code": 9021205,
+    "org_name": "WAKE FOREST UNIVERSITY HEALTH SCIENCES",
+    "slug": "wake-forest-university-health-sciences",
+    "hub_name": "Wake Forest University Health Sciences",
+    "city": "WINSTON-SALEM",
+    "state": "NC",
+    "first_funded_year": 2015,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR001420",
+      "UM1TR004929"
+    ]
+  },
+  {
+    "ipf_code": 9083901,
+    "org_name": "WASHINGTON UNIVERSITY",
+    "slug": "washington-university",
+    "hub_name": "Washington University",
+    "city": "SAINT LOUIS",
+    "state": "MO",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000448",
+      "UL1TR002345"
+    ]
+  },
+  {
+    "ipf_code": 1514803,
+    "org_name": "WEILL MEDICAL COLL OF CORNELL UNIV",
+    "slug": "weill-medical-coll-of-cornell-univ",
+    "hub_name": "Weill Medical Coll Of Cornell Univ",
+    "city": "NEW YORK",
+    "state": "NY",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000457",
+      "UL1TR002384"
+    ]
+  },
+  {
+    "ipf_code": 9420201,
+    "org_name": "YALE UNIVERSITY",
+    "slug": "yale-university",
+    "hub_name": "Yale University",
+    "city": "NEW HAVEN",
+    "state": "CT",
+    "first_funded_year": 2012,
+    "last_funded_year": 2026,
+    "core_project_nums": [
+      "UL1TR000142",
+      "UL1TR001863"
+    ]
+  }
+]
