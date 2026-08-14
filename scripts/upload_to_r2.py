@@ -148,8 +148,9 @@ def main():
         return
 
     if not to_upload:
-        logger.info("Already up to date.")
-        return
+        # Not a return: stale remote objects still need pruning even when every
+        # local file is already up to date.
+        logger.info("All local files already up to date.")
 
     uploaded = errors = 0
     for path, key in to_upload:
