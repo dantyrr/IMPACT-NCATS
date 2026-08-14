@@ -2,10 +2,19 @@
 
 **Publication impact of the NCATS grant portfolio, by CTSA site, investigator, and grant.**
 
+### 🔗 **Live site: https://dantyrr.github.io/IMPACT-NCATS**
+
 A sibling project to [IMPACT](https://github.com/dantyrr/IMPACT) and
 [IMPACT-gender](https://github.com/dantyrr/IMPACT-gender). Where IMPACT measures journals,
 IMPACT-NCATS measures **funding** — every award made by NIH's National Center for Advancing
 Translational Sciences, and what was published as a result.
+
+| | |
+|---|---|
+| CTSA sites | 72 |
+| NCATS grants | 1,680 · $9.1B awarded |
+| Linked publications | 148,977 |
+| Matched to journal/citation data | 143,825 (96.5%) |
 
 ## What it answers
 
