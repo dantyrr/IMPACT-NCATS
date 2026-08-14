@@ -34,11 +34,13 @@ class SitePicker {
 
     _renderResults() {
         const term = this.input.value.toLowerCase().trim();
+        // No result cap: there are only ~72 sites and the dropdown scrolls.
+        // A cap silently hid everything alphabetically after ~"Oregon",
+        // including Yale and UAB, with no indication they existed.
         const matches = this.sites
             .filter(s => !this.selected.includes(s.slug))
             .filter(s => !term || (s.hub_name || '').toLowerCase().includes(term)
-                                || (s.state || '').toLowerCase() === term)
-            .slice(0, 25);
+                                || (s.state || '').toLowerCase() === term);
 
         if (!matches.length) { this.results.style.display = 'none'; return; }
         this.results.innerHTML = matches.map(s =>

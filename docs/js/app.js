@@ -238,6 +238,7 @@ class NCATSApp {
         ['grants-search', 'grants-group', 'grants-hubs-only'].forEach(id =>
             document.getElementById(id).addEventListener('input', () => this.renderGrantsTable()));
 
+        this.grantsSort = { key: 'total_award_amount', dir: 'desc' };
         this.renderGrantsTable();
     }
 
@@ -245,6 +246,7 @@ class NCATSApp {
         const term = document.getElementById('grants-search').value.toLowerCase().trim();
         const group = document.getElementById('grants-group').value;
         const hubsOnly = document.getElementById('grants-hubs-only').checked;
+        const { key, dir } = this.grantsSort;
 
         const rows = this.allGrants.filter(g => {
             if (hubsOnly && !g.is_hub_award) return false;
@@ -254,14 +256,34 @@ class NCATSApp {
                 if (!hay.includes(term)) return false;
             }
             return true;
-        }).sort((a, b) => (b.total_award_amount || 0) - (a.total_award_amount || 0));
+        }).sort((a, b) => {
+            const av = a[key], bv = b[key];
+            // Missing values always sort last, regardless of direction.
+            if (av === null || av === undefined || av === '') return 1;
+            if (bv === null || bv === undefined || bv === '') return -1;
+            if (typeof av === 'string' || typeof bv === 'string') {
+                return dir === 'asc'
+                    ? String(av).localeCompare(String(bv))
+                    : String(bv).localeCompare(String(av));
+            }
+            return dir === 'asc' ? av - bv : bv - av;
+        });
 
         document.getElementById('grants-count').textContent =
             `${rows.length.toLocaleString()} of ${this.allGrants.length.toLocaleString()} grants`;
 
-        document.getElementById('grants-table-container').innerHTML = `
+        const cols = [
+            ['core_project_num', 'Core project'], ['activity_code', 'Activity'],
+            ['hub_name', 'Site'], ['title', 'Title'],
+            ['first_fy', 'Years'], ['total_award_amount', 'Awarded'],
+        ];
+
+        const container = document.getElementById('grants-table-container');
+        container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Core project</th><th>Activity</th><th>Site</th><th>Title</th><th>Years</th><th>Awarded</th></tr></thead>
+                <thead><tr>${cols.map(([k, label]) =>
+                    `<th class="sortable" data-key="${k}">${label}${key === k ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`
+                ).join('')}</tr></thead>
                 <tbody>${rows.slice(0, 500).map(g => `
                     <tr>
                         <td><a href="https://reporter.nih.gov/search/?projectNums=${g.core_project_num}" target="_blank" rel="noopener">${g.core_project_num}</a></td>
@@ -273,7 +295,21 @@ class NCATSApp {
                     </tr>`).join('')}
                 </tbody>
             </table>
-            ${rows.length > 500 ? '<p class="data-note">Showing the 500 largest awards. Narrow the search to see more.</p>' : ''}`;
+            ${rows.length > 500
+                ? `<p class="data-note">Showing the first 500 of ${rows.length.toLocaleString()} matching grants, by the current sort. Narrow the search to see the rest.</p>`
+                : ''}`;
+
+        container.querySelectorAll('th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const k = th.dataset.key;
+                // Text columns start ascending (A-Z); numbers start descending (largest first).
+                const isText = ['core_project_num', 'activity_code', 'hub_name', 'title'].includes(k);
+                this.grantsSort = (this.grantsSort.key === k)
+                    ? { key: k, dir: this.grantsSort.dir === 'asc' ? 'desc' : 'asc' }
+                    : { key: k, dir: isText ? 'asc' : 'desc' };
+                this.renderGrantsTable();
+            });
+        });
     }
 
     // ---------------- Investigators ----------------
