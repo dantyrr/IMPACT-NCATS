@@ -98,10 +98,20 @@ def export_sites(conn, out_dir) -> int:
                 "FROM grants WHERE ipf_code=? ORDER BY activity_code, core_project_num",
                 (ipf,))
         ]
+        # Monthly rolling citation rates (IMPACT's formula, per site).
+        snapshots = [
+            {"month": r[0], "rate_12m": r[1], "rate_24m": r[2], "rate_5yr": r[3],
+             "paper_count": r[4], "citation_count": r[5]}
+            for r in conn.execute(
+                "SELECT snapshot_month, rate_12m, rate_24m, rate_5yr, "
+                "       paper_count, citation_count "
+                "FROM site_month_snapshots WHERE ipf_code=? ORDER BY snapshot_month",
+                (ipf,))
+        ]
         _write(out_dir / "sites" / f"{slug}.json", {
             "ipf_code": ipf, "slug": slug, "hub_name": hub_name,
             "org_name": org, "city": city, "state": state,
-            "metrics": metrics, "grants": grants,
+            "metrics": metrics, "grants": grants, "snapshots": snapshots,
         })
         written.add(slug)
         n += 1

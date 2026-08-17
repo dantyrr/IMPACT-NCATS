@@ -84,6 +84,18 @@ CREATE TABLE IF NOT EXISTS site_metrics (
     UNIQUE(ipf_code, year, activity_group)
 );
 
+CREATE TABLE IF NOT EXISTS site_month_snapshots (
+    ipf_code       INTEGER NOT NULL REFERENCES sites(ipf_code),
+    snapshot_month TEXT NOT NULL,          -- 'YYYY-MM'
+    rate_12m       REAL,                   -- 12-mo paper window
+    rate_24m       REAL,                   -- 24-mo paper window (IMPACT default)
+    rate_5yr       REAL,                   -- 60-mo window, 12-mo skip (yr 2-6)
+    paper_count    INTEGER DEFAULT 0,      -- research papers in the 24-mo window
+    citation_count INTEGER DEFAULT 0,      -- citations in the 12-mo window
+    UNIQUE(ipf_code, snapshot_month)
+);
+
+CREATE INDEX IF NOT EXISTS idx_site_snapshots ON site_month_snapshots(ipf_code, snapshot_month);
 CREATE INDEX IF NOT EXISTS idx_grants_ipf ON grants(ipf_code);
 CREATE INDEX IF NOT EXISTS idx_grants_activity ON grants(activity_code);
 CREATE INDEX IF NOT EXISTS idx_grant_years_fy ON grant_years(fiscal_year);

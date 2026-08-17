@@ -27,7 +27,6 @@ class NCATSApp {
         this.setupTrends();
         this.setupGrants();
         this.setupInvestigators();
-        this.setupCompare();
         this.renderAbout();
     }
 
@@ -38,11 +37,14 @@ class NCATSApp {
                 this.showSection(link.dataset.section);
             });
         });
-        const initial = location.hash.replace('#', '') || 'sites';
+        let initial = location.hash.replace('#', '') || 'sites';
+        // The old Compare tab was merged into Trends; keep its links working.
+        if (initial === 'compare') initial = 'trends';
         this.showSection(initial);
     }
 
     showSection(sectionId) {
+        if (sectionId === 'compare') sectionId = 'trends';
         document.querySelectorAll('.section').forEach(s =>
             s.classList.toggle('active', s.id === sectionId));
         document.querySelectorAll('.nav-link').forEach(l =>
@@ -475,6 +477,9 @@ class NCATSApp {
                         <option value="cost_per_pub">Cost per publication</option>
                         <option value="citations_per_million">Citations per $1M</option>
                         <option value="pubs_per_million">Publications per $1M</option>
+                        <option value="rate_12m">Rolling citation rate (12-mo window)</option>
+                        <option value="rate_24m">Rolling citation rate (24-mo window)</option>
+                        <option value="rate_5yr">Rolling citation rate (5-yr, yr 2-6)</option>
                     </select>
                 </label>
                 <label>Sites:
@@ -545,6 +550,18 @@ class NCATSApp {
         this.renderTrends();
     }
 
+    /** True for metrics stored as monthly snapshots rather than yearly rows. */
+    _isRollingMetric(metric) {
+        return metric === 'rate_12m' || metric === 'rate_24m' || metric === 'rate_5yr';
+    }
+
+    /** Monthly rolling-rate series for one site, limited to the year range. */
+    _siteMonthSeries(siteData, metric, months) {
+        const by = {};
+        for (const s of (siteData.snapshots || [])) by[s.month] = s[metric];
+        return months.map(m => (by[m] === undefined ? null : by[m]));
+    }
+
     _trendsState() {
         const metric = document.getElementById('trends-metric').value;
         const topN = parseInt(document.getElementById('trends-topn').value, 10);
@@ -558,6 +575,21 @@ class NCATSApp {
         let years = this.trendYears.filter(y => y >= from && y <= to);
         if (dropPartial) years = years.filter(y => y <= cutoff);
 
+        // Rolling rates are monthly, so the x-axis becomes months in range.
+        const rolling = this._isRollingMetric(metric);
+        let months = [];
+        if (rolling) {
+            const allMonths = new Set();
+            for (const d of Object.values(this.siteCache)) {
+                for (const s of (d.snapshots || [])) allMonths.add(s.month);
+            }
+            months = [...allMonths].sort().filter(m => {
+                const y = parseInt(m.slice(0, 4), 10);
+                return y >= from && y <= to && (!dropPartial || y <= cutoff);
+            });
+        }
+        const axis = rolling ? months : years;
+
         // An explicit picker selection wins; otherwise fall back to Top N.
         const picked = this.trendsPicker ? this.trendsPicker.getSelected() : [];
         const pool = picked.length
@@ -568,10 +600,12 @@ class NCATSApp {
             .map(s => {
                 const data = this.siteCache[s.slug];
                 if (!data) return null;
-                const series = this._siteYearSeries(data, metric, mech, years);
+                const series = rolling
+                    ? this._siteMonthSeries(data, metric, months)
+                    : this._siteYearSeries(data, metric, mech, years);
                 const vals = series.filter(v => v !== null);
                 if (!vals.length) return null;
-                const isRate = metric === 'mean_rcr' || metric === 'cost_per_pub' ||
+                const isRate = rolling || metric === 'mean_rcr' || metric === 'cost_per_pub' ||
                                metric === 'citations_per_million' || metric === 'pubs_per_million';
                 const score = isRate
                     ? vals.reduce((a, b) => a + b, 0) / vals.length
@@ -582,8 +616,8 @@ class NCATSApp {
             .sort((a, b) => b.score - a.score);
         const limited = picked.length ? ranked : ranked.slice(0, topN);
 
-        return { metric, mech, years, ranked: limited, cutoff, dropPartial,
-                 explicit: picked.length > 0 };
+        return { metric, mech, years: axis, ranked: limited, cutoff, dropPartial,
+                 explicit: picked.length > 0, rolling };
     }
 
     renderTrends() {
@@ -1054,71 +1088,6 @@ class NCATSApp {
                 </tbody>
             </table>`;
         panel.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // ---------------- Compare ----------------
-
-    setupCompare() {
-        document.getElementById('compare-controls').innerHTML = `
-            <div class="controls-row">
-                <label>Metric:
-                    <select id="compare-metric">
-                        <option value="pub_count">Publications</option>
-                        <option value="citation_count">Citations</option>
-                        <option value="mean_rcr">Mean RCR</option>
-                        <option value="award_total">Award dollars</option>
-                        <option value="cost_per_pub">Cost per publication</option>
-                        <option value="citations_per_million">Citations per $1M</option>
-                    </select>
-                </label>
-            </div>`;
-        document.getElementById('compare-metric')
-            .addEventListener('change', () => this.renderCompareChart());
-
-        this.comparePicker = new SitePicker(
-            'compare-picker', this.index.sites, ChartManager.PALETTE,
-            () => this.renderCompareChart());
-    }
-
-    async renderCompareChart() {
-        const slugs = this.comparePicker.getSelected();
-        const container = document.getElementById('compare-chart-container');
-        const hint = document.getElementById('compare-hint');
-
-        if (!slugs.length) {
-            container.style.display = 'none';
-            hint.style.display = 'block';
-            return;
-        }
-        hint.style.display = 'none';
-        container.style.display = 'block';
-
-        const metric = document.getElementById('compare-metric').value;
-        const colorMap = this.comparePicker.getColorMap();
-
-        const loaded = {};
-        for (const slug of slugs) {
-            loaded[slug] = this.siteCache[slug] || await this.loader.loadSite(slug);
-            this.siteCache[slug] = loaded[slug];
-        }
-
-        const years = [...new Set(slugs.flatMap(s => loaded[s].metrics.map(m => m.year)))].sort();
-
-        const datasets = slugs.map(slug => {
-            const site = loaded[slug];
-            return {
-                label: site.hub_name,
-                data: this._siteYearSeries(site, metric, 'all', years),
-                borderColor: colorMap[slug],
-                backgroundColor: colorMap[slug],
-                spanGaps: true,
-            };
-        });
-
-        ChartManager.lineChart('compare-chart', years, datasets, {
-            xLabel: 'Year',
-            yLabel: document.getElementById('compare-metric').selectedOptions[0].text,
-        });
     }
 
     // ---------------- About ----------------
