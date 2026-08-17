@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS site_metrics (
     mean_rcr          REAL,
     mean_journal_if   REAL,
     award_total       REAL DEFAULT 0,
+    award_count       INTEGER DEFAULT 0,
     cost_per_pub      REAL,
     cost_per_citation REAL,
     UNIQUE(ipf_code, year, activity_group)
@@ -109,6 +110,7 @@ CREATE INDEX IF NOT EXISTS idx_site_metrics_site ON site_metrics(ipf_code, year)
 # schema change never requires rebuilding ncats.db from scratch.
 MIGRATIONS = [
     ("pub_metrics", "title", "TEXT"),
+    ("site_metrics", "award_count", "INTEGER DEFAULT 0"),
 ]
 
 

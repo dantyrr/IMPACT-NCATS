@@ -95,6 +95,20 @@ def compute_site_metrics(conn: sqlite3.Connection) -> int:
         GROUP BY 1, 2, 3
     """)
 
+    # Number of distinct awards active in the same (site, year, mechanism) slice.
+    conn.execute("""
+        UPDATE site_metrics SET award_count = COALESCE((
+            SELECT COUNT(DISTINCT gy.core_project_num)
+            FROM grant_years gy
+            JOIN grants g2 ON g2.core_project_num = gy.core_project_num
+            WHERE g2.ipf_code = site_metrics.ipf_code
+              AND gy.fiscal_year = site_metrics.year
+              AND (CASE WHEN SUBSTR(g2.activity_code,1,1) IN ('R','K','U','T','F','P')
+                        THEN SUBSTR(g2.activity_code,1,1) ELSE 'other' END)
+                  = site_metrics.activity_group
+        ), 0)
+    """)
+
     # Award dollars for the same (site, year, mechanism) slice.
     conn.execute("""
         UPDATE site_metrics SET award_total = COALESCE((

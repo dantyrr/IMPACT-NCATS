@@ -80,11 +80,11 @@ def export_sites(conn, out_dir) -> int:
             {"year": r[0], "activity_group": r[1], "pub_count": r[2],
              "research_count": r[3], "citation_count": r[4], "mean_rcr": r[5],
              "mean_journal_if": r[6], "award_total": r[7],
-             "cost_per_pub": r[8], "cost_per_citation": r[9]}
+             "cost_per_pub": r[8], "cost_per_citation": r[9], "award_count": r[10]}
             for r in conn.execute(
                 "SELECT year, activity_group, pub_count, research_count, "
                 "       citation_count, mean_rcr, mean_journal_if, award_total, "
-                "       cost_per_pub, cost_per_citation "
+                "       cost_per_pub, cost_per_citation, award_count "
                 "FROM site_metrics WHERE ipf_code=? ORDER BY year, activity_group",
                 (ipf,))
         ]

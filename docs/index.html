@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=9">
+    <link rel="stylesheet" href="css/style.css?v=10">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -16,9 +16,8 @@
         <p class="subtitle">Publication impact of the NCATS grant portfolio, by CTSA site, investigator, and grant</p>
     </div>
     <nav>
-        <a href="#sites" class="nav-link active" data-section="sites">Sites</a>
-        <a href="#publications" class="nav-link" data-section="publications">Publications</a>
-        <a href="#trends" class="nav-link" data-section="trends">Compare &amp; Trends</a>
+        <a href="#site-detail" class="nav-link active" data-section="site-detail">Site Detail</a>
+        <a href="#across-sites" class="nav-link" data-section="across-sites">Across Sites</a>
         <a href="#grants" class="nav-link" data-section="grants">Grants</a>
         <a href="#investigators" class="nav-link" data-section="investigators">Investigators</a>
         <a href="#about" class="nav-link" data-section="about">About</a>
@@ -26,51 +25,42 @@
 </header>
 
 <main>
-    <section id="sites" class="section active">
-        <h2>CTSA Sites</h2>
-        <p class="data-note" id="sites-summary">Loading…</p>
-        <div id="sites-selection-bar" style="display:none;"></div>
-        <div id="sites-view-controls" style="display:none;"></div>
-        <div id="sites-combined" style="display:none;">
-            <div class="chart-container"><canvas id="sites-combined-chart"></canvas></div>
-            <div id="sites-combined-downloads"></div>
-        </div>
-        <div id="site-detail"></div>
-        <div id="sites-table-container"></div>
-    </section>
-
-    <section id="publications" class="section">
-        <h2>Publications</h2>
-        <div id="pub-controls"></div>
-        <div class="chart-container" id="pub-chart-container">
-            <canvas id="pub-site-chart"></canvas>
-        </div>
-        <div id="pub-chart-downloads"></div>
-        <div id="pub-chart-note"></div>
-        <h3>Top papers</h3>
-        <div id="pub-paper-controls"></div>
-        <div id="pub-paper-downloads"></div>
-        <div id="pub-papers-container"></div>
-    </section>
-
-    <section id="trends" class="section">
-        <h2>Compare Sites Over Time</h2>
+    <!-- ============ SITE DETAIL: one or more sites in depth ============ -->
+    <section id="site-detail" class="section active">
+        <h2>Site Detail</h2>
+        <p class="data-note" id="portfolio-summary">Loading…</p>
         <p class="data-note">
-            Pick specific sites to compare, or leave the picker empty to see the top
-            performers automatically. Rolling citation-rate metrics use the same formula
-            as the main <a href="https://dantyrr.github.io/IMPACT" target="_blank"
-            rel="noopener">IMPACT</a> site, applied to each hub's linked publications.
+            Pick one or more CTSA sites to see every metric broken down by year and
+            award mechanism. To rank or compare sites, use
+            <a href="#across-sites">Across Sites</a>.
         </p>
-        <div id="trends-picker"></div>
-        <div id="trends-controls"></div>
-        <div id="trends-combined">
-            <div class="chart-container" id="trends-chart-container">
-                <canvas id="trends-chart"></canvas>
-            </div>
-            <div id="trends-downloads"></div>
+        <div id="sd-picker"></div>
+        <div id="sd-controls" style="display:none;"></div>
+        <div id="sd-combined" style="display:none;">
+            <div class="chart-container"><canvas id="sd-combined-chart"></canvas></div>
+            <div id="sd-combined-downloads"></div>
         </div>
-        <div id="trends-cards"></div>
-        <div id="trends-note"></div>
+        <div id="sd-cards"></div>
+        <p class="data-note" id="sd-hint">Search above to add a site.</p>
+    </section>
+
+    <!-- ============ ACROSS SITES: rank, compare, top papers ============ -->
+    <section id="across-sites" class="section">
+        <h2>Across Sites</h2>
+        <div id="as-controls"></div>
+        <div class="chart-container" id="as-chart-container">
+            <canvas id="as-chart"></canvas>
+        </div>
+        <div id="as-downloads"></div>
+        <div id="as-note"></div>
+
+        <h3>All sites</h3>
+        <div id="as-table-container"></div>
+
+        <h3>Top papers</h3>
+        <div id="as-paper-controls"></div>
+        <div id="as-paper-downloads"></div>
+        <div id="as-papers-container"></div>
     </section>
 
     <section id="grants" class="section">
@@ -92,9 +82,10 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=9"></script>
-<script src="js/site-picker.js?v=9"></script>
-<script src="js/chart-manager.js?v=9"></script>
-<script src="js/app.js?v=9"></script>
+<script src="js/data-loader.js?v=10"></script>
+<script src="js/site-picker.js?v=10"></script>
+<script src="js/chart-manager.js?v=10"></script>
+<script src="js/metrics-def.js?v=10"></script>
+<script src="js/app.js?v=10"></script>
 </body>
 </html>
