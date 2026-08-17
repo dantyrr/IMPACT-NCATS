@@ -313,6 +313,17 @@ h2 {
     border-radius: var(--radius);
     padding: 1rem;
     margin-bottom: 1.5rem;
+    /* Explicit height is required. Chart.js runs with maintainAspectRatio:false,
+       so the canvas sizes itself to this container; if the container height is
+       auto it derives from the canvas instead, and every redraw shrinks the
+       chart a little further with no way back short of a page reload. */
+    position: relative;
+    height: 440px;
+}
+
+.chart-container > canvas {
+    height: 100% !important;
+    width: 100% !important;
 }
 
 canvas {
@@ -1555,3 +1566,6 @@ tr.row-excluded td {
          margin-left: 0.3rem; vertical-align: middle; }
 #pub-papers-container { max-height: 700px; overflow-y: auto; }
 #pub-papers-container td:nth-child(2) { max-width: 420px; }
+
+.data-note.warn { background: #fff8e6; border-left: 3px solid var(--warning);
+                  padding: 0.6rem 0.8rem; border-radius: 4px; margin-bottom: 0.5rem; }

@@ -146,6 +146,15 @@ def export_publications(conn, out_dir, top_n: int = 250, min_pubs: int = 25) -> 
             })
         return out
 
+    # Award dollars per site, summed across all grants. Kept separate from the
+    # publication join below, which would multiply dollars by the number of
+    # linked papers.
+    awards = dict(conn.execute("""
+        SELECT s.slug, COALESCE(SUM(g.total_award_amount), 0)
+        FROM sites s JOIN grants g ON g.ipf_code = s.ipf_code
+        WHERE s.is_ctsa_hub = 1
+        GROUP BY s.slug"""))
+
     rankings = []
     for row in conn.execute("""
         SELECT s.slug, s.hub_name, s.state,
@@ -161,11 +170,18 @@ def export_publications(conn, out_dir, top_n: int = 250, min_pubs: int = 25) -> 
         WHERE s.is_ctsa_hub = 1 AND pm.in_impact_db = 1
         GROUP BY s.slug, s.hub_name, s.state"""):
         slug, hub, state, pubs, mean_rcr, cites, mean_cites, rcr_n = row
+        dollars = awards.get(slug, 0) or 0
+        millions = dollars / 1_000_000 if dollars > 0 else 0
         rankings.append({
             "slug": slug, "hub_name": hub, "state": state,
             "pub_count": pubs, "mean_rcr": mean_rcr,
             "citation_count": cites, "mean_citations": mean_cites,
             "rcr_n": rcr_n,
+            "award_total": dollars,
+            # Ratio of sums, not a mean of yearly ratios. Null rather than
+            # infinite when no dollars are recorded for the site.
+            "citations_per_million": (cites / millions) if millions > 0 else None,
+            "pubs_per_million": (pubs / millions) if millions > 0 else None,
             "below_threshold": 1 if (rcr_n or 0) < min_pubs else 0,
         })
     rankings.sort(key=lambda r: (r["mean_rcr"] is None, -(r["mean_rcr"] or 0)))

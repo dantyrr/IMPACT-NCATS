@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=6">
+    <link rel="stylesheet" href="css/style.css?v=8">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -60,11 +60,15 @@
             Publication metrics by year for each CTSA site. Use this to see how a site's
             output or citation impact has changed, rather than a single all-time total.
         </p>
+        <div id="trends-picker"></div>
         <div id="trends-controls"></div>
-        <div class="chart-container" id="trends-chart-container">
-            <canvas id="trends-chart"></canvas>
+        <div id="trends-combined">
+            <div class="chart-container" id="trends-chart-container">
+                <canvas id="trends-chart"></canvas>
+            </div>
+            <div id="trends-downloads"></div>
         </div>
-        <div id="trends-downloads"></div>
+        <div id="trends-cards"></div>
         <div id="trends-note"></div>
     </section>
 
@@ -97,9 +101,9 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=6"></script>
-<script src="js/site-picker.js?v=6"></script>
-<script src="js/chart-manager.js?v=6"></script>
-<script src="js/app.js?v=6"></script>
+<script src="js/data-loader.js?v=8"></script>
+<script src="js/site-picker.js?v=8"></script>
+<script src="js/chart-manager.js?v=8"></script>
+<script src="js/app.js?v=8"></script>
 </body>
 </html>

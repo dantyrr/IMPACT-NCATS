@@ -88,3 +88,25 @@ def test_export_prunes_stale_site_files(conn, tmp_path):
     export_sites(conn, tmp_path)
     assert (sites_dir / "a.json").exists()
     assert not (sites_dir / "defunct-hub.json").exists()
+
+
+def test_citations_per_million_is_ratio_of_sums(conn, tmp_path):
+    """Not a mean of yearly ratios, and dollars must not be multiplied by the
+    number of linked publications."""
+    conn.execute("UPDATE grants SET total_award_amount=2000000 WHERE core_project_num='UL1TR000001'")
+    d = json.loads(export_publications(conn, tmp_path).read_text())
+    hub_a = [r for r in d["site_rankings"] if r["hub_name"] == "Hub A"][0]
+    # Hub A has 2 papers with 500 + 10 = 510 citations on $2M.
+    assert hub_a["award_total"] == 2000000
+    assert hub_a["citation_count"] == 510
+    assert hub_a["citations_per_million"] == pytest.approx(255.0)
+    assert hub_a["pubs_per_million"] == pytest.approx(1.0)
+
+
+def test_citations_per_million_is_null_when_no_dollars_recorded(conn, tmp_path):
+    """A site with citations but no award dollars must be null, not infinite."""
+    conn.execute("UPDATE grants SET total_award_amount=0")
+    d = json.loads(export_publications(conn, tmp_path).read_text())
+    for r in d["site_rankings"]:
+        assert r["citations_per_million"] is None
+        assert r["pubs_per_million"] is None

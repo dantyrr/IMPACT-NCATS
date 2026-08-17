@@ -202,6 +202,7 @@ class NCATSApp {
                         <option value="mean_rcr">Mean RCR</option>
                         <option value="research_count">Research articles</option>
                         <option value="award_total">Award dollars</option>
+                        <option value="citations_per_million">Citations per $1M</option>
                     </select>
                 </label>
                 <label>From: <select id="sites-year-from">${opts}</select></label>
@@ -429,10 +430,23 @@ class NCATSApp {
     _siteYearSeries(siteData, metric, mechanism, years) {
         const isRate = metric === 'mean_rcr' || metric === 'cost_per_pub' ||
                        metric === 'cost_per_citation' || metric === 'mean_journal_if';
+        // Derived efficiency metrics are a ratio of sums, never a mean of
+        // yearly ratios, and are null (a gap) rather than infinite when no
+        // award dollars are recorded for that slice.
+        const perMillion = metric === 'citations_per_million' || metric === 'pubs_per_million';
+        const numerKey = metric === 'pubs_per_million' ? 'pub_count' : 'citation_count';
         return years.map(y => {
             const rows = siteData.metrics.filter(m =>
                 m.year === y && (mechanism === 'all' || m.activity_group === mechanism));
             if (!rows.length) return null;
+            if (perMillion) {
+                let numer = 0, dollars = 0;
+                for (const r of rows) {
+                    numer += r[numerKey] || 0;
+                    dollars += r.award_total || 0;
+                }
+                return dollars > 0 ? numer / (dollars / 1e6) : null;
+            }
             if (isRate) {
                 let num = 0, den = 0;
                 for (const r of rows) {
@@ -459,6 +473,8 @@ class NCATSApp {
                         <option value="research_count">Research articles</option>
                         <option value="award_total">Award dollars</option>
                         <option value="cost_per_pub">Cost per publication</option>
+                        <option value="citations_per_million">Citations per $1M</option>
+                        <option value="pubs_per_million">Publications per $1M</option>
                     </select>
                 </label>
                 <label>Sites:
@@ -466,6 +482,13 @@ class NCATSApp {
                         <option value="5">Top 5</option>
                         <option value="10" selected>Top 10</option>
                         <option value="20">Top 20</option>
+                    </select>
+                </label>
+                <label>View:
+                    <select id="trends-view">
+                        <option value="combined" selected>Combined chart</option>
+                        <option value="cards">Individual cards</option>
+                        <option value="both">Both</option>
                     </select>
                 </label>
                 <label>Mechanism:
@@ -505,13 +528,19 @@ class NCATSApp {
         to.value = String(this.trendYears[this.trendYears.length - 1]);
 
         ['trends-metric', 'trends-topn', 'trends-mech', 'trends-from', 'trends-to',
-         'trends-drop-partial', 'trends-log'].forEach(id =>
+         'trends-drop-partial', 'trends-log', 'trends-view'].forEach(id =>
             document.getElementById(id).addEventListener('input', () => this.renderTrends()));
 
         this._attachDownloadBar('trends-downloads',
             () => this.trendsChart,
             () => this._trendsCsvRows(),
             () => `ncats-trends-${document.getElementById('trends-metric').value}`);
+
+        // Explicit site selection. When nothing is picked the tab falls back to
+        // the Top-N ranking, so it is useful before the user chooses anything.
+        this.trendsPicker = new SitePicker(
+            'trends-picker', this.index.sites, ChartManager.PALETTE,
+            () => this.renderTrends());
 
         this.renderTrends();
     }
@@ -529,29 +558,43 @@ class NCATSApp {
         let years = this.trendYears.filter(y => y >= from && y <= to);
         if (dropPartial) years = years.filter(y => y <= cutoff);
 
-        // Rank sites by their total over the visible window.
-        const ranked = this.index.sites
+        // An explicit picker selection wins; otherwise fall back to Top N.
+        const picked = this.trendsPicker ? this.trendsPicker.getSelected() : [];
+        const pool = picked.length
+            ? this.index.sites.filter(s => picked.includes(s.slug))
+            : this.index.sites;
+
+        const ranked = pool
             .map(s => {
                 const data = this.siteCache[s.slug];
                 if (!data) return null;
                 const series = this._siteYearSeries(data, metric, mech, years);
                 const vals = series.filter(v => v !== null);
                 if (!vals.length) return null;
-                const isRate = metric === 'mean_rcr' || metric === 'cost_per_pub';
+                const isRate = metric === 'mean_rcr' || metric === 'cost_per_pub' ||
+                               metric === 'citations_per_million' || metric === 'pubs_per_million';
                 const score = isRate
                     ? vals.reduce((a, b) => a + b, 0) / vals.length
                     : vals.reduce((a, b) => a + b, 0);
                 return { slug: s.slug, hub_name: s.hub_name, series, score };
             })
             .filter(Boolean)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, topN);
+            .sort((a, b) => b.score - a.score);
+        const limited = picked.length ? ranked : ranked.slice(0, topN);
 
-        return { metric, mech, years, ranked, cutoff, dropPartial };
+        return { metric, mech, years, ranked: limited, cutoff, dropPartial,
+                 explicit: picked.length > 0 };
     }
 
     renderTrends() {
-        const { metric, years, ranked, cutoff, dropPartial } = this._trendsState();
+        const { metric, years, ranked, cutoff, dropPartial, explicit } = this._trendsState();
+        const view = (document.getElementById('trends-view') || {}).value || 'combined';
+        const showCombined = view === 'combined' || view === 'both';
+        const showCards = view === 'cards' || view === 'both';
+
+        document.getElementById('trends-combined').style.display = showCombined ? 'block' : 'none';
+        this._renderTrendCards(showCards ? ranked : [], years, metric);
+        if (!showCombined) { this._renderTrendsNote(ranked, years, metric, cutoff, dropPartial, explicit); return; }
         const label = document.getElementById('trends-metric').selectedOptions[0].text;
 
         const useLog = document.getElementById('trends-log').checked;
@@ -576,16 +619,85 @@ class NCATSApp {
                 } : undefined,
             });
 
+        this._renderTrendsNote(ranked, years, metric, cutoff, dropPartial, explicit);
+    }
+
+    _renderTrendsNote(ranked, years, metric, cutoff, dropPartial, explicit) {
+        const label = document.getElementById('trends-metric').selectedOptions[0].text;
+        const isEff = metric === 'citations_per_million' || metric === 'pubs_per_million';
+        if (!years.length || !ranked.length) {
+            document.getElementById('trends-note').innerHTML =
+                '<p class="data-note">No data for the selected sites and year range.</p>';
+            return;
+        }
         document.getElementById('trends-note').innerHTML = `
+            ${isEff ? `<p class="data-note warn">
+                <strong>Per-year efficiency is noisy.</strong> A quarter of site-years have
+                publications linked but no award dollars recorded, because papers are reported
+                against a grant outside its funded years — those points are gaps, not zeros.
+                Citations also lag spending by years, so the most recent points understate every site.
+            </p>` : ''}
             <p class="data-note">
-                Showing the top ${ranked.length} sites by ${label.toLowerCase()} over
-                ${years[0]}–${years[years.length - 1]}.
+                ${explicit
+                    ? `Showing the ${ranked.length} site${ranked.length === 1 ? '' : 's'} you selected`
+                    : `Showing the top ${ranked.length} sites by ${label.toLowerCase()}`}
+                over ${years[0]}–${years[years.length - 1]}.
                 ${dropPartial
                     ? `Years after ${cutoff} are hidden because they are still filling in — papers keep being published and reported against a grant for years.`
                     : `<strong>Recent years are incomplete</strong> and will understate output.`}
-                Sites are ranked within the selected window, so changing the year range can
-                change which sites appear.
+                ${explicit ? '' : `Sites are ranked within the selected window, so changing the
+                year range can change which sites appear.`}
             </p>`;
+    }
+
+    /** One small line chart per site, for reading a single site clearly. */
+    _renderTrendCards(ranked, years, metric) {
+        const wrap = document.getElementById('trends-cards');
+        if (!ranked.length) { wrap.innerHTML = ''; return; }
+        const label = document.getElementById('trends-metric').selectedOptions[0].text;
+
+        wrap.innerHTML = ranked.map(r => `
+            <div class="detail-panel site-card" data-slug="${r.slug}">
+                <h3>${r.hub_name}</h3>
+                <div class="chart-container"><canvas id="trend-card-${r.slug}"></canvas></div>
+                <div class="download-bar">
+                    <span>Download:</span>
+                    <button class="download-btn" data-slug="${r.slug}" data-fmt="png">PNG</button>
+                    <button class="download-btn" data-slug="${r.slug}" data-fmt="jpg">JPG</button>
+                    <button class="download-btn" data-slug="${r.slug}" data-fmt="pdf">PDF</button>
+                    <button class="download-btn" data-slug="${r.slug}" data-fmt="csv">CSV data</button>
+                </div>
+            </div>`).join('');
+
+        this.trendCardCharts = {};
+        ranked.forEach((r, i) => {
+            this.trendCardCharts[r.slug] = ChartManager.lineChart(
+                `trend-card-${r.slug}`, years,
+                [{
+                    label: r.hub_name,
+                    data: r.series,
+                    borderColor: ChartManager.color(i),
+                    backgroundColor: ChartManager.color(i),
+                    spanGaps: true, tension: 0.25, pointRadius: 2,
+                }],
+                { xLabel: 'Year', yLabel: label });
+        });
+
+        wrap.querySelectorAll('.download-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const slug = btn.dataset.slug;
+                const row = ranked.find(x => x.slug === slug);
+                const name = `ncats-trend-${slug}-${metric}`;
+                if (btn.dataset.fmt === 'csv') {
+                    ChartManager.downloadCSV(
+                        [['site', 'year', metric],
+                         ...row.series.map((v, i) => [row.hub_name, years[i], v ?? ''])],
+                        name);
+                } else {
+                    ChartManager.download(this.trendCardCharts[slug], btn.dataset.fmt, name);
+                }
+            });
+        });
     }
 
     _trendsCsvRows() {
@@ -618,6 +730,8 @@ class NCATSApp {
                         <option value="mean_rcr">Mean RCR</option>
                         <option value="citation_count">Total citations</option>
                         <option value="mean_citations">Mean citations per paper</option>
+                        <option value="citations_per_million">Citations per $1M awarded</option>
+                        <option value="pubs_per_million">Publications per $1M awarded</option>
                         <option value="pub_count">Publications</option>
                     </select>
                 </label>
@@ -715,7 +829,15 @@ class NCATSApp {
                 },
             });
 
+        const isEfficiency = metric === 'citations_per_million' || metric === 'pubs_per_million';
         document.getElementById('pub-chart-note').innerHTML = `
+            ${isEfficiency ? `<p class="data-note warn">
+                <strong>Read this one carefully.</strong> Citations accrue for years after the
+                money is spent, so recently funded sites look inefficient. Hub awards (UL1/UM1)
+                pay for cores, staff and services rather than papers directly, and a paper shared
+                by several hubs counts in full at each. A high value here is not proof of a
+                better-run site, and a low one is not evidence of waste.
+            </p>` : ''}
             <p class="data-note">
                 ${applyMin
                     ? `${excluded} site${excluded === 1 ? '' : 's'} with fewer than ${thr} RCR-scored papers ${excluded === 1 ? 'is' : 'are'} hidden — small samples produce unstable averages.`
@@ -946,6 +1068,7 @@ class NCATSApp {
                         <option value="mean_rcr">Mean RCR</option>
                         <option value="award_total">Award dollars</option>
                         <option value="cost_per_pub">Cost per publication</option>
+                        <option value="citations_per_million">Citations per $1M</option>
                     </select>
                 </label>
             </div>`;
@@ -985,22 +1108,7 @@ class NCATSApp {
             const site = loaded[slug];
             return {
                 label: site.hub_name,
-                data: years.map(y => {
-                    const rows = site.metrics.filter(m => m.year === y);
-                    if (!rows.length) return null;
-                    if (metric === 'mean_rcr' || metric === 'cost_per_pub') {
-                        // Weighted by publication count, so a tiny mechanism
-                        // cannot swing the site's value.
-                        let num = 0, den = 0;
-                        for (const r of rows) {
-                            if (r[metric] === null || r[metric] === undefined) continue;
-                            num += r[metric] * (r.pub_count || 0);
-                            den += r.pub_count || 0;
-                        }
-                        return den > 0 ? num / den : null;
-                    }
-                    return rows.reduce((sum, r) => sum + (r[metric] || 0), 0);
-                }),
+                data: this._siteYearSeries(site, metric, 'all', years),
                 borderColor: colorMap[slug],
                 backgroundColor: colorMap[slug],
                 spanGaps: true,
