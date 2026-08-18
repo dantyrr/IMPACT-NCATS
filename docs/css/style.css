@@ -1576,4 +1576,7 @@ tr.row-excluded td {
 .data-table.compact th, .data-table.compact td {
     padding: 0.4rem 0.6rem; font-size: 0.82rem; white-space: nowrap; }
 .data-table.compact td:nth-child(2) { white-space: normal; max-width: 420px; }
+/* Height is set inline by JS per render — tall for many-bar rankings, fixed
+   for the over-time line view. This just seeds a value before the first
+   render so the container isn't collapsed to 0 for an instant. */
 #as-chart-container { height: 520px; }

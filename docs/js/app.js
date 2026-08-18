@@ -515,6 +515,18 @@ class NCATSApp {
         const st = this._asState();
         const label = metricLabel(st.metric);
         const useLog = document.getElementById('as-log').checked;
+        const container = document.getElementById('as-chart-container');
+
+        if (st.view === 'rank') {
+            // Horizontal bars need room per site or labels overlap into an
+            // unreadable pile once "All sites" is picked. Height grows with the
+            // bar count instead of squeezing everything into a fixed box.
+            const perBar = 26;
+            const chrome = 90; // axis + padding
+            container.style.height = `${Math.max(440, st.limited.length * perBar + chrome)}px`;
+        } else {
+            container.style.height = '520px';
+        }
 
         if (st.view === 'rank') {
             this.asChart = ChartManager.barChart('as-chart',
