@@ -48,9 +48,23 @@ class NCATSApp {
 
         this.setupSiteDetail();
         this.setupAcrossSites();
+        await this.setupThemes();
         this.setupGrants();
         this.setupInvestigators();
         this.renderAbout();
+    }
+
+    /** Themes & Translation tab. Optional: the site still works without it. */
+    async setupThemes() {
+        try {
+            const data = await this.loader.loadThemes();
+            this.themesTab = new ThemesTab(this, data);
+            this.themesTab.setup();
+        } catch (e) {
+            document.getElementById('th-controls').innerHTML =
+                '<p class="data-note">Theme data not available yet. Run compute_themes.py and export_themes.py.</p>';
+            console.error('Failed to load themes.json', e);
+        }
     }
 
     setupNavigation() {

@@ -133,8 +133,23 @@ def main():
             GROUP BY 1 ORDER BY 1""")
     ]
 
+    # Theme x site x year, needed for the per-site themes view.
+    theme_site_year = [
+        {"theme_id": r[0], "slug": r[1], "year": r[2], "n": r[3]}
+        for r in conn.execute("""
+            SELECT pt.theme_id, s.slug, pm.pub_year, COUNT(DISTINCT pt.pmid)
+            FROM pub_themes pt
+            JOIN pub_metrics pm ON pm.pmid = pt.pmid
+            JOIN grant_pubs gp ON gp.pmid = pt.pmid
+            JOIN grants g ON g.core_project_num = gp.core_project_num
+            JOIN sites s ON s.ipf_code = g.ipf_code
+            WHERE s.is_ctsa_hub = 1 AND pm.pub_year IS NOT NULL
+            GROUP BY 1, 2, 3""")
+    ]
+
     payload = {
         "themes": themes,
+        "theme_site_year": theme_site_year,
         "theme_year": theme_year,
         "theme_site": theme_site,
         "trans_site_year": trans_site_year,

@@ -26,6 +26,10 @@ class DataLoader {
         return this._fetch(`${this.baseUrl}/publications.json`);
     }
 
+    async loadThemes() {
+        return this._fetch(`${this.baseUrl}/themes.json`);
+    }
+
     async loadSite(slug) {
         return this._fetch(`${this.baseUrl}/sites/${slug}.json`);
     }
