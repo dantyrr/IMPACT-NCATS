@@ -105,6 +105,14 @@ def main():
     log.info("labelled %d of %d themes",
              len(updates), conn.execute("SELECT COUNT(*) FROM themes").fetchone()[0])
 
+    conn.executemany(
+        "INSERT INTO theme_run (key, value) VALUES (?,?) "
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        [("label_min_support", str(MIN_SUPPORT)),
+         ("label_top_n", str(TOP_N)),
+         ("label_mesh_papers", str(n_bg))])
+    conn.commit()
+
     log.info("Most coherent themes:")
     for label, coh, size in conn.execute(
         "SELECT mesh_label, coherence, size FROM themes "

@@ -155,8 +155,19 @@ def main():
             GROUP BY 1, 2, 3""")
     ]
 
+    # Parameters of the clustering run, so the published methods description is
+    # generated from what actually ran.
+    run = dict(conn.execute("SELECT key, value FROM theme_run"))
+    for k in ("umap", "hdbscan"):
+        if k in run:
+            try:
+                run[k] = json.loads(run[k])
+            except (ValueError, TypeError):
+                pass
+
     payload = {
         "themes": themes,
+        "run": run,
         "theme_site_year": theme_site_year,
         "theme_year": theme_year,
         "theme_site": theme_site,

@@ -111,6 +111,14 @@ CREATE TABLE IF NOT EXISTS themes (
     size       INTEGER DEFAULT 0
 );
 
+-- Parameters of the clustering run that produced the current themes, so the
+-- published methods description reflects what actually ran rather than prose
+-- that silently drifts when a parameter changes.
+CREATE TABLE IF NOT EXISTS theme_run (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_pub_themes_theme ON pub_themes(theme_id);
 
 CREATE TABLE IF NOT EXISTS site_month_snapshots (

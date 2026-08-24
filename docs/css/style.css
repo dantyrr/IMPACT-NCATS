@@ -1586,3 +1586,17 @@ tr.row-excluded td {
 .coh-mid  { color: #b8860b; }
 .coh-low  { color: var(--danger); font-weight: 600; }
 .data-table td.muted { color: var(--text-light); font-size: 0.78rem; white-space: normal; }
+
+/* ---- Methods disclosure ---- */
+.methods-box { background: var(--surface); border: 1px solid var(--border);
+               border-radius: var(--radius); padding: 0.8rem 1rem;
+               margin-bottom: 1rem; box-shadow: var(--shadow); }
+.methods-box > summary { cursor: pointer; font-weight: 600; color: var(--primary);
+                         font-size: 0.95rem; }
+.methods-box h4 { color: var(--primary); font-size: 0.9rem; margin: 1rem 0 0.3rem; }
+.methods-box p, .methods-box li { font-size: 0.86rem; color: var(--text);
+                                  line-height: 1.55; }
+.methods-box ul, .methods-box ol { margin-left: 1.2rem; }
+.methods-box .methods-steps > li { margin-bottom: 0.5rem; }
+.methods-box code { background: var(--bg); padding: 0.05rem 0.3rem;
+                    border-radius: 3px; font-size: 0.82em; }

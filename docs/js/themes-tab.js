@@ -67,12 +67,147 @@ class ThemesTab {
         ['th-view', 'th-site', 'th-topn', 'th-units', 'th-from', 'th-to'].forEach(id =>
             document.getElementById(id).addEventListener('input', () => this.render()));
 
+        this.renderMethods();
+
         this.app._attachDownloadBar('th-downloads',
             () => this.chart,
             () => this.csvRows(),
             () => `ncats-${document.getElementById('th-view').value}`);
 
         this.render();
+    }
+
+    /**
+     * Methods, generated from the run record rather than written by hand, so the
+     * description cannot drift from the parameters that actually produced the
+     * themes on screen.
+     */
+    renderMethods() {
+        const el = document.getElementById('th-methods');
+        if (!el) return;
+        const r = this.data.run || {};
+        const cov = this.data.coverage || {};
+        const u = r.umap || {}, h = r.hdbscan || {};
+        const docs = +r.documents || 0;
+        const unassigned = +r.n_unassigned || 0;
+        const pctUnassigned = docs ? (100 * unassigned / docs).toFixed(1) : '—';
+
+        const meshYears = (this.data.mesh_by_year || []).filter(m => m.total > 200);
+        const first = meshYears[0], last = meshYears[meshYears.length - 1];
+        const meshTrend = (first && last)
+            ? `${Math.round(100 * first.with_mesh / first.total)}% in ${first.year} to
+               ${Math.round(100 * last.with_mesh / last.total)}% in ${last.year}`
+            : 'declining in recent years';
+
+        el.innerHTML = `
+        <details class="methods-box">
+            <summary>Methods — how themes and translational classes were derived</summary>
+
+            <h4>Translational classification</h4>
+            <p>
+                Each publication's position on the translational spectrum comes from
+                <a href="https://icite.od.nih.gov/" target="_blank" rel="noopener">NIH iCite</a>,
+                not from anything computed here. iCite derives the
+                <strong>Triangle of Biomedicine</strong> (Weber 2013) from a paper's MeSH terms,
+                giving the share of its content that is human, animal, or molecular/cellular.
+                A paper is assigned to whichever vertex holds at least
+                ${Math.round((this.data.vertex_threshold || 0.5) * 100)}% of its mix; anything
+                below that is reported as <em>Mixed</em> rather than forced to a vertex.
+                iCite also supplies <strong>APT</strong> (Approximate Potential to Translate),
+                NIH's model-estimated probability that a paper will later be cited by a clinical
+                trial or guideline, and whether the paper is itself a clinical article.
+                ${(cov.with_translational || 0).toLocaleString()} publications are classified.
+            </p>
+
+            <h4>Theme discovery</h4>
+            <ol class="methods-steps">
+                <li>
+                    <strong>Corpus.</strong> ${docs.toLocaleString()} publications whose abstract
+                    exceeds ${r.min_abstract_chars || 200} characters. Title and abstract are
+                    concatenated, the abstract truncated at
+                    ${(+r.abstract_truncation || 1500).toLocaleString()} characters.
+                </li>
+                <li>
+                    <strong>Embedding.</strong> <code>${r.model || 'PubMedBERT'}</code>, a
+                    sentence encoder trained on biomedical text, producing
+                    ${r.embedding_dims || 768}-dimensional unit-normalised vectors.
+                </li>
+                <li>
+                    <strong>Dimensionality reduction.</strong> UMAP to ${u.n_components || 5}
+                    dimensions (<code>n_neighbors=${u.n_neighbors}</code>,
+                    <code>min_dist=${u.min_dist}</code>, <code>metric=${u.metric}</code>,
+                    <code>random_state=${u.random_state}</code>). The fixed seed makes the run
+                    reproducible.
+                </li>
+                <li>
+                    <strong>Clustering.</strong> HDBSCAN
+                    (<code>min_cluster_size=${h.min_cluster_size}</code>,
+                    <code>min_samples=${h.min_samples}</code>,
+                    <code>cluster_selection_method=${h.cluster_selection_method}</code>),
+                    yielding <strong>${r.n_themes || 0} themes</strong>. HDBSCAN does not
+                    partition the whole corpus: papers that sit in no dense region are left
+                    unassigned rather than pushed into the nearest theme.
+                    <strong>${unassigned.toLocaleString()} papers (${pctUnassigned}%) are
+                    unassigned</strong>, so theme shares describe the remainder, not the
+                    whole portfolio.
+                </li>
+                <li>
+                    <strong>Naming.</strong> Each theme is named from the MeSH descriptors most
+                    enriched inside it relative to the rest of the corpus, scored by log-odds
+                    weighted by the square root of support, requiring at least
+                    ${r.label_min_support || 5} papers per descriptor. Descriptors that index
+                    study population or design rather than subject — Humans, Female, Adult,
+                    Retrospective Studies and similar — are excluded, or nearly every theme
+                    would be called "Humans, Female, Adult".
+                    ${(+r.label_mesh_papers || 0).toLocaleString()} MeSH-indexed papers
+                    contribute to naming.
+                </li>
+            </ol>
+
+            <h4>Why abstracts rather than MeSH</h4>
+            <p>
+                Themes are clustered from abstracts even though MeSH is a cleaner controlled
+                vocabulary, because NIH assigns MeSH with a lag: coverage in this corpus falls
+                from ${meshTrend}. Counting MeSH terms per year would therefore show
+                <em>every</em> theme shrinking recently for administrative reasons rather than
+                scientific ones. Abstract coverage is effectively flat
+                (${(cov.with_abstract || 0).toLocaleString()} of
+                ${(cov.total || 0).toLocaleString()} papers), so abstract-derived themes give
+                trend lines that track research activity. MeSH is still used for
+                <em>naming</em>, where the lag does not distort anything.
+            </p>
+
+            <h4>Coherence</h4>
+            <p>
+                The share of a theme's MeSH-indexed papers carrying its single top descriptor.
+                It is deliberately blunt so it is easy to interpret: a COVID-19 theme scores near
+                80% and is genuinely one subject, while a theme scoring under 15% spans several
+                and its name captures only part of it. Treat low-coherence themes as loose
+                groupings, not categories.
+            </p>
+
+            <h4>Known limitations</h4>
+            <ul>
+                <li>
+                    Themes are an unsupervised description of this corpus, not a standard
+                    taxonomy. Re-running with a different <code>min_cluster_size</code> would
+                    split or merge them.
+                </li>
+                <li>
+                    A paper belongs to at most one theme, so interdisciplinary work is placed in
+                    a single cluster rather than counted in several.
+                </li>
+                <li>
+                    Publications reach this corpus only when reported against an NCATS award, and
+                    hubs differ substantially in reporting practice. Theme volumes reflect what
+                    was reported, not everything that was done.
+                </li>
+                <li>
+                    Recent years are still filling in on indexing, citation accrual and grant
+                    reporting, so the right-hand edge of every trend is provisional.
+                </li>
+            </ul>
+        </details>`;
     }
 
     _state() {

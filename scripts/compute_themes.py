@@ -91,24 +91,24 @@ def embed(texts, model_name, batch_size=128):
     ).astype(np.float32)
 
 
+# Clustering parameters, kept in one place so the run record and the code cannot
+# disagree. UMAP_PARAMS is passed straight to UMAP; HDBSCAN_PARAMS to HDBSCAN.
+UMAP_PARAMS = dict(n_neighbors=15, n_components=5, min_dist=0.0,
+                   metric="cosine", random_state=42)
+HDBSCAN_PARAMS = dict(min_samples=10, metric="euclidean",
+                      cluster_selection_method="eom")
+
+
 def cluster(vectors, min_cluster_size, n_components=5, seed=42):
     import umap
     import hdbscan
 
     log.info("UMAP: %d x %d -> %d dims", *vectors.shape, n_components)
-    reduced = umap.UMAP(
-        n_neighbors=15, n_components=n_components, min_dist=0.0,
-        metric="cosine", random_state=seed, verbose=True,
-    ).fit_transform(vectors)
+    reduced = umap.UMAP(**UMAP_PARAMS, verbose=True).fit_transform(vectors)
 
     log.info("HDBSCAN: min_cluster_size=%d", min_cluster_size)
     clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=min_cluster_size,
-        min_samples=10,
-        metric="euclidean",
-        cluster_selection_method="eom",
-        prediction_data=True,
-    )
+        min_cluster_size=min_cluster_size, prediction_data=True, **HDBSCAN_PARAMS)
     labels = clusterer.fit_predict(reduced)
     probs = clusterer.probabilities_
     return labels, probs
@@ -197,6 +197,21 @@ def main():
              n_themes, n_noise, 100 * n_noise / len(labels))
 
     terms = label_clusters(texts, labels)
+
+    # Record exactly what produced these themes.
+    conn.executemany(
+        "INSERT INTO theme_run (key, value) VALUES (?,?) "
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        [("model", args.model),
+         ("documents", str(len(pmids))),
+         ("embedding_dims", str(vectors.shape[1])),
+         ("umap", json.dumps(UMAP_PARAMS)),
+         ("hdbscan", json.dumps({**HDBSCAN_PARAMS,
+                                 "min_cluster_size": args.min_cluster_size})),
+         ("n_themes", str(n_themes)),
+         ("n_unassigned", str(n_noise)),
+         ("min_abstract_chars", "200"),
+         ("abstract_truncation", "1500")])
 
     conn.execute("DELETE FROM pub_themes")
     conn.execute("DELETE FROM themes")
