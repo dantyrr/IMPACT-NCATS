@@ -8,3 +8,8 @@ docs/data/sites/
 docs/data/grants/
 docs/data/investigators/
 .DS_Store
+
+# Analysis exports (large CSVs, regenerate with export_themes.py)
+exports/
+data/embeddings.npy
+data/embedding_pmids.npy

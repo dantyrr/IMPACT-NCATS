@@ -85,6 +85,34 @@ CREATE TABLE IF NOT EXISTS site_metrics (
     UNIQUE(ipf_code, year, activity_group)
 );
 
+-- Full text fields from PubMed EFetch, for thematic analysis.
+CREATE TABLE IF NOT EXISTS pub_text (
+    pmid        INTEGER PRIMARY KEY,
+    abstract    TEXT,
+    mesh_terms  TEXT,      -- JSON array of MeSH descriptors
+    major_mesh  TEXT,      -- JSON array of major-topic descriptors only
+    keywords    TEXT,      -- JSON array of author keywords
+    pub_types   TEXT,      -- JSON array of PublicationType values
+    has_mesh    INTEGER NOT NULL DEFAULT 0,
+    fetched     INTEGER NOT NULL DEFAULT 0
+);
+
+-- Theme assignment from embedding + clustering.
+CREATE TABLE IF NOT EXISTS pub_themes (
+    pmid      INTEGER PRIMARY KEY,
+    theme_id  INTEGER NOT NULL,
+    theme_prob REAL
+);
+
+CREATE TABLE IF NOT EXISTS themes (
+    theme_id   INTEGER PRIMARY KEY,
+    label      TEXT,
+    top_terms  TEXT,       -- JSON array
+    size       INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_pub_themes_theme ON pub_themes(theme_id);
+
 CREATE TABLE IF NOT EXISTS site_month_snapshots (
     ipf_code       INTEGER NOT NULL REFERENCES sites(ipf_code),
     snapshot_month TEXT NOT NULL,          -- 'YYYY-MM'
@@ -111,6 +139,16 @@ CREATE INDEX IF NOT EXISTS idx_site_metrics_site ON site_metrics(ipf_code, year)
 MIGRATIONS = [
     ("pub_metrics", "title", "TEXT"),
     ("site_metrics", "award_count", "INTEGER DEFAULT 0"),
+    # iCite translational-science fields. NIH computes these from MeSH, so they
+    # are authoritative and available for essentially every indexed paper.
+    ("pub_metrics", "human", "REAL"),                 # Triangle of Biomedicine
+    ("pub_metrics", "animal", "REAL"),
+    ("pub_metrics", "molecular_cellular", "REAL"),
+    ("pub_metrics", "tri_x", "REAL"),                 # triangle coordinates
+    ("pub_metrics", "tri_y", "REAL"),
+    ("pub_metrics", "apt", "REAL"),                   # Approximate Potential to Translate
+    ("pub_metrics", "is_clinical", "INTEGER"),
+    ("pub_metrics", "clin_citations", "INTEGER"),     # count of citing clinical articles
 ]
 
 

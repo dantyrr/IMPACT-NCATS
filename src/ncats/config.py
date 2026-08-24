@@ -18,6 +18,11 @@ IMPACT_DB_PATH = Path(
     os.getenv("IMPACT_DB_PATH", Path.home() / "Projects/IMPACT/data/impact.db")
 )
 
+# --- PubMed (EFetch for abstracts / MeSH) ---
+# A key raises the rate limit from 3 to 10 requests per second.
+PUBMED_API_KEY = os.getenv("PUBMED_API_KEY", "")
+PUBMED_EMAIL = os.getenv("PUBMED_EMAIL", "")
+
 # --- APIs ---
 REPORTER_PROJECTS_URL = "https://api.reporter.nih.gov/v2/projects/search"
 REPORTER_PUBS_URL = "https://api.reporter.nih.gov/v2/publications/search"
