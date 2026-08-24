@@ -149,6 +149,13 @@ MIGRATIONS = [
     ("pub_metrics", "apt", "REAL"),                   # Approximate Potential to Translate
     ("pub_metrics", "is_clinical", "INTEGER"),
     ("pub_metrics", "clin_citations", "INTEGER"),     # count of citing clinical articles
+    # Readable theme names derived from MeSH. The tf-idf label optimises for
+    # distinctiveness and produces unreadable acronym soup; MeSH is a curated
+    # vocabulary of recognisable disease and method names.
+    ("themes", "mesh_label", "TEXT"),
+    ("themes", "mesh_terms", "TEXT"),
+    ("themes", "coherence", "REAL"),   # share of papers carrying the top descriptor
+    ("themes", "mesh_n", "INTEGER"),
 ]
 
 

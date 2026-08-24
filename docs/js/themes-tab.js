@@ -247,6 +247,9 @@ class ThemesTab {
                 ${(this.data.coverage?.with_theme || 0).toLocaleString()} papers carry a theme;
                 papers too dissimilar to join any cluster are left unassigned rather than forced
                 into one.
+                <strong>Coherence</strong> is the share of a theme's MeSH-indexed papers carrying
+                its single top descriptor: high means the theme is one subject, low means it spans
+                several and the name only captures part of it.
             </p>`;
         this.renderThemeTable(top, totals);
     }
@@ -256,13 +259,18 @@ class ThemesTab {
             <h3>Themes</h3>
             <div class="table-scroll">
             <table class="data-table compact">
-                <thead><tr><th>#</th><th>Theme</th><th>Distinguishing terms</th><th>Papers (range)</th><th>Papers (all time)</th></tr></thead>
+                <thead><tr><th>#</th><th>Theme</th><th>Coherence</th><th>Distinguishing terms</th><th>Papers (range)</th><th>Papers (all time)</th></tr></thead>
                 <tbody>${ids.map(id => {
                     const t = this.themeById[id] || {};
+                    const coh = t.coherence == null ? null : Math.round(100 * t.coherence);
+                    // Below ~15% the cluster spans several subjects; say so rather
+                    // than let a tidy label imply more unity than the data supports.
+                    const cls = coh == null ? '' : (coh >= 40 ? 'coh-high' : coh >= 15 ? 'coh-mid' : 'coh-low');
                     return `<tr>
                         <td>${id}</td>
                         <td><strong>${t.label || '—'}</strong></td>
-                        <td>${(t.top_terms || []).join(', ')}</td>
+                        <td class="${cls}">${coh == null ? '—' : coh + '%'}</td>
+                        <td class="muted">${(t.top_terms || []).slice(0, 6).join(', ')}</td>
                         <td>${(totals[id] || 0).toLocaleString()}</td>
                         <td>${(t.size || 0).toLocaleString()}</td>
                     </tr>`;

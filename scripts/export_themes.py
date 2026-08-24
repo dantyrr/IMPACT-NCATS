@@ -52,10 +52,18 @@ def main():
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
 
     themes = [
-        {"theme_id": r[0], "label": r[1], "top_terms": json.loads(r[2] or "[]"),
+        {"theme_id": r[0],
+         # MeSH name is the readable one; the tf-idf terms stay as fine detail.
+         "label": r[4] or r[1],
+         "tfidf_label": r[1],
+         "top_terms": json.loads(r[2] or "[]"),
+         "mesh_terms": json.loads(r[5] or "[]"),
+         "coherence": r[6],
+         "mesh_n": r[7],
          "size": r[3]}
         for r in conn.execute(
-            "SELECT theme_id, label, top_terms, size FROM themes ORDER BY size DESC")
+            "SELECT theme_id, label, top_terms, size, mesh_label, mesh_terms, "
+            "       coherence, mesh_n FROM themes ORDER BY size DESC")
     ]
     log.info("themes: %d", len(themes))
 
@@ -171,7 +179,7 @@ def main():
                tri_class(pm.human, pm.animal, pm.molecular_cellular),
                pm.apt, pm.is_clinical, pm.clin_citations,
                pm.n_linked_hubs,
-               th.theme_id, t.label,
+               th.theme_id, COALESCE(t.mesh_label, t.label),
                pt.has_mesh, pt.mesh_terms,
                (SELECT GROUP_CONCAT(DISTINCT s.hub_name)
                   FROM grant_pubs gp
@@ -234,7 +242,7 @@ def main():
         w = csv.writer(f)
         w.writerow(["theme_id", "theme_label", "site", "slug", "year", "papers"])
         for r in conn.execute("""
-            SELECT th.theme_id, t.label, s.hub_name, s.slug, pm.pub_year,
+            SELECT th.theme_id, COALESCE(t.mesh_label, t.label), s.hub_name, s.slug, pm.pub_year,
                    COUNT(DISTINCT th.pmid)
             FROM pub_themes th
             JOIN themes t ON t.theme_id = th.theme_id

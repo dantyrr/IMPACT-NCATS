@@ -1580,3 +1580,9 @@ tr.row-excluded td {
    for the over-time line view. This just seeds a value before the first
    render so the container isn't collapsed to 0 for an instant. */
 #as-chart-container { height: 520px; }
+
+/* Theme coherence: how much of a cluster its top MeSH descriptor covers. */
+.coh-high { color: #1a7f4b; font-weight: 600; }
+.coh-mid  { color: #b8860b; }
+.coh-low  { color: var(--danger); font-weight: 600; }
+.data-table td.muted { color: var(--text-light); font-size: 0.78rem; white-space: normal; }
