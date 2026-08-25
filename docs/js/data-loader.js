@@ -9,6 +9,18 @@
 
 const R2_BASE_URL = 'https://pub-4368cf00a45748488f64d2b648550d4d.r2.dev/ncats';
 
+/**
+ * Cache-busting token for DATA files.
+ *
+ * The JS and CSS carry ?v=N in index.html, but data URLs did not, and R2 serves
+ * them with max-age=3600. A data refresh was therefore invisible to anyone with
+ * a warm cache for up to an hour: the page loaded new code against a stale
+ * themes.json and showed the previous run's theme labels.
+ *
+ * Bump this whenever exported data changes.
+ */
+const DATA_VERSION = '2026-08-24b';
+
 class DataLoader {
     constructor() {
         const isLocal = location.hostname === 'localhost' ||
@@ -40,7 +52,8 @@ class DataLoader {
 
     async _fetch(url) {
         if (this.cache[url]) return this.cache[url];
-        const resp = await fetch(url);
+        const versioned = url + (url.includes('?') ? '&' : '?') + 'v=' + DATA_VERSION;
+        const resp = await fetch(versioned);
         if (!resp.ok) throw new Error(`Failed to load ${url}: ${resp.status}`);
         const data = await resp.json();
         this.cache[url] = data;
