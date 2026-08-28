@@ -49,6 +49,7 @@ class NCATSApp {
         this.setupSiteDetail();
         this.setupAcrossSites();
         await this.setupThemes();
+        await this.setupSearch();
         this.setupGrants();
         this.setupInvestigators();
         this.renderAbout();
@@ -64,6 +65,16 @@ class NCATSApp {
             document.getElementById('th-controls').innerHTML =
                 '<p class="data-note">Theme data not available yet. Run compute_themes.py and export_themes.py.</p>';
             console.error('Failed to load themes.json', e);
+        }
+    }
+
+    /** Search tab. Optional: the rest of the site works without the index. */
+    async setupSearch() {
+        try {
+            this.searchTab = new SearchTab(this);
+            await this.searchTab.setup();
+        } catch (e) {
+            console.error('Failed to set up search', e);
         }
     }
 
@@ -142,12 +153,17 @@ class NCATSApp {
     _attachDownloadBar(containerId, getChart, getCsvRows, getFilename) {
         const el = document.getElementById(containerId);
         if (!el) return;
+        // A null chart getter means the content is a table, so the image formats
+        // would be dead buttons. Offer CSV alone rather than controls that do
+        // nothing when clicked.
+        const imageFormats = getChart !== null;
         el.innerHTML = `
             <div class="download-bar">
                 <span>Download:</span>
+                ${imageFormats ? `
                 <button class="download-btn" data-fmt="png">PNG</button>
                 <button class="download-btn" data-fmt="jpg">JPG</button>
-                <button class="download-btn" data-fmt="pdf">PDF</button>
+                <button class="download-btn" data-fmt="pdf">PDF</button>` : ''}
                 <button class="download-btn" data-fmt="csv">CSV data</button>
             </div>`;
         el.querySelectorAll('.download-btn').forEach(btn => {
@@ -455,7 +471,7 @@ class NCATSApp {
             document.getElementById(id).addEventListener('input', () => this.renderPapers()));
 
         this._attachDownloadBar('as-paper-downloads',
-            () => null,   // the paper list is a table, so image formats do not apply
+            null,   // a table, not a chart: only CSV applies
             () => [['rank', 'pmid', 'title', 'journal', 'year', 'rcr', 'citations', 'sites'],
                    ...(this.papersShown || []).map((p, i) =>
                        [i + 1, p.pmid, p.title, p.journal, p.year, p.rcr, p.citations,

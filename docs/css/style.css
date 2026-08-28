@@ -1600,3 +1600,8 @@ tr.row-excluded td {
 .methods-box .methods-steps > li { margin-bottom: 0.5rem; }
 .methods-box code { background: var(--bg); padding: 0.05rem 0.3rem;
                     border-radius: 3px; font-size: 0.82em; }
+
+/* Search results: give the title room; it is the column people read. */
+#se-results .data-table.compact td:nth-child(2) { min-width: 380px; max-width: 560px; }
+#se-results .data-table.compact td:nth-child(3) { max-width: 220px; white-space: normal; }
+#se-controls input[type="text"] { flex: 1; min-width: 340px; font-size: 0.95rem; }

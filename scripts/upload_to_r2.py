@@ -23,6 +23,8 @@ Usage:
 
 import sys
 import os
+import gzip
+import io
 import hashlib
 import argparse
 import logging
@@ -50,11 +52,27 @@ logging.basicConfig(
 logger = logging.getLogger("upload_r2")
 
 
+def gzip_bytes(path: Path) -> bytes:
+    """Compress a file for upload.
+
+    R2 does not compress on the wire - a 3.8 MB themes.json transferred as 3.8 MB
+    even when the client asked for gzip - so JSON is stored pre-compressed with
+    Content-Encoding: gzip and browsers decompress it transparently. Files on
+    disk stay uncompressed, so the local dev server still works unchanged.
+    mtime is zeroed so identical content always produces identical bytes, or the
+    ETag comparison would re-upload everything on every run.
+    """
+    raw = path.read_bytes()
+    buf = io.BytesIO()
+    with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=9, mtime=0) as f:
+        f.write(raw)
+    return buf.getvalue()
+
+
 def md5_hex(path: Path) -> str:
+    """MD5 of the bytes actually uploaded, so it can be compared with the ETag."""
     h = hashlib.md5()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
+    h.update(gzip_bytes(path))
     return h.hexdigest()
 
 
@@ -156,12 +174,12 @@ def main():
     for path, key in to_upload:
         for attempt in range(1, 7):
             try:
-                client.upload_file(
-                    str(path), R2_BUCKET_NAME, key,
-                    ExtraArgs={
-                        "ContentType": "application/json",
-                        "CacheControl": "public, max-age=3600",
-                    },
+                client.put_object(
+                    Bucket=R2_BUCKET_NAME, Key=key,
+                    Body=gzip_bytes(path),
+                    ContentType="application/json",
+                    ContentEncoding="gzip",
+                    CacheControl="public, max-age=3600",
                 )
                 uploaded += 1
                 if uploaded % 100 == 0 or uploaded == len(to_upload):

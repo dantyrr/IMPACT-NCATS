@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=15">
+    <link rel="stylesheet" href="css/style.css?v=17">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -18,6 +18,7 @@
     <nav>
         <a href="#site-detail" class="nav-link active" data-section="site-detail">Site Detail</a>
         <a href="#across-sites" class="nav-link" data-section="across-sites">Across Sites</a>
+        <a href="#search" class="nav-link" data-section="search">Search</a>
         <a href="#themes" class="nav-link" data-section="themes">Themes &amp; Translation</a>
         <a href="#grants" class="nav-link" data-section="grants">Grants</a>
         <a href="#investigators" class="nav-link" data-section="investigators">Investigators</a>
@@ -64,6 +65,18 @@
         <div id="as-papers-container"></div>
     </section>
 
+    <section id="search" class="section">
+        <h2>Search Publications</h2>
+        <p class="data-note">
+            Full-text search across the titles, abstracts, MeSH terms and author keywords of
+            every publication linked to an NCATS award. Runs entirely in your browser against a
+            sharded index, so only the parts needed for your query are downloaded.
+        </p>
+        <div id="se-controls"></div>
+        <div id="se-downloads"></div>
+        <div id="se-results"></div>
+    </section>
+
     <section id="themes" class="section">
         <h2>Themes &amp; Translation</h2>
         <p class="data-note">
@@ -101,11 +114,12 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=15"></script>
-<script src="js/site-picker.js?v=15"></script>
-<script src="js/chart-manager.js?v=15"></script>
-<script src="js/metrics-def.js?v=15"></script>
-<script src="js/themes-tab.js?v=15"></script>
-<script src="js/app.js?v=15"></script>
+<script src="js/data-loader.js?v=17"></script>
+<script src="js/site-picker.js?v=17"></script>
+<script src="js/chart-manager.js?v=17"></script>
+<script src="js/metrics-def.js?v=17"></script>
+<script src="js/search-tab.js?v=17"></script>
+<script src="js/themes-tab.js?v=17"></script>
+<script src="js/app.js?v=17"></script>
 </body>
 </html>

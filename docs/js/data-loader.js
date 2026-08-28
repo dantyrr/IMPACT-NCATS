@@ -19,7 +19,7 @@ const R2_BASE_URL = 'https://pub-4368cf00a45748488f64d2b648550d4d.r2.dev/ncats';
  *
  * Bump this whenever exported data changes.
  */
-const DATA_VERSION = '2026-08-24b';
+const DATA_VERSION = '2026-08-28a';
 
 class DataLoader {
     constructor() {
