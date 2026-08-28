@@ -1602,6 +1602,9 @@ tr.row-excluded td {
                     border-radius: 3px; font-size: 0.82em; }
 
 /* Search results: give the title room; it is the column people read. */
-#se-results .data-table.compact td:nth-child(2) { min-width: 380px; max-width: 560px; }
-#se-results .data-table.compact td:nth-child(3) { max-width: 220px; white-space: normal; }
+#se-results .data-table.compact td:nth-child(3) { min-width: 360px; max-width: 540px;
+                                                   white-space: normal; }
+#se-results .data-table.compact td:nth-child(4) { max-width: 200px; white-space: normal; }
+.data-table td.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                      font-size: 0.78rem; color: var(--text-light); }
 #se-controls input[type="text"] { flex: 1; min-width: 340px; font-size: 0.95rem; }

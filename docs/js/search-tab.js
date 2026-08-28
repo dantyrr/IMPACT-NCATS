@@ -35,7 +35,7 @@ class SearchTab {
 
         document.getElementById('se-controls').innerHTML = `
             <div class="controls-row">
-                <input type="text" id="se-q" placeholder="Search titles, abstracts, MeSH terms and keywords…"
+                <input type="text" id="se-q" placeholder="Search titles, abstracts, MeSH terms, keywords — or paste PMIDs"
                        autocomplete="off" spellcheck="false">
                 <button class="download-btn" id="se-go">Search</button>
             </div>
@@ -79,9 +79,22 @@ class SearchTab {
         document.getElementById('se-to').innerHTML = opts(years[years.length - 1]);
 
         const run = () => this.search();
+        const box = document.getElementById('se-q');
         document.getElementById('se-go').addEventListener('click', run);
-        document.getElementById('se-q').addEventListener('keydown', e => {
+        box.addEventListener('keydown', e => {
             if (e.key === 'Enter') run();
+        });
+        // A single-line input silently strips newlines, so a column of PMIDs
+        // pasted from a spreadsheet would arrive as one long concatenated
+        // number. Normalise whitespace as it is pasted instead.
+        box.addEventListener('paste', e => {
+            const text = (e.clipboardData || window.clipboardData).getData('text');
+            if (!/[\r\n\t]/.test(text)) return;
+            e.preventDefault();
+            const cleaned = text.replace(/\s+/g, ' ').trim();
+            const start = box.selectionStart, end = box.selectionEnd;
+            box.value = box.value.slice(0, start) + cleaned + box.value.slice(end);
+            box.selectionStart = box.selectionEnd = start + cleaned.length;
         });
         // Filters only re-rank what is already found, so they are cheap to apply.
         ['se-site', 'se-sort', 'se-from', 'se-to', 'se-clinical'].forEach(id =>
@@ -100,6 +113,9 @@ class SearchTab {
         const status = document.getElementById('se-status');
         status.textContent = 'Loading index…';
         this.docs = await this.app.loader._fetch(`${this.base}/docs.json`);
+        // Lookup table for PMID queries; built once, reused for every search.
+        this.pmidIndex = new Map();
+        this.docs.pmid.forEach((p, i) => this.pmidIndex.set(p, i));
         status.textContent = '';
     }
 
@@ -128,6 +144,25 @@ class SearchTab {
         return out;
     }
 
+    /**
+     * PMIDs found in the query, if it is a PMID lookup rather than a text search.
+     *
+     * Returns null when the query contains any word characters beyond PMID
+     * scaffolding, so "covid 2020" stays a text search rather than hunting for a
+     * paper numbered 2020. PMIDs are 1-8 digits; anything longer is not one.
+     */
+    parsePmids(q) {
+        const cleaned = (q || '').replace(/\bpmids?\b|[:,;]/gi, ' ').trim();
+        if (!cleaned) return null;
+        const parts = cleaned.split(/\s+/);
+        const ids = [];
+        for (const part of parts) {
+            if (!/^\d{1,8}$/.test(part)) return null;   // any non-numeric token -> text search
+            ids.push(parseInt(part, 10));
+        }
+        return ids.length ? [...new Set(ids)] : null;
+    }
+
     tokenize(q) {
         const stop = new Set(this.manifest.stopwords || []);
         return [...new Set((q || '').toLowerCase().match(/[a-z][a-z0-9]{2,}/g) || [])]
@@ -138,6 +173,24 @@ class SearchTab {
         const q = document.getElementById('se-q').value.trim();
         const status = document.getElementById('se-status');
         if (!q) { status.textContent = 'Type something to search for.'; return; }
+
+        const pmids = this.parsePmids(q);
+        if (pmids) {
+            status.textContent = 'Looking up…';
+            await this.ensureDocs();
+            const found = [], missing = [];
+            for (const p of pmids) {
+                const id = this.pmidIndex.get(p);
+                if (id === undefined) missing.push(p);
+                // Score descends with input order so a pasted list keeps its order.
+                else found.push({ id, score: pmids.length - found.length });
+            }
+            this.results = found;
+            this.query = { pmidLookup: true, requested: pmids.length,
+                           missing, terms: [], partial: false };
+            this.render();
+            return;
+        }
 
         const terms = this.tokenize(q);
         if (!terms.length) {
@@ -229,6 +282,21 @@ class SearchTab {
         this.shown = rows.slice(0, 200);
 
         const q = this.query;
+        if (q.pmidLookup) {
+            const parts = [`${rows.length.toLocaleString()} of ${q.requested.toLocaleString()} PMID${q.requested === 1 ? '' : 's'} found`];
+            if (q.missing.length) {
+                const shown = q.missing.slice(0, 8).join(', ');
+                parts.push(`<strong>Not in this corpus:</strong> ${shown}` +
+                    (q.missing.length > 8 ? ` and ${q.missing.length - 8} more` : '') +
+                    ' — either not linked to an NCATS award, or not indexed in IMPACT.');
+            }
+            if (rows.length !== this.results.length) {
+                parts.push(`${this.results.length - rows.length} hidden by the filters above.`);
+            }
+            document.getElementById('se-status').innerHTML = parts.join(' ');
+            this.renderTable();
+            return;
+        }
         const notes = [];
         if (q.missing.length) {
             notes.push(`No matches for ${q.missing.map(t => `“${t}”`).join(', ')}.`);
@@ -241,11 +309,16 @@ class SearchTab {
             (rows.length > 200 ? ', showing the first 200' : '') +
             (notes.length ? ` — ${notes.join(' ')}` : '');
 
+        this.renderTable();
+    }
+
+    renderTable() {
+        const d = this.docs;
         const tri = this.manifest.tri_labels || [];
         document.getElementById('se-results').innerHTML = `
             <div class="table-scroll tall">
             <table class="data-table compact">
-                <thead><tr><th>#</th><th>Title</th><th>Journal</th><th>Year</th>
+                <thead><tr><th>#</th><th>PMID</th><th>Title</th><th>Journal</th><th>Year</th>
                     <th>Citations</th><th>RCR</th><th>Translational</th><th>Site(s)</th></tr></thead>
                 <tbody>${this.shown.map((r, i) => {
                     const id = r.id;
@@ -257,6 +330,7 @@ class SearchTab {
                     const t = d.tri[id];
                     return `<tr>
                         <td>${i + 1}</td>
+                        <td class="mono">${d.pmid[id]}</td>
                         <td><a href="https://pubmed.ncbi.nlm.nih.gov/${d.pmid[id]}/"
                                target="_blank" rel="noopener">${d.title[id] || '(untitled)'}</a></td>
                         <td>${d.journals[d.journal[id]] || '—'}</td>
