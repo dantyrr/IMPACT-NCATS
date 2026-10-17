@@ -62,6 +62,12 @@ def fetch_citation_events(impact, pmid_month, pmids):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--start-year", type=int, default=2012)
+    ap.add_argument("--ipf", type=int, action="append",
+                    help="Recompute only this site (repeatable), e.g. after an IPF "
+                         "alias merges two sites. Other sites' rows are kept.")
+    ap.add_argument("--end", metavar="YYYY-MM",
+                    help="Last snapshot month (default: this month). Match the other "
+                         "sites' last month when recomputing one site with --ipf.")
     args = ap.parse_args()
 
     conn = connect_ncats()
@@ -69,15 +75,23 @@ def main():
 
     first_idx = month_index(args.start_year, 1)
     today = date.today()
-    last_idx = month_index(today.year, today.month)
+    end_year, end_month = (map(int, args.end.split("-")) if args.end
+                           else (today.year, today.month))
+    last_idx = month_index(end_year, end_month)
 
     sites = conn.execute(
         "SELECT ipf_code, hub_name FROM sites WHERE is_ctsa_hub=1 ORDER BY hub_name"
     ).fetchall()
+    if args.ipf:
+        sites = [s for s in sites if s[0] in args.ipf]
     log.info("Computing rolling rates for %d sites, %s-01 to %s",
-             len(sites), args.start_year, f"{today.year}-{today.month:02d}")
+             len(sites), args.start_year, f"{end_year}-{end_month:02d}")
 
-    conn.execute("DELETE FROM site_month_snapshots")
+    if args.ipf:
+        conn.executemany("DELETE FROM site_month_snapshots WHERE ipf_code=?",
+                         [(ipf,) for ipf, _ in sites])
+    else:
+        conn.execute("DELETE FROM site_month_snapshots")
     total_rows = 0
 
     for n, (ipf, hub) in enumerate(sites, 1):
