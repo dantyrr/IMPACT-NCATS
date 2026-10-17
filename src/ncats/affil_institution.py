@@ -21,7 +21,7 @@ import re
 from dataclasses import dataclass
 
 from src.ncats.affil_location import Location, NOWHERE, split_parts, parse_part
-from src.ncats.hub_matching import normalize, is_institution_part, is_subunit
+from src.ncats.hub_matching import normalize, institution_segments
 
 TYPES = ("university", "hospital", "government", "industry", "other")
 
@@ -109,8 +109,10 @@ _GENERIC = re.compile(r"^(?:school|college|faculty|department|division|institute
 _ADDRESS = re.compile(r"^\d+[a-z]? |(?<![a-z0-9])\d{5,}(?![a-z0-9])|(?<![a-z])(?:street|avenue|ave|"
                       r"road|boulevard|blvd|drive|parkway|suite|room|floor|building|bldg|p o box|"
                       r"po box)(?![a-z])")
-_SUBUNIT_MORE = re.compile(r"^(?:from (?:the )?)?(?:departments|depts|divisions|sections|programs|"
-                           r"units|services|branch|office of|core|laborator(?:y|ies) of|and)\b")
+# Departments and the like, on normalized text. hub_matching's own test covers
+# the singular forms; this adds plurals, "and ..." continuations and a few more.
+_SUBUNIT = re.compile(r"^(?:from (?:the )?)?(?:departments?|depts?|divisions?|sections?|programs?|"
+                      r"units?|services?|branch|office of|core|laborator(?:y|ies) of|labs? of|and)\b")
 # Names that contain commas, rejoined before splitting into segments.
 _COMMA_NAMES = [(re.compile(r"National Heart,\s*Lung,?\s*and Blood Institute", re.I),
                  "National Heart Lung and Blood Institute"),
@@ -217,10 +219,9 @@ def institution_key(name, next_segment=None):
 
 def _candidate(seg):
     norm = normalize(seg)
-    if (not norm or norm in _CITY_NAMES or _ADDRESS.search(norm) or is_subunit(seg)
-            or _SUBUNIT_MORE.match(norm)):
+    if not norm or norm in _CITY_NAMES or _ADDRESS.search(norm) or _SUBUNIT.match(norm):
         return False
-    return is_institution_part(seg) or bool(_EXTRA_RX.search(norm))
+    return bool(institution_segments(seg)) or bool(_EXTRA_RX.search(norm))
 
 
 def _merge_suffixes(head):
@@ -249,7 +250,7 @@ def institution(head, located=False):
         seg, norm = head[j], normalize(head[j])
         if _ADDRESS.search(norm):
             continue                    # skip a street address between institution and city
-        if norm and not is_subunit(seg) and not _SUBUNIT_MORE.match(norm) \
+        if norm and not _SUBUNIT.match(norm) \
                 and len(norm.split()) <= 8 and seg.strip()[:1].isupper():
             cands = [(j, seg)]
         break

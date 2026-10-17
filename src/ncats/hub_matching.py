@@ -134,20 +134,13 @@ _SUBUNIT = re.compile(r"^(department|dept|division|section|program|unit|service|
                       re.IGNORECASE)
 
 
-def is_subunit(part):
-    """Whether a segment names a department, division or similar unit."""
-    return bool(_SUBUNIT.match(part.strip()))
-
-
-def is_institution_part(part):
-    """Whether one comma-separated segment names an institution rather than
-    a department or an address."""
-    part = part.strip()
-    return bool(part) and bool(_INSTITUTION_WORD.search(part)) and not is_subunit(part)
-
-
 def institution_segments(affiliation):
     """Comma- or semicolon-separated parts of a string that name an
     institution rather than a department or an address. Used to discover
     aliases, not to match."""
-    return [normalize(p) for p in re.split(r"[;,]", affiliation or "") if is_institution_part(p)]
+    out = []
+    for part in re.split(r"[;,]", affiliation or ""):
+        part = part.strip()
+        if part and _INSTITUTION_WORD.search(part) and not _SUBUNIT.match(part):
+            out.append(normalize(part))
+    return out

@@ -370,7 +370,7 @@ def parse_part(part, whole=None):
     head = segs[:tail] + ([" ".join(left)] if left else [])
     city = None
     if country == USA and state and head and not in_name:
-        city = re.sub(r"\s*\b\d{5}(?:-\d{4})?\b", "", head[-1]).strip(" .") or None
+        city = " ".join(re.sub(r"\b\d{5}(?:-\d{4})?\b", " ", head[-1]).split()).strip(" .") or None
     return Location(country, state, zip_, "named" if named else "inferred", city), head
 
 

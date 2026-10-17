@@ -132,6 +132,7 @@ def test_clean_drops_emails_and_asides():
     ("Washington University, St. Louis, MO, USA", "St. Louis"),
     ("Bethesda 20892, USA", "Bethesda"),
     ("NIH, Bethesda, MD20892", "Bethesda"),
+    ("Pfizer, Long\nIsland City, NY 11101", "Long Island City"),          # whitespace as in the source
     ("Center for Genome Sciences, Fort Detrick, Frederick, Maryland 21702, USA.", "Frederick"),
     ("Department of Psychology, University of Oregon, United States.", None),   # state in a name
     ("Carnegie Mellon University, USA.", None),                                 # no state
