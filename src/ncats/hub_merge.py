@@ -11,6 +11,9 @@ SQLite resolves an unqualified table name to TEMP before MAIN, so every
 exporter's SQL runs unchanged and nothing in ncats.db is modified. Call it
 only on a connection that exports: writes through that connection to those
 three tables land in the TEMP copies and are dropped on close.
+
+pub_metrics.n_linked_hubs still counts sites, so a paper linked to both
+Dartmouth grantees would count as two hubs. None is, as of October 2026.
 """
 
 import logging

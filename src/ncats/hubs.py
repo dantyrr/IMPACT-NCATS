@@ -9,7 +9,9 @@ A hub award is a UL1, or a UM1 that is not one of the New Approach Methods
 (NAMs) centers NCATS first awarded in FY2026 (MIT, Brigham and Women's, Texas
 A&M AgriLife, Cincinnati Children's). grants.is_hub_award and sites.is_ctsa_hub
 use the same rule. The CSV differs from sites.is_ctsa_hub only in grouping: one
-hub can span several sites (Dartmouth College and Dartmouth-Hitchcock).
+hub can span several sites (Dartmouth College and Dartmouth-Hitchcock). The
+dashboard export shows such a hub as one site (hub_merge.py); ncats.db keeps
+the sites apart.
 """
 
 import csv

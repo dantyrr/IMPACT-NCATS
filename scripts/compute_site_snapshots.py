@@ -15,6 +15,7 @@ from datetime import date
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.ncats.schema import connect_ncats, connect_impact_readonly
+from src.ncats.hub_merge import merge_hub_sites
 from src.ncats.site_snapshots import month_index, compute_site_series
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -71,6 +72,7 @@ def main():
     args = ap.parse_args()
 
     conn = connect_ncats()
+    merge_hub_sites(conn)   # one dashboard site per hub; ncats.db untouched
     impact = connect_impact_readonly()
 
     first_idx = month_index(args.start_year, 1)

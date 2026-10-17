@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.ncats.config import WEBSITE_DATA_DIR
 from src.ncats.schema import connect_ncats
+from src.ncats.hub_merge import merge_hub_sites
 from src.ncats.json_exporter import (
     export_index, export_sites, export_investigators, export_publications,
 )
@@ -15,6 +16,7 @@ log = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     conn = connect_ncats()
+    merge_hub_sites(conn)   # one dashboard site per hub; ncats.db untouched
     log.info("index.json -> %s", export_index(conn, WEBSITE_DATA_DIR))
     log.info("site files: %d", export_sites(conn, WEBSITE_DATA_DIR))
     log.info("publications.json -> %s", export_publications(conn, WEBSITE_DATA_DIR))
