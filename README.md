@@ -73,6 +73,17 @@ python scripts/export_author_affiliations.py      # exports/author_affiliations.
 PubMed recorded only the first author's affiliation before about 2014, so papers from
 2012–2013 mostly lack co-author affiliations. That gap is in the source data, not the fetch.
 
+Collaboration between CTSA hubs uses only those PubMed affiliations, NIH RePORTER grant links,
+and two curated files: [`data/ctsa_hubs.csv`](data/ctsa_hubs.csv) (the 67 hubs) and
+[`data/hub_aliases.csv`](data/hub_aliases.csv) (the names that identify each hub's authors):
+
+```bash
+python scripts/match_hub_affiliations.py      # authors -> hubs, from data/hub_aliases.csv
+python scripts/build_hub_network.py           # co-authorship and co-funding networks
+python scripts/export_hub_matching.py         # hub assignments and matching checks
+python scripts/suggest_hub_aliases.py         # names to consider adding to the alias list
+```
+
 Every script is idempotent — re-running never duplicates rows or double-counts dollars.
 
 ## Architecture
