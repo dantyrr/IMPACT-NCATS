@@ -97,6 +97,40 @@ CREATE TABLE IF NOT EXISTS pub_text (
     fetched     INTEGER NOT NULL DEFAULT 0
 );
 
+-- Every author of every linked paper, from PubMed EFetch. impact.db keeps only
+-- first and last author, which cannot show collaboration between hubs.
+-- position is 1-based byline order among valid authors (ValidYN="N" entries
+-- are PubMed's record of a corrected name and are dropped).
+CREATE TABLE IF NOT EXISTS pub_authors (
+    pmid            INTEGER NOT NULL,
+    position        INTEGER NOT NULL,
+    last_name       TEXT,
+    fore_name       TEXT,
+    initials        TEXT,
+    collective_name TEXT,      -- set for group authors, which have no name parts
+    orcid           TEXT,      -- bare 0000-0000-0000-000X form
+    PRIMARY KEY (pmid, position)
+);
+
+-- Affiliation strings exactly as PubMed records them, one row per
+-- AffiliationInfo element. Parsing into institutions is a separate step.
+CREATE TABLE IF NOT EXISTS pub_author_affils (
+    pmid        INTEGER NOT NULL,
+    position    INTEGER NOT NULL,
+    affil_order INTEGER NOT NULL,
+    affiliation TEXT NOT NULL,
+    PRIMARY KEY (pmid, position, affil_order)
+);
+
+-- One row per PMID the author fetch has processed, so --resume can skip papers
+-- that have no authors or that PubMed did not return.
+CREATE TABLE IF NOT EXISTS pub_author_fetch (
+    pmid      INTEGER PRIMARY KEY,
+    returned  INTEGER NOT NULL,   -- 1 if EFetch returned a record for this PMID
+    n_authors INTEGER NOT NULL DEFAULT 0,
+    pub_year  INTEGER             -- PubMed's year; fallback where pub_metrics has none
+);
+
 -- Theme assignment from embedding + clustering.
 CREATE TABLE IF NOT EXISTS pub_themes (
     pmid      INTEGER PRIMARY KEY,

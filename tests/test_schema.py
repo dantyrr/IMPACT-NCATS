@@ -5,6 +5,7 @@ from src.ncats.schema import create_schema
 EXPECTED_TABLES = {
     "sites", "grants", "grant_years", "investigators",
     "grant_pis", "grant_pubs", "pub_metrics", "site_metrics",
+    "pub_authors", "pub_author_affils", "pub_author_fetch",
 }
 
 
@@ -43,6 +44,12 @@ def test_grant_pubs_rejects_duplicate_link(conn):
         conn.execute(
             "INSERT INTO grant_pubs (core_project_num, pmid) VALUES ('UL1TR000001', 42)"
         )
+
+
+def test_author_position_is_unique_per_paper(conn):
+    conn.execute("INSERT INTO pub_authors (pmid, position, last_name) VALUES (1, 1, 'A')")
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute("INSERT INTO pub_authors (pmid, position, last_name) VALUES (1, 1, 'B')")
 
 
 def test_site_is_keyed_on_ipf_code(conn):
