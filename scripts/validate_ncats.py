@@ -5,6 +5,7 @@ import sys, os, logging
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.ncats.schema import connect_ncats
+from src.ncats.hub_merge import merge_hub_sites
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger(__name__)
@@ -64,6 +65,7 @@ def run_checks(conn) -> list[tuple[str, bool, str]]:
 
 if __name__ == "__main__":
     conn = connect_ncats()
+    merge_hub_sites(conn)   # one dashboard site per hub; ncats.db untouched
     results = run_checks(conn)
     failed = 0
     for name, passed, detail in results:
