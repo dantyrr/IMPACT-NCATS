@@ -62,6 +62,17 @@ python scripts/validate_ncats.py         # integrity checks
 python scripts/upload_to_r2.py           # sync to Cloudflare R2
 ```
 
+For collaboration analysis, the full byline of every linked paper (all authors, ORCIDs,
+and affiliation strings as written) comes from PubMed EFetch:
+
+```bash
+python scripts/fetch_authors.py --resume          # pub_authors, pub_author_affils (~25 min)
+python scripts/export_author_affiliations.py      # exports/author_affiliations.csv + coverage by year
+```
+
+PubMed recorded only the first author's affiliation before about 2014, so papers from
+2012–2013 mostly lack co-author affiliations. That gap is in the source data, not the fetch.
+
 Every script is idempotent — re-running never duplicates rows or double-counts dollars.
 
 ## Architecture
