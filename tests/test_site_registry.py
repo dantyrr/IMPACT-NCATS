@@ -39,6 +39,32 @@ def test_only_hub_sites_are_flagged(conn):
     assert flags[2] == 0
 
 
+def test_site_with_only_a_nams_um1_is_not_a_hub(conn):
+    """A NAMs UM1 never makes a site a hub, even if ingest stored it as one.
+
+    Before the NAMs exclusion every UM1 was stored with is_hub_award = 1, so
+    mark_ctsa_hubs must recompute the flag rather than trust the stored value.
+    """
+    conn.execute("INSERT INTO sites (ipf_code, org_name) VALUES (5, 'MIT')")
+    conn.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code, is_hub_award) "
+                 "VALUES ('UM1TR006029',5,'UM1',1)")
+    # UCLA also holds a NAMs UM1; it stays a hub through its UL1s.
+    conn.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code, is_hub_award) "
+                 "VALUES ('UM1TR006031',1,'UM1',1)")
+    # A hub UM1 at a site with no UL1 still counts.
+    conn.execute("INSERT INTO sites (ipf_code, org_name) VALUES (6, 'UNIVERSITY OF MICHIGAN')")
+    conn.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code, is_hub_award) "
+                 "VALUES ('UM1TR004404',6,'UM1',0)")
+
+    assert mark_ctsa_hubs(conn) == 2
+    flags = dict(conn.execute("SELECT ipf_code, is_ctsa_hub FROM sites"))
+    assert flags == {1: 1, 2: 0, 5: 0, 6: 1}
+    awards = dict(conn.execute("SELECT core_project_num, is_hub_award FROM grants"))
+    assert awards["UM1TR006029"] == 0
+    assert awards["UM1TR006031"] == 0
+    assert awards["UM1TR004404"] == 1
+
+
 def test_renewal_chain_collapses_to_one_site(conn):
     mark_ctsa_hubs(conn)
     rows = conn.execute("SELECT COUNT(*) FROM sites WHERE is_ctsa_hub=1").fetchone()[0]

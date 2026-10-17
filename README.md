@@ -11,7 +11,7 @@ Translational Sciences, and what was published as a result.
 
 | | |
 |---|---|
-| CTSA sites | 72 |
+| CTSA sites | 68 |
 | NCATS grants | 1,680 · $9.1B awarded |
 | Linked publications | 148,977 |
 | Matched to journal/citation data | 143,825 (96.5%) |

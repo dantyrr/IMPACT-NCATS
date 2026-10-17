@@ -40,7 +40,6 @@ ICITE_MAX_BATCH = 200
 # --- Scope ---
 AGENCY = "NCATS"
 FIRST_FISCAL_YEAR = 2012
-HUB_ACTIVITY_CODES = ["UL1", "UM1"]
 
 # Non-grant and one-off funding instruments, excluded by scope decision.
 # OT2/OT3 are Other Transactions and N-series are R&D contracts - neither is a

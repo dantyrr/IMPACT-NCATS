@@ -3,7 +3,8 @@
 import logging
 import sqlite3
 
-from src.ncats.config import HUB_ACTIVITY_CODES, EXCLUDED_ACTIVITY_CODES
+from src.ncats.config import EXCLUDED_ACTIVITY_CODES
+from src.ncats.hubs import is_ctsa_hub_award
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +83,13 @@ def ingest_projects(conn: sqlite3.Connection, records: list[dict]) -> dict:
         counts["sites"] += cur.rowcount
 
         activity = rec.get("activity_code")
-        is_hub = 1 if activity in HUB_ACTIVITY_CODES else 0
+        is_hub = int(is_ctsa_hub_award(activity, core))
         cur = conn.execute(
             "INSERT INTO grants (core_project_num, ipf_code, activity_code, title, is_hub_award) "
             "VALUES (?,?,?,?,?) "
             "ON CONFLICT(core_project_num) DO UPDATE SET "
-            "  ipf_code=excluded.ipf_code, activity_code=excluded.activity_code",
+            "  ipf_code=excluded.ipf_code, activity_code=excluded.activity_code, "
+            "  is_hub_award=excluded.is_hub_award",
             (core, ipf, activity, rec.get("project_title"), is_hub),
         )
         counts["grants"] += cur.rowcount
