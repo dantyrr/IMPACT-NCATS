@@ -5,6 +5,8 @@ import re
 import sqlite3
 from pathlib import Path
 
+from src.ncats.hubs import is_ctsa_hub_award
+
 
 def slugify(name: str) -> str:
     """Lowercase kebab-case slug, matching IMPACT journal-slug conventions.
@@ -56,9 +58,16 @@ def canonicalize_ipf_codes(conn: sqlite3.Connection, aliases: dict) -> int:
 def mark_ctsa_hubs(conn: sqlite3.Connection) -> int:
     """Flag every site holding a hub award, and set its slug and funded span.
 
-    Because identity is the IPF code, a site with several renewal core
-    projects collapses into exactly one hub row.
+    A hub award is a UL1, or a UM1 other than the NAMs centers (see
+    hubs.is_ctsa_hub_award). Because identity is the IPF code, a site with
+    several renewal core projects collapses into exactly one hub row.
     """
+    # Recompute the per-grant flag rather than trust the stored one: grants
+    # ingested before the NAMs exclusion have every UM1 marked as a hub award.
+    conn.executemany(
+        "UPDATE grants SET is_hub_award=? WHERE core_project_num=?",
+        [(int(is_ctsa_hub_award(code, core)), core) for core, code in conn.execute(
+            "SELECT core_project_num, activity_code FROM grants").fetchall()])
     conn.execute("UPDATE sites SET is_ctsa_hub = 0")
     conn.execute(
         "UPDATE sites SET is_ctsa_hub = 1 "

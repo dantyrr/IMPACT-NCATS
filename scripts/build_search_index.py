@@ -37,6 +37,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.ncats.schema import connect_ncats
+from src.ncats.hub_merge import merge_hub_sites
 from src.ncats.config import WEBSITE_DATA_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -100,6 +101,7 @@ def write_shards(postings, subdir):
 
 def main():
     conn = connect_ncats()
+    merge_hub_sites(conn)   # one dashboard site per hub; ncats.db untouched
     OUT.mkdir(parents=True, exist_ok=True)
 
     log.info("Loading corpus...")

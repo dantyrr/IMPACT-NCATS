@@ -43,19 +43,6 @@
     ]
   },
   {
-    "ipf_code": 1080401,
-    "org_name": "BRIGHAM AND WOMEN'S HOSPITAL",
-    "slug": "brigham-and-womens-hospital",
-    "hub_name": "Brigham And Women'S Hospital",
-    "city": "BOSTON",
-    "state": "MA",
-    "first_funded_year": 2013,
-    "last_funded_year": 2026,
-    "core_project_nums": [
-      "UM1TR006047"
-    ]
-  },
-  {
     "ipf_code": 218601,
     "org_name": "CASE WESTERN RESERVE UNIVERSITY",
     "slug": "case-western-reserve-university",
@@ -82,19 +69,6 @@
     "core_project_nums": [
       "UL1TR000075",
       "UL1TR001876"
-    ]
-  },
-  {
-    "ipf_code": 615001,
-    "org_name": "CINCINNATI CHILDRENS HOSP MED CTR",
-    "slug": "cincinnati-childrens-hosp-med-ctr",
-    "hub_name": "Cincinnati Childrens Hosp Med Ctr",
-    "city": "CINCINNATI",
-    "state": "OH",
-    "first_funded_year": 2012,
-    "last_funded_year": 2026,
-    "core_project_nums": [
-      "UM1TR006070"
     ]
   },
   {
@@ -243,21 +217,7 @@
       "UL1TR000424",
       "UL1TR001079",
       "UL1TR003098",
-      "UM1TR004926",
-      "UM1TR006046"
-    ]
-  },
-  {
-    "ipf_code": 4911501,
-    "org_name": "MASSACHUSETTS INSTITUTE OF TECHNOLOGY",
-    "slug": "massachusetts-institute-of-technology",
-    "hub_name": "Massachusetts Institute Of Technology",
-    "city": "CAMBRIDGE",
-    "state": "MA",
-    "first_funded_year": 2012,
-    "last_funded_year": 2026,
-    "core_project_nums": [
-      "UM1TR006029"
+      "UM1TR004926"
     ]
   },
   {
@@ -435,8 +395,7 @@
       "UL1TR000093",
       "UL1TR001085",
       "UL1TR003142",
-      "UM1TR004921",
-      "UM1TR006031"
+      "UM1TR004921"
     ]
   },
   {
@@ -451,19 +410,6 @@
     "core_project_nums": [
       "UL1TR001412",
       "UM1TR005296"
-    ]
-  },
-  {
-    "ipf_code": 8266920,
-    "org_name": "TEXAS A&M AGRILIFE RESEARCH",
-    "slug": "texas-a-m-agrilife-research",
-    "hub_name": "Texas A&M Agrilife Research",
-    "city": "College Station",
-    "state": "TX",
-    "first_funded_year": 2026,
-    "last_funded_year": 2026,
-    "core_project_nums": [
-      "UM1TR006055"
     ]
   },
   {

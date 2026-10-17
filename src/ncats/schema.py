@@ -97,6 +97,65 @@ CREATE TABLE IF NOT EXISTS pub_text (
     fetched     INTEGER NOT NULL DEFAULT 0
 );
 
+-- Every author of every linked paper, from PubMed EFetch. impact.db keeps only
+-- first and last author, which cannot show collaboration between hubs.
+-- position is 1-based byline order among valid authors (ValidYN="N" entries
+-- are PubMed's record of a corrected name and are dropped).
+CREATE TABLE IF NOT EXISTS pub_authors (
+    pmid            INTEGER NOT NULL,
+    position        INTEGER NOT NULL,
+    last_name       TEXT,
+    fore_name       TEXT,
+    initials        TEXT,
+    collective_name TEXT,      -- set for group authors, which have no name parts
+    orcid           TEXT,      -- bare 0000-0000-0000-000X form
+    PRIMARY KEY (pmid, position)
+);
+
+-- Affiliation strings exactly as PubMed records them, one row per
+-- AffiliationInfo element. Parsing into institutions is a separate step.
+CREATE TABLE IF NOT EXISTS pub_author_affils (
+    pmid        INTEGER NOT NULL,
+    position    INTEGER NOT NULL,
+    affil_order INTEGER NOT NULL,
+    affiliation TEXT NOT NULL,
+    PRIMARY KEY (pmid, position, affil_order)
+);
+
+-- One row per PMID the author fetch has processed, so --resume can skip papers
+-- that have no authors or that PubMed did not return.
+CREATE TABLE IF NOT EXISTS pub_author_fetch (
+    pmid      INTEGER PRIMARY KEY,
+    returned  INTEGER NOT NULL,   -- 1 if EFetch returned a record for this PMID
+    n_authors INTEGER NOT NULL DEFAULT 0,
+    pub_year  INTEGER             -- PubMed's year; fallback where pub_metrics has none
+);
+
+-- CTSA hub of each author, matched from PubMed affiliation strings against the
+-- curated names in data/hub_aliases.csv (scripts/match_hub_affiliations.py).
+-- hub_id is the canonical sites.ipf_code from data/ctsa_hubs.csv. tier is the
+-- strongest match for that author: core (the hub's own institution) beats
+-- partner (an affiliated hospital or institute).
+CREATE TABLE IF NOT EXISTS pub_author_hubs (
+    pmid     INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    hub_id   INTEGER NOT NULL,
+    tier     TEXT NOT NULL,
+    PRIMARY KEY (pmid, position, hub_id)
+);
+
+-- Paper-level roll-up: which hubs a paper's authors belong to.
+CREATE TABLE IF NOT EXISTS pub_hubs (
+    pmid      INTEGER NOT NULL,
+    hub_id    INTEGER NOT NULL,
+    tier      TEXT NOT NULL,      -- strongest tier among that hub's authors
+    n_authors INTEGER NOT NULL,   -- authors matched to the hub at any tier
+    n_core    INTEGER NOT NULL,   -- authors matched at core tier
+    PRIMARY KEY (pmid, hub_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pub_hubs_hub ON pub_hubs(hub_id);
+
 -- Theme assignment from embedding + clustering.
 CREATE TABLE IF NOT EXISTS pub_themes (
     pmid      INTEGER PRIMARY KEY,

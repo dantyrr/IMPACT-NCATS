@@ -49,8 +49,23 @@ new IPF code. Albert Einstein College of Medicine, for instance, holds three IPF
 2012–2026. These are merged through the curated `data/ipf_aliases.json`. Any addition to that
 file should be verified by hand — same institution, contiguous funding, same city and state.
 
+One hub has changed grantee organization: Dartmouth College held the UL1 (FY2013–2017) and
+Dartmouth-Hitchcock holds the UM1 (FY2024–). The curated hub list, `data/ctsa_hubs.csv`, treats
+them as one hub, and the dashboard shows them as one site, "Dartmouth". The database keeps the
+two organizations apart, so the merge is applied when the dashboard data is exported
+(`src/ncats/hub_merge.py`). Its metrics and rolling citation rates are computed over both
+organizations' papers together, not averaged.
+
+A site is a CTSA hub if it has held a hub award: a UL1, or a UM1 under the CTSA program.
+NCATS also uses the UM1 mechanism for the New Approach Methods (NAMs) centers first funded in
+FY2026. Titles cannot tell these apart from hub UM1s (Michigan's hub UM1 is titled only
+"MICHR"), so the six NAMs awards are listed by core project number in `src/ncats/hubs.py`.
+MIT, Brigham and Women's Hospital, Texas A&M AgriLife Research and Cincinnati Children's hold
+only a NAMs UM1 and are not hubs; Stanford and Johns Hopkins hold one too but are hubs through
+their UL1.
+
 Every NCATS award at a hub's IPF rolls up to that site. Awards at organizations that never
-held a UL1/UM1 are retained but flagged `is_ctsa_hub = 0`, so NCATS-wide questions remain
+held a hub award are retained but flagged `is_ctsa_hub = 0`, so NCATS-wide questions remain
 answerable.
 
 ## Limitations

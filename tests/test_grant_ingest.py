@@ -73,6 +73,25 @@ def test_hub_awards_are_flagged(conn):
     assert flags["R01TR009999"] == 0
 
 
+def test_nams_um1_is_not_a_hub_award(conn):
+    """NCATS also uses UM1 for the FY2026 NAMs centers, which are not hubs."""
+    ingest_projects(conn, [
+        _record(core="UM1TR004404", act="UM1"),                          # Michigan hub
+        _record(core="UM1TR006029", act="UM1", ipf=4911501, org="MIT"),  # NAMs center
+    ])
+    flags = dict(conn.execute(
+        "SELECT core_project_num, is_hub_award FROM grants"))
+    assert flags == {"UM1TR004404": 1, "UM1TR006029": 0}
+
+
+def test_reingest_corrects_a_stale_hub_flag(conn):
+    conn.execute("INSERT INTO sites (ipf_code, org_name) VALUES (4911501, 'MIT')")
+    conn.execute("INSERT INTO grants (core_project_num, ipf_code, activity_code, is_hub_award) "
+                 "VALUES ('UM1TR006029', 4911501, 'UM1', 1)")
+    ingest_projects(conn, [_record(core="UM1TR006029", act="UM1", ipf=4911501, org="MIT")])
+    assert conn.execute("SELECT is_hub_award FROM grants").fetchone()[0] == 0
+
+
 def test_record_with_no_ipf_code_is_skipped(conn):
     bad = _record()
     bad["organization"]["org_ipf_code"] = None
