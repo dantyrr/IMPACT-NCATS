@@ -2,11 +2,14 @@
 """Measure each CTSA hub's collaboration with institutions that are not hubs.
 
 A non-hub co-author is an author with a PubMed affiliation and no row in
-pub_author_hubs. Their place (country, US state, ZIP) and a rough institution
-name and type come from the affiliation text alone (affil_location.py,
-affil_institution.py); no outside registry or gazetteer is used. A hub's
-papers are those in pub_hubs (any tier), from --from-year on: before 2014
-PubMed recorded only the first author's affiliation.
+pub_author_hubs. Their place (country, US state, ZIP, city) and a rough
+institution name and type come from the affiliation text alone
+(affil_location.py, affil_institution.py); no outside institution registry
+is used. US cities and ZIPs get a map point from the Census Bureau Gazetteer
+(gazetteer.py), which also places each hub at its city's center, giving the
+distance from a hub to its non-hub co-authors. A hub's papers are those in
+pub_hubs (any tier), from --from-year on: before 2014 PubMed recorded only
+the first author's affiliation.
 
 Two kinds of non-hub author are set aside:
   - authors whose affiliations name nothing ("Department of Medicine."):
@@ -24,14 +27,16 @@ Outputs (in --out-dir):
   hub_outreach_summary.csv          one row per hub
   hub_outreach_by_year.csv          hub x year
   hub_nonhub_states.csv             hub x US state (for a map), + _by_year
+  hub_nonhub_cities.csv             hub x US city or ZIP point, with distance from the hub
   hub_nonhub_countries.csv          hub x country
   hub_nonhub_institutions.csv       hub x non-hub institution (network edges)
   hub_top_nonhub_institutions.csv   each hub's 25 most frequent non-hub institutions
+  hub_coordinates.csv               each hub's city center
   nonhub_institutions.csv           every non-hub institution: type, place, hubs reached
   nonhub_affiliations.csv           one row per non-hub affiliation, parsed; join to
                                     author_affiliations.csv on pmid, position, affil_order
-  location_coverage.csv             share of non-hub affiliations with a country, state, ZIP
-  location_check_sample.csv         random affiliations with blank columns for a hand check
+  location_coverage.csv             share of non-hub affiliations with a country, state, point
+  location_check_sample.csv         random affiliations with columns for a hand check
   likely_missed_hub_authors.csv     strings that match a hub once repaired
   possible_hub_names.csv            frequent non-hub US names that resemble a hub's
 
@@ -39,7 +44,7 @@ Usage:
     python scripts/build_nonhub_collaboration.py [--out-dir exports/nonhub_collaboration]
 """
 
-import sys, os, csv, re, time, random, sqlite3, argparse, logging
+import sys, os, csv, re, time, random, sqlite3, argparse, logging, statistics
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,8 +56,11 @@ from src.ncats.hubs import load_hubs
 from src.ncats.hub_matching import HubMatcher, load_aliases, normalize
 from src.ncats.affil_location import USA, STATES
 from src.ncats.affil_institution import describe, TYPES
+from src.ncats.gazetteer import Gazetteer, GAZETTEER_DIR, VINTAGE, km
 
 BIG_PAPER = 100      # authors
+LOCAL_KM = 100       # "near the hub"
+MIN_PAPERS = 5       # a state or country "reached" with at least this many papers
 TOP_N = 25
 SAMPLE_SEED = 20261017
 
@@ -120,37 +128,51 @@ class Part:
     pmid: int
     position: int
     affil_order: int
-    part: int
-    country: str | None
-    state: str | None
-    zip: str | None
-    basis: str | None
-    inst_key: str | None
-    inst_name: str | None
-    inst_type: str | None
-    missed_hub: int | None
+    part: int = 0
+    country: str | None = None
+    state: str | None = None
+    zip: str | None = None
+    basis: str | None = None
+    city: str | None = None
+    inst_key: str | None = None
+    inst_name: str | None = None
+    inst_type: str | None = None
+    missed_hub: int | None = None
+    point: object = None          # gazetteer.Point: the city's, else the ZIP's
 
     @property
     def informative(self):
         return bool(self.country or self.inst_key)
 
 
-def parse_rows(rows, matcher):
+def map_point(gaz, loc):
+    """The Gazetteer point for a US location: its city if found, else its
+    ZIP. The city comes first because authors mistype ZIPs more often than
+    cities (where both are found but over 50 km apart, the ZIP is usually wrong)."""
+    if gaz is None or loc.country != USA:
+        return None
+    return gaz.city_point(loc.city, loc.state) or gaz.zip_point(loc.zip)
+
+
+def parse_rows(rows, matcher, gaz=None):
     """[Part] for each affiliation row (a row naming nothing still gets one
     Part, empty), plus the institution label for each key: its most common
     spelling."""
-    cache, parts, spellings = {}, [], defaultdict(Counter)
+    cache, points, parts, spellings = {}, {}, [], defaultdict(Counter)
     for pmid, pos, order, aff in rows:
         hit = cache.get(aff)
         if hit is None:
             hit = cache[aff] = (describe(aff), likely_hub(aff, matcher))
         described, missed = hit
         if not described:
-            parts.append(Part(pmid, pos, order, 0, None, None, None, None, None, None, None, missed))
+            parts.append(Part(pmid, pos, order, missed_hub=missed))
         for i, d in enumerate(described):
             loc, inst = d.location, d.institution
-            parts.append(Part(pmid, pos, order, i, loc.country, loc.state, loc.zip, loc.basis,
-                              inst and inst.key, inst and inst.name, inst and inst.type, missed))
+            if loc not in points:
+                points[loc] = map_point(gaz, loc)
+            parts.append(Part(pmid, pos, order, i, loc.country, loc.state, loc.zip, loc.basis, loc.city,
+                              inst and inst.key, inst and inst.name, inst and inst.type, missed,
+                              points[loc]))
             if inst:
                 spellings[inst.key][inst.name] += 1
     labels = {k: c.most_common(1)[0][0] for k, c in spellings.items()}
@@ -176,56 +198,83 @@ def _pct(a, b):
     return round(100 * a / b, 1) if b else None
 
 
-def hub_tables(hub_papers, by_paper, unmatched, hubs, years, n_authors, labels):
-    """All hub-level tables as lists of dicts."""
-    paper_count = Counter()
+_FLAGS = ("papers", "papers_with_unmatched_author", "papers_with_nonhub_coauthor",
+          "papers_nonhub_located", "papers_nonhub_us", "papers_nonhub_international",
+          "papers_nonhub_in_state", "papers_nonhub_out_of_state", "papers_nonhub_us_mapped",
+          f"papers_nonhub_within_{LOCAL_KM}km", *[f"papers_nonhub_{t}" for t in TYPES])
+
+
+def _paper_flags(pmid, ps, unmatched, home_state, home_point):
+    """Flags for one hub on one paper, and each mapped non-hub author's
+    distance from the hub (nearest of their affiliations)."""
+    located = [p for p in ps if p.country]
+    us = [p for p in located if p.country == USA]
+    mapped = [p for p in us if p.point]
+    dist = {}
+    if home_point:
+        for p in mapped:
+            d = km(home_point, p.point)
+            dist[p.position] = min(d, dist.get(p.position, d))
+    types = {p.inst_type for p in ps if p.inst_type}
+    f = {"papers": 1,
+         "papers_with_unmatched_author": bool(unmatched.get(pmid)),
+         "papers_with_nonhub_coauthor": bool(ps),
+         "papers_nonhub_located": bool(located),
+         "papers_nonhub_us": bool(us),
+         "papers_nonhub_international": any(p.country != USA for p in located),
+         "papers_nonhub_in_state": any(p.state == home_state for p in us),
+         "papers_nonhub_out_of_state": any(p.state and p.state != home_state for p in us),
+         "papers_nonhub_us_mapped": bool(mapped),
+         f"papers_nonhub_within_{LOCAL_KM}km": any(d <= LOCAL_KM for d in dist.values()),
+         **{f"papers_nonhub_{t}": t in types for t in TYPES}}
+    return {k: int(v) for k, v in f.items()}, dist
+
+
+def hub_tables(hub_papers, by_paper, unmatched, hubs, years, n_authors, labels, hub_points=None):
+    """All hub-level tables as lists of dicts. hub_points {hub_id: Point}
+    adds distances; without it the distance columns are empty."""
+    hub_points = hub_points or {}
     flags = defaultdict(Counter)                  # hub -> flag -> papers
     by_year = defaultdict(Counter)                # (hub, year) -> flag -> papers
-    cells = {k: defaultdict(lambda: [set(), set(), set()]) for k in ("state", "country", "inst")}
+    dists = defaultdict(list)                     # hub -> km per (paper, mapped non-hub author)
+    # (hub, key) -> [pmids, (pmid, author)s, pmids of papers under BIG_PAPER authors]
+    cells = {k: defaultdict(lambda: [set(), set(), set()])
+             for k in ("state", "country", "inst", "point")}
     states_by_year = defaultdict(set)             # (hub, state, year) -> pmids
     inst_years = defaultdict(set)
+    point_of, point_state = {}, defaultdict(Counter)
 
     for pmid, hubs_on in hub_papers.items():
         year, big = years[pmid], n_authors.get(pmid, 0) >= BIG_PAPER
         ps = by_paper.get(pmid, [])
-        authors = {p.position for p in ps}
-        located = [p for p in ps if p.country]
-        us = [p for p in located if p.country == USA]
-        intl = [p for p in located if p.country != USA]
-        types = {p.inst_type for p in ps if p.inst_type}
+        keyed = {"state": [(p, p.state) for p in ps if p.country == USA],
+                 "country": [(p, p.country) for p in ps],
+                 "inst": [(p, p.inst_key) for p in ps],
+                 "point": [(p, p.point.geoid) for p in ps if p.point]}
         for hub in hubs_on:
-            home = hubs[hub]["state"]
-            f = {"papers": 1,
-                 "papers_with_unmatched_author": bool(unmatched.get(pmid)),
-                 "papers_with_nonhub_coauthor": bool(authors),
-                 "papers_nonhub_located": bool(located),
-                 "papers_nonhub_us": bool(us),
-                 "papers_nonhub_international": bool(intl),
-                 "papers_nonhub_in_state": any(p.state == home for p in us),
-                 "papers_nonhub_out_of_state": any(p.state and p.state != home for p in us),
-                 **{f"papers_nonhub_{t}": t in types for t in TYPES}}
-            paper_count[hub] += 1
-            flags[hub].update({k: int(v) for k, v in f.items()})
-            by_year[(hub, year)].update({k: int(v) for k, v in f.items()})
-            for kind, key_of, subset in (("state", lambda p: p.state, us),
-                                         ("country", lambda p: p.country, located),
-                                         ("inst", lambda p: p.inst_key, ps)):
-                for p in subset:
-                    k = key_of(p)
+            f, dist = _paper_flags(pmid, ps, unmatched, hubs[hub]["state"], hub_points.get(hub))
+            flags[hub].update(f)
+            by_year[(hub, year)].update(f)
+            dists[hub] += dist.values()
+            for kind, pairs in keyed.items():
+                for p, k in pairs:
                     if k:
                         cell = cells[kind][(hub, k)]
                         cell[0].add(pmid)
                         cell[1].add((pmid, p.position))
                         if not big:
                             cell[2].add(pmid)
-            for p in us:
-                if p.state:
-                    states_by_year[(hub, p.state, year)].add(pmid)
-            for p in ps:
-                if p.inst_key:
-                    inst_years[(hub, p.inst_key)].add(year)
+            for p, st in keyed["state"]:
+                if st:
+                    states_by_year[(hub, st, year)].add(pmid)
+            for p, k in keyed["inst"]:
+                if k:
+                    inst_years[(hub, k)].add(year)
+            for p, g in keyed["point"]:
+                point_of[g] = p.point
+                point_state[g][p.state] += 1
 
-    reach = defaultdict(lambda: defaultdict(set))   # hub -> kind -> keys (all / small papers)
+    reach = defaultdict(lambda: defaultdict(set))   # hub -> kind -> keys
     for kind in ("state", "country"):
         for (hub, k), (pm, _, small) in cells[kind].items():
             if kind == "country" and k == USA:
@@ -233,17 +282,30 @@ def hub_tables(hub_papers, by_paper, unmatched, hubs, years, n_authors, labels):
             reach[hub][kind].add(k)
             if small:
                 reach[hub][kind + "_small"].add(k)
+            if len(pm) >= MIN_PAPERS:
+                reach[hub][kind + "_min"].add(k)
 
+    lab = {k: h["label"] for k, h in hubs.items()}
+    home = {k: h["state"] for k, h in hubs.items()}
     inst_info = institution_info(cells["inst"], by_paper)
-    top = {}
-    for (hub, k), (pm, _, _) in cells["inst"].items():
-        top.setdefault(hub, []).append((len(pm), k))
+    edges = []
+    for (hub, k), (pm, au, small) in cells["inst"].items():
+        info, yrs = inst_info[k], inst_years[(hub, k)]
+        edges.append({"hub_id": hub, "hub_label": lab[hub], "institution_key": k,
+                      "institution": labels.get(k, k), "type": info["type"],
+                      "country": info["country"], "state": info["state"],
+                      "papers": len(pm), "nonhub_authors": len(au),
+                      f"papers_under_{BIG_PAPER}_authors": len(small),
+                      "first_year": min(yrs), "last_year": max(yrs)})
+    edges.sort(key=lambda e: (lab[e["hub_id"]], -e["papers"], e["institution_key"]))
+    by_hub = defaultdict(list)
+    for e in edges:
+        by_hub[e["hub_id"]].append(e)
 
+    local = f"papers_nonhub_within_{LOCAL_KM}km"
     summary = []
     for hub_id, h in sorted(hubs.items(), key=lambda kv: kv[1]["label"]):
-        f = flags[hub_id]
-        n = f["papers"]
-        best = sorted(top.get(hub_id, []), key=lambda t: (-t[0], t[1]))[:1]
+        f, n, best = flags[hub_id], flags[hub_id]["papers"], by_hub[hub_id][:1]
         summary.append({
             "hub_id": hub_id, "label": h["label"], "state": h["state"], "papers": n,
             "papers_with_unmatched_author": f["papers_with_unmatched_author"],
@@ -258,26 +320,24 @@ def hub_tables(hub_papers, by_paper, unmatched, hubs, years, n_authors, labels):
             "papers_nonhub_in_state": f["papers_nonhub_in_state"],
             "papers_nonhub_out_of_state": f["papers_nonhub_out_of_state"],
             "pct_in_state_of_us": _pct(f["papers_nonhub_in_state"], f["papers_nonhub_us"]),
+            "papers_nonhub_us_mapped": f["papers_nonhub_us_mapped"],
+            local: f[local],
+            f"pct_within_{LOCAL_KM}km_of_mapped": _pct(f[local], f["papers_nonhub_us_mapped"]),
+            "median_km_to_nonhub_us": round(statistics.median(dists[hub_id])) if dists[hub_id] else None,
             "nonhub_states": len(reach[hub_id]["state"]),
+            f"nonhub_states_{MIN_PAPERS}plus_papers": len(reach[hub_id]["state_min"]),
             "nonhub_states_under_100_authors": len(reach[hub_id]["state_small"]),
             "nonhub_countries": len(reach[hub_id]["country"]),
+            f"nonhub_countries_{MIN_PAPERS}plus_papers": len(reach[hub_id]["country_min"]),
             "nonhub_countries_under_100_authors": len(reach[hub_id]["country_small"]),
             **{f"papers_nonhub_{t}": f[f"papers_nonhub_{t}"] for t in TYPES},
-            "nonhub_institutions": len(top.get(hub_id, [])),
-            "top_nonhub_institution": labels.get(best[0][1]) if best else None,
-            "top_nonhub_institution_papers": best[0][0] if best else 0,
+            "nonhub_institutions": len(by_hub[hub_id]),
+            "top_nonhub_institution": best[0]["institution"] if best else None,
+            "top_nonhub_institution_papers": best[0]["papers"] if best else 0,
         })
 
-    yearly = [{"hub_id": hub, "label": hubs[hub]["label"], "year": year, **dict(c)}
+    yearly = [{"hub_id": hub, "label": lab[hub], "year": year, **{k: c[k] for k in _FLAGS}}
               for (hub, year), c in sorted(by_year.items())]
-    for row in yearly:
-        for t in ("papers_with_unmatched_author", "papers_with_nonhub_coauthor", "papers_nonhub_located",
-                  "papers_nonhub_us", "papers_nonhub_international", "papers_nonhub_in_state",
-                  "papers_nonhub_out_of_state", *[f"papers_nonhub_{t}" for t in TYPES]):
-            row.setdefault(t, 0)
-
-    lab = {k: h["label"] for k, h in hubs.items()}
-    home = {k: h["state"] for k, h in hubs.items()}
     states = [{"hub_id": hub, "hub_label": lab[hub], "hub_state": home[hub], "state": st,
                "state_name": STATES.get(st), "in_state": int(st == home[hub]), "papers": len(pm),
                "nonhub_authors": len(au), f"papers_under_{BIG_PAPER}_authors": len(small)}
@@ -287,41 +347,36 @@ def hub_tables(hub_papers, by_paper, unmatched, hubs, years, n_authors, labels):
     countries = [{"hub_id": hub, "hub_label": lab[hub], "country": c, "papers": len(pm),
                   "nonhub_authors": len(au), f"papers_under_{BIG_PAPER}_authors": len(small)}
                  for (hub, c), (pm, au, small) in sorted(cells["country"].items())]
-    edges = []
-    for (hub, k), (pm, au, small) in cells["inst"].items():
-        info = inst_info[k]
-        yrs = inst_years[(hub, k)]
-        edges.append({"hub_id": hub, "hub_label": lab[hub], "institution_key": k,
-                      "institution": labels.get(k, k), "type": info["type"],
-                      "country": info["country"], "state": info["state"],
-                      "papers": len(pm), "nonhub_authors": len(au),
-                      f"papers_under_{BIG_PAPER}_authors": len(small),
-                      "first_year": min(yrs), "last_year": max(yrs)})
-    edges.sort(key=lambda e: (lab[e["hub_id"]], -e["papers"], e["institution_key"]))
-    top_rows = []
-    for hub in sorted(hubs, key=lambda k: lab[k]):
-        ranked = [e for e in edges if e["hub_id"] == hub][:TOP_N]
-        top_rows += [{"rank": i + 1, **e} for i, e in enumerate(ranked)]
-    institutions = []
+    cities = []
+    for (hub, g), (pm, au, small) in cells["point"].items():
+        pt, hp = point_of[g], hub_points.get(hub)
+        cities.append({"hub_id": hub, "hub_label": lab[hub], "state": point_state[g].most_common(1)[0][0],
+                       "place": pt.name, "geoid": g, "precision": "zip" if pt.kind == "zcta" else "city",
+                       "lat": pt.lat, "lon": pt.lon,
+                       "km_from_hub": round(km(hp, pt), 1) if hp else None,
+                       "papers": len(pm), "nonhub_authors": len(au),
+                       f"papers_under_{BIG_PAPER}_authors": len(small)})
+    cities.sort(key=lambda r: (lab[r["hub_id"]], -r["papers"], r["geoid"]))
+    top_rows = [{"rank": i + 1, **e} for hub in sorted(hubs, key=lambda k: lab[k])
+                for i, e in enumerate(by_hub[hub][:TOP_N])]
     hubs_of = defaultdict(set)
     for (hub, k) in cells["inst"]:
         hubs_of[k].add(hub)
-    for k, info in inst_info.items():
-        institutions.append({"institution_key": k, "institution": labels.get(k, k), **info,
-                             "hubs_reached": len(hubs_of[k])})
-    institutions.sort(key=lambda r: (-r["papers"], r["institution_key"]))
+    institutions = sorted(({"institution_key": k, "institution": labels.get(k, k), **info,
+                            "hubs_reached": len(hubs_of[k])} for k, info in inst_info.items()),
+                          key=lambda r: (-r["papers"], r["institution_key"]))
     return dict(summary=summary, yearly=yearly, states=states, states_year=states_year,
-                countries=countries, edges=edges, top=top_rows, institutions=institutions)
+                cities=cities, countries=countries, edges=edges, top=top_rows,
+                institutions=institutions)
 
 
 def institution_info(inst_cells, by_paper):
     """{key: type, most common country and state, papers, non-hub authors}
     over hub papers."""
-    places, types = defaultdict(Counter), defaultdict(Counter)
     pmids_of = defaultdict(set)
     for (_, k), (pm, _, _) in inst_cells.items():
         pmids_of[k] |= pm
-    authors = defaultdict(set)
+    places, types, authors = defaultdict(Counter), defaultdict(Counter), defaultdict(set)
     for pmid, ps in by_paper.items():
         for p in ps:
             if p.inst_key and pmid in pmids_of.get(p.inst_key, ()):
@@ -330,7 +385,7 @@ def institution_info(inst_cells, by_paper):
                 authors[p.inst_key].add((pmid, p.position))
     out = {}
     for k, pm in pmids_of.items():
-        located = [(c, s) for (c, s), _ in places[k].most_common() if c]
+        located = [cs for cs, _ in places[k].most_common() if cs[0]]
         country, state = located[0] if located else (None, None)
         out[k] = {"type": types[k].most_common(1)[0][0], "country": country, "state": state,
                   "papers": len(pm), "nonhub_authors": len(authors[k])}
@@ -338,21 +393,24 @@ def institution_info(inst_cells, by_paper):
 
 
 def coverage(parts, years):
-    """Share of non-hub affiliation rows with a country, US state and ZIP,
-    overall and by year. A row counts once, by its last semicolon part."""
+    """Share of non-hub affiliation rows with a country, US state, ZIP and
+    map point, overall and by year. A row counts once, by its last part."""
     last = {}
     for p in parts:
         last[(p.pmid, p.position, p.affil_order)] = p
     tally = defaultdict(Counter)
     for (pmid, _, _), p in last.items():
+        us = p.country == USA
         for y in ("all", years[pmid]):
             t = tally[y]
             t["affiliations"] += 1
             t["with_country"] += bool(p.country)
             t["country_named"] += p.basis == "named"
-            t["us"] += p.country == USA
-            t["us_with_state"] += p.country == USA and bool(p.state)
-            t["us_with_zip"] += p.country == USA and bool(p.zip)
+            t["us"] += us
+            t["us_with_state"] += us and bool(p.state)
+            t["us_with_zip"] += us and bool(p.zip)
+            t["us_with_city_point"] += us and bool(p.point) and p.point.kind != "zcta"
+            t["us_with_zip_point_only"] += us and bool(p.point) and p.point.kind == "zcta"
             t["with_institution"] += bool(p.inst_key)
             t["informative"] += p.informative
             t["likely_missed_hub"] += p.missed_hub is not None
@@ -363,6 +421,7 @@ def coverage(parts, years):
                      "pct_with_country": _pct(t["with_country"], t["affiliations"]),
                      "pct_us_with_state": _pct(t["us_with_state"], t["us"]),
                      "pct_us_with_zip": _pct(t["us_with_zip"], t["us"]),
+                     "pct_us_with_point": _pct(t["us_with_city_point"] + t["us_with_zip_point_only"], t["us"]),
                      "pct_with_institution": _pct(t["with_institution"], t["affiliations"]),
                      "pct_informative": _pct(t["informative"], t["affiliations"])})
     return rows
@@ -409,6 +468,8 @@ def main():
     ap.add_argument("--from-year", type=int, default=2014)
     ap.add_argument("--core-only", action="store_true",
                     help="count a hub's papers only where it has a core-tier author")
+    ap.add_argument("--gazetteer-dir", type=Path, default=GAZETTEER_DIR)
+    ap.add_argument("--gazetteer-vintage", type=int, default=VINTAGE)
     ap.add_argument("--sample", type=int, default=50)
     args = ap.parse_args()
     out = args.out_dir
@@ -422,15 +483,37 @@ def main():
     conn.close()
     log.info("%d papers from %d, %d with a hub author, %d non-hub affiliation rows",
              len(years), args.from_year, len(hub_papers), len(rows))
+    try:
+        gaz = Gazetteer.load(args.gazetteer_dir, args.gazetteer_vintage)
+    except FileNotFoundError as e:
+        log.warning("%s Writing no map points or distances.", e)
+        gaz = None
 
-    parts, labels = parse_rows(rows, matcher)
+    lab = {k: h["label"] for k, h in hubs.items()}
+    hub_points = {}
+    if gaz:
+        for k, h in hubs.items():
+            pt = gaz.city_point(h["city"], h["state"])
+            if pt is None:
+                log.warning("no Gazetteer point for hub %s (%s, %s)", h["label"], h["city"], h["state"])
+            else:
+                hub_points[k] = pt
+        _write(out / "hub_coordinates.csv",
+               [{"hub_id": k, "label": lab[k], "city": hubs[k]["city"], "state": hubs[k]["state"],
+                 "lat": pt.lat, "lon": pt.lon, "gazetteer_name": pt.name, "geoid": pt.geoid,
+                 "gazetteer_file": pt.kind, "gazetteer_vintage": args.gazetteer_vintage}
+                for k, pt in sorted(hub_points.items(), key=lambda kv: lab[kv[0]])])
+
+    parts, labels = parse_rows(rows, matcher, gaz)
     by_paper, unmatched = outreach_parts(parts)
-    t = hub_tables(hub_papers, by_paper, unmatched, hubs, years, n_authors, labels)
+    t = hub_tables(hub_papers, by_paper, unmatched, hubs, years, n_authors, labels, hub_points)
 
     _write(out / "hub_outreach_summary.csv", t["summary"])
     _write(out / "hub_outreach_by_year.csv", t["yearly"])
     _write(out / "hub_nonhub_states.csv", t["states"])
     _write(out / "hub_nonhub_states_by_year.csv", t["states_year"])
+    if gaz:
+        _write(out / "hub_nonhub_cities.csv", t["cities"])
     _write(out / "hub_nonhub_countries.csv", t["countries"])
     _write(out / "hub_nonhub_institutions.csv", t["edges"])
     _write(out / "hub_top_nonhub_institutions.csv", t["top"])
@@ -441,7 +524,10 @@ def main():
     _write(out / "nonhub_affiliations.csv",
            [{"pmid": p.pmid, "position": p.position, "affil_order": p.affil_order, "part": p.part,
              "pub_year": years[p.pmid], "country": p.country, "state": p.state, "zip": p.zip,
-             "location_basis": p.basis, "institution_key": p.inst_key,
+             "city": p.city, "location_basis": p.basis,
+             "lat": p.point.lat if p.point else None, "lon": p.point.lon if p.point else None,
+             "point": p.point.name if p.point else None,
+             "institution_key": p.inst_key,
              "institution": labels.get(p.inst_key) if p.inst_key else None,
              "institution_type": p.inst_type, "likely_missed_hub_id": p.missed_hub}
             for p in parts])
@@ -449,30 +535,30 @@ def main():
     text = {(p, pos, o): a for p, pos, o, a in rows}
     missed = Counter((text[(p.pmid, p.position, p.affil_order)], p.missed_hub)
                      for p in parts if p.missed_hub is not None and p.part == 0)
-    lab = {k: h["label"] for k, h in hubs.items()}
     _write(out / "likely_missed_hub_authors.csv",
            [{"affiliation": a, "hub_id": h, "hub_label": lab.get(h), "rows": n}
             for (a, h), n in missed.most_common()])
 
     # Hand-check sample: affiliation rows of non-hub authors on hub papers.
-    pool = sorted({(p.pmid, p.position, p.affil_order) for p in parts
-                   if p.pmid in hub_papers and p.missed_hub is None})
-    pick = random.Random(SAMPLE_SEED).sample(pool, min(args.sample, len(pool)))
     last = {}
     for p in parts:
         last[(p.pmid, p.position, p.affil_order)] = p
+    pool = sorted(k for k, p in last.items() if k[0] in hub_papers and p.missed_hub is None)
+    pick = random.Random(SAMPLE_SEED).sample(pool, min(args.sample, len(pool)))
     _write(out / "location_check_sample.csv",
            [{"pmid": k[0], "position": k[1], "affil_order": k[2], "affiliation": text[k],
              "country": last[k].country, "state": last[k].state, "zip": last[k].zip,
+             "city": last[k].city, "point": last[k].point.name if last[k].point else None,
              "institution": labels.get(last[k].inst_key) if last[k].inst_key else None,
              "institution_type": last[k].inst_type,
              "country_ok": "", "state_ok": "", "institution_ok": "", "type_ok": "", "note": ""}
             for k in sorted(pick)])
 
     s = t["summary"]
-    log.info("hubs %d | median pct with non-hub co-author %.1f | median pct international %.1f",
-             len(s), sorted(r["pct_with_nonhub_coauthor"] or 0 for r in s)[len(s) // 2],
-             sorted(r["pct_international_of_located"] or 0 for r in s)[len(s) // 2])
+    med = lambda col: statistics.median(r[col] for r in s if r[col] is not None)
+    log.info("hubs %d | median %% with non-hub co-author %.1f | %% international %.1f | "
+             "%% within %d km %.1f", len(s), med("pct_with_nonhub_coauthor"),
+             med("pct_international_of_located"), LOCAL_KM, med(f"pct_within_{LOCAL_KM}km_of_mapped"))
 
 
 if __name__ == "__main__":

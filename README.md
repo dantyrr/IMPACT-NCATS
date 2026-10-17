@@ -84,6 +84,18 @@ python scripts/export_hub_matching.py         # hub assignments and matching che
 python scripts/suggest_hub_aliases.py         # names to consider adding to the alias list
 ```
 
+Collaboration with institutions that are *not* hubs reads the country, US state, ZIP, city and a
+rough institution name and type from the same affiliation text. US cities and ZIPs get map points,
+and hubs their city centers, from the US Census Bureau Gazetteer: the 2026 place, county-subdivision
+and ZCTA files from
+`https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/`, unzipped into
+`data/gazetteer/2026/{place,cousubs,zcta}/` (gitignored). Without them, everything but the points
+and distances is still written.
+
+```bash
+python scripts/build_nonhub_collaboration.py  # per-hub outreach: places, distances, institution types
+```
+
 Every script is idempotent — re-running never duplicates rows or double-counts dollars.
 
 ## Architecture

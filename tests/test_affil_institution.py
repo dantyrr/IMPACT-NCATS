@@ -84,6 +84,8 @@ def test_describe_keeps_each_semicolon_part():
     ("Karolinska Institutet", "university"),
     ("Los Angeles County Department of Public Health", "government"),
     ("Salk Institute for Biological Studies", "other"),
+    ("Helmholtz Zentrum München-German Research Center for Environmental Health", "other"),
+    ("Intermountain Healthcare", "hospital"),
 ])
 def test_institution_type(name, kind):
     assert institution_type(name) == kind
@@ -98,3 +100,8 @@ def test_institution_key_groups_spellings():
         "centers for disease control and prevention"
     assert institution_key("University of Texas", "Austin") == "university of texas austin"
     assert institution_key("University of Cambridge", "Cambridge") == "university of cambridge"
+
+
+def test_a_trailing_and_is_not_part_of_the_name():
+    parts = describe("Baker Institute for Animal Health, and.")
+    assert parts[0].institution.name == "Baker Institute for Animal Health"

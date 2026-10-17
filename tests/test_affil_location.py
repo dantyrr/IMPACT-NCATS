@@ -63,7 +63,7 @@ from src.ncats.affil_location import (Location, NOWHERE, parse_location, parse_l
     # nothing to go on
     ("Department of Medicine.", None, None, None),
     ("Department of Medicine and.", None, None, None),
-    ("Boston University, Boston", None, None, None),           # a city alone: no gazetteer
+    ("Boston University, Boston", None, None, None),           # a city alone is ambiguous
     ("", None, None, None),
 ])
 def test_parse_location(text, country, state, zip5):
@@ -73,7 +73,7 @@ def test_parse_location(text, country, state, zip5):
 
 def test_zip_must_fit_the_state():
     # 90210 is California; written next to MD it is dropped rather than trusted.
-    assert parse_location("Somewhere, MD 90210, USA") == Location("USA", "MD", None, "named")
+    assert parse_location("Somewhere, MD 90210, USA") == Location("USA", "MD", None, "named", "Somewhere")
 
 
 def test_basis_says_whether_the_country_was_written():
@@ -100,7 +100,7 @@ def test_several_affiliations_in_one_string():
 
 def test_head_keeps_the_segments_before_the_place():
     loc, head = parse_part("Real World Solutions, IQVIA, Durham, NC, USA")
-    assert loc == Location("USA", "NC", None, "named")
+    assert loc == Location("USA", "NC", None, "named", "Durham")
     assert head == ["Real World Solutions", "IQVIA", "Durham"]
     _, head = parse_part("Dept, Acme, Durham NC")
     assert head == ["Dept", "Acme", "Durham"]           # the city shares a segment with the code
@@ -124,3 +124,18 @@ def test_clean_drops_emails_and_asides():
     assert "@" not in clean("Dept, Univ, City, USA. a.b@c.edu")
     assert "CDC" not in clean("Centers for Disease Control and Prevention (CDC), Atlanta, GA")
     assert NOWHERE.country is None
+
+
+@pytest.mark.parametrize("text, city", [
+    ("Johns Hopkins School of Medicine, Baltimore, MD 21205, USA.", "Baltimore"),
+    ("Physics Department, Brookhaven National Laboratory, Upton, NY USA.", "Upton"),
+    ("Washington University, St. Louis, MO, USA", "St. Louis"),
+    ("Bethesda 20892, USA", "Bethesda"),
+    ("NIH, Bethesda, MD20892", "Bethesda"),
+    ("Center for Genome Sciences, Fort Detrick, Frederick, Maryland 21702, USA.", "Frederick"),
+    ("Department of Psychology, University of Oregon, United States.", None),   # state in a name
+    ("Carnegie Mellon University, USA.", None),                                 # no state
+    ("University of Toronto, Toronto, ON, Canada", None),                       # US only
+])
+def test_city_is_the_segment_before_the_state(text, city):
+    assert parse_location(text).city == city

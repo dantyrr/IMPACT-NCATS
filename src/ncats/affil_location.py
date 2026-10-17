@@ -9,8 +9,11 @@ earlier in the string ("University of Washington, Seattle, WA") is not read.
 Everything is matched against lists kept in this file: country names and
 common variants, US state and territory names, USPS codes and the older AP
 abbreviations ("Calif", "Md"), and the USPS 3-digit ZIP prefix ranges, which
-check a ZIP against its state. No gazetteer, so a string that names only a
-city ("..., Baltimore") gets no location.
+check a ZIP against its state.
+
+The city is taken to be the segment before the state, unverified: a
+string that names a city without a state gets no location at all, since a
+city name alone is ambiguous (Burlington, Jackson, Columbia).
 
 A US state or ZIP code without "USA" counts as US. Puerto Rico, Guam and the
 US Virgin Islands are US with their USPS code as the state, as in NIH
@@ -197,6 +200,8 @@ class Location:
     zip: str | None = None       # 5-digit ZIP; US only, and only if it fits the state
     basis: str | None = None     # "named": the country is written; "inferred": from a
                                  # state, province or ZIP only
+    city: str | None = None      # US only: the text before the state, unverified
+                                 # (gazetteer.py checks it against Census places)
 
     @property
     def is_us(self):
@@ -359,10 +364,14 @@ def parse_part(part, whole=None):
             zip_ = None
     else:
         zip_ = None
-    if left and left[-1].lower() in ("of", "at", "for", "and", "de"):
+    in_name = bool(left) and left[-1].lower() in ("of", "at", "for", "and", "de")
+    if in_name:
         left = [segs[tail]]             # "University of Oregon": the state is part of the name
     head = segs[:tail] + ([" ".join(left)] if left else [])
-    return Location(country, state, zip_, "named" if named else "inferred"), head
+    city = None
+    if country == USA and state and head and not in_name:
+        city = re.sub(r"\s*\b\d{5}(?:-\d{4})?\b", "", head[-1]).strip(" .") or None
+    return Location(country, state, zip_, "named" if named else "inferred", city), head
 
 
 def parse_locations(text):

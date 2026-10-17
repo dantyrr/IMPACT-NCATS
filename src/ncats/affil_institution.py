@@ -88,7 +88,8 @@ _COMPANY_RX = _rx(*_COMPANY_SUFFIX, *_COMPANY)
 _GOVERNMENT_RX = _rx(*_GOVERNMENT)
 _GOVERNMENT_WEAK_RX = _rx(*_GOVERNMENT_WEAK)
 _HOSPITAL_RX = _rx(*_HOSPITAL)
-_HEALTH_END = re.compile(r"(?<!public) health(?:care)?$")   # "Jefferson Health", not "... Public Health"
+# "Jefferson Health", not "School of Public Health" or "Center for Environmental Health"
+_HEALTH_END = re.compile(r"^(?!.* (?:for|of) ).*(?<!public) health(?:care)?$")
 _UNIVERSITY_RX = _rx(*_UNIVERSITY)
 _OTHER_RX = _rx(*_OTHER_ORG)
 # Organization words hub_matching's institution test misses: companies,
@@ -226,7 +227,8 @@ def _merge_suffixes(head):
     """Put a bare "Inc." or "Ltd" segment back onto the name before it."""
     out = []
     for seg in head:
-        if out and not _CORP_TAIL.sub("", " " + normalize(seg)).strip():
+        norm = normalize(seg)
+        if out and norm != "and" and not _CORP_TAIL.sub("", " " + norm).strip():
             out[-1] = f"{out[-1]}, {seg.strip()}"
         else:
             out.append(seg)
