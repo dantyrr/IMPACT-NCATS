@@ -13,3 +13,6 @@ docs/data/investigators/
 exports/
 data/embeddings.npy
 data/embedding_pmids.npy
+
+# US Census Gazetteer files (download: see src/ncats/gazetteer.py)
+data/gazetteer
