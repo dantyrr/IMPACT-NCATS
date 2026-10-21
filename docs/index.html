@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=20">
+    <link rel="stylesheet" href="css/style.css?v=21">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 </head>
 <body>
 
@@ -20,6 +21,7 @@
         <a href="#across-sites" class="nav-link" data-section="across-sites">Across Sites</a>
         <a href="#search" class="nav-link" data-section="search">Search</a>
         <a href="#themes" class="nav-link" data-section="themes">Themes &amp; Translation</a>
+        <a href="#collaboration" class="nav-link" data-section="collaboration">Collaboration</a>
         <a href="#grants" class="nav-link" data-section="grants">Grants</a>
         <a href="#investigators" class="nav-link" data-section="investigators">Investigators</a>
         <a href="#about" class="nav-link" data-section="about">About</a>
@@ -95,6 +97,62 @@
         <div id="th-table-container"></div>
     </section>
 
+    <section id="collaboration" class="section">
+        <h2>Collaboration</h2>
+        <p class="data-note">
+            How CTSA hubs work together. Each dot is a hub; a line joins two hubs that share
+            papers, and gets thicker the more they share. Co-authorship links come from authors'
+            PubMed affiliations; co-funding links from papers that cite two hubs' CTSA awards.
+            Hover a hub or link for numbers, click a hub to see its partners, zoom with the + and − buttons (or pinch, or Ctrl/⌘ + scroll), and use the
+            controls to hide outliers or leave out large consortium papers.
+        </p>
+        <div id="co-controls"></div>
+        <p class="data-note" id="co-status"></p>
+        <p class="data-note co-summary" id="co-summary"></p>
+        <div class="co-layout">
+            <div class="co-map-wrap" id="co-map-wrap">
+                <svg id="co-map" role="img" aria-label="Map of CTSA hubs and their collaboration links"></svg>
+                <div class="co-zoom">
+                    <button class="download-btn" id="co-zoom-in" aria-label="Zoom in">+</button>
+                    <button class="download-btn" id="co-zoom-out" aria-label="Zoom out">−</button>
+                    <button class="download-btn" id="co-reset" style="display:none;">Reset</button>
+                </div>
+                <div class="co-tooltip" id="co-tooltip" role="status"></div>
+                <div id="co-legend" class="co-legend" aria-hidden="true"></div>
+            </div>
+            <aside class="co-panel" id="co-panel"></aside>
+        </div>
+        <div id="co-downloads"></div>
+
+        <h3>Strongest links</h3>
+        <div id="co-pairs"></div>
+
+        <details class="co-methods">
+            <summary>How this is built</summary>
+            <ul>
+                <li><strong>Hubs:</strong> the 67 CTSA hubs (any UL1, or a hub UM1; the FY2026
+                    New Approach Methods UM1 centers are not hubs). Dartmouth's two grantees are one hub.</li>
+                <li><strong>Co-authorship:</strong> a hub is on a paper when an author's PubMed
+                    affiliation names the hub's own institution (core), or, in the partner network,
+                    also one of its affiliated hospitals or institutes. Names come from a curated list.</li>
+                <li><strong>Co-funding:</strong> a hub is on a paper when the paper cites that hub's
+                    CTSA program award (hub award, KL2/TL1, K12/T32) in NIH RePORTER.</li>
+                <li><strong>Counting:</strong> full counting adds 1 for each paper two hubs share.
+                    Fractional counting gives each pair on a paper with <em>k</em> hubs 1/(<em>k</em>−1),
+                    so a 40-hub consortium paper weighs as much in total as a two-hub paper.</li>
+                <li><strong>Before 2014</strong> PubMed recorded only the first author's affiliation,
+                    so co-authorship starts in 2014 by default.</li>
+                <li><strong>Which papers:</strong> papers linked to any NCATS grant. A hub that
+                    acknowledges its grant on more papers (Yale most of all) contributes more papers,
+                    and so more links. Hiding a hub with "drop papers only in the data through a hidden
+                    hub's grants" removes that effect.</li>
+                <li><strong>Locations:</strong> each hub sits at its city's center point from the US Census
+                    Gazetteer; hubs in the same city are spread slightly so each is visible.
+                    State outlines: US Census Bureau 2024 cartographic boundary file.</li>
+            </ul>
+        </details>
+    </section>
+
     <section id="grants" class="section">
         <h2>Grants</h2>
         <div id="grants-controls"></div>
@@ -114,12 +172,13 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=20"></script>
-<script src="js/site-picker.js?v=20"></script>
-<script src="js/chart-manager.js?v=20"></script>
-<script src="js/metrics-def.js?v=20"></script>
-<script src="js/search-tab.js?v=20"></script>
-<script src="js/themes-tab.js?v=20"></script>
-<script src="js/app.js?v=20"></script>
+<script src="js/data-loader.js?v=21"></script>
+<script src="js/site-picker.js?v=21"></script>
+<script src="js/chart-manager.js?v=21"></script>
+<script src="js/metrics-def.js?v=21"></script>
+<script src="js/search-tab.js?v=21"></script>
+<script src="js/themes-tab.js?v=21"></script>
+<script src="js/collab-tab.js?v=21"></script>
+<script src="js/app.js?v=21"></script>
 </body>
 </html>

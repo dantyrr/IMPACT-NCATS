@@ -15,6 +15,8 @@ class NCATSApp {
         this.loader = new DataLoader();
         this.index = null;
         this.siteCache = {};
+        // Loads its own data the first time its tab is shown.
+        this.collabTab = new CollabTab(this);
         this.init();
     }
 
@@ -104,6 +106,18 @@ class NCATSApp {
         document.querySelectorAll('.nav-link').forEach(l =>
             l.classList.toggle('active', l.dataset.section === sectionId));
         history.replaceState(null, '', `#${sectionId}`);
+        if (sectionId === 'collaboration') this.collabTab.show();
+    }
+
+    /** Add a site to Site Detail and switch to it. */
+    openSite(slug) {
+        if (!this.sdPicker) return;
+        if (!this.sdPicker.selected.includes(slug)) this.sdPicker.selected.push(slug);
+        this.sdPicker._renderChips();
+        this.sdSelected = this.sdPicker.getSelected();
+        this.renderSiteDetail();
+        this.showSection('site-detail');
+        window.scrollTo(0, 0);
     }
 
     renderPortfolioSummary() {
@@ -677,13 +691,7 @@ class NCATSApp {
         container.querySelectorAll('.site-row').forEach(tr =>
             tr.addEventListener('click', (e) => {
                 e.preventDefault();
-                const slug = tr.dataset.slug;
-                if (!this.sdPicker.selected.includes(slug)) this.sdPicker.selected.push(slug);
-                this.sdPicker._renderChips();
-                this.sdSelected = this.sdPicker.getSelected();
-                this.renderSiteDetail();
-                this.showSection('site-detail');
-                window.scrollTo(0, 0);
+                this.openSite(tr.dataset.slug);
             }));
     }
 

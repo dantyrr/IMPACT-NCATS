@@ -96,6 +96,19 @@ and distances is still written.
 python scripts/build_nonhub_collaboration.py  # per-hub outreach: places, distances, institution types
 ```
 
+The dashboard's **Collaboration** tab maps the hub network and recomputes it in the browser as its
+toggles change: network type, counting, years, hidden hubs and consortium papers. Its data is one
+record per paper, exported after `export_ncats_json.py`:
+
+```bash
+python scripts/export_collaboration_json.py   # docs/data/collaboration.json (~3 MB, ~600 KB gzipped)
+```
+
+The map's state outlines are committed in `docs/geo/us-states.json`. They come from the US Census
+Bureau's 2024 cartographic boundary file (`cb_2024_us_state_20m`, KML, from
+`https://www2.census.gov/geo/tiger/GENZ2024/kml/`). To rebuild them:
+`python scripts/build_state_outlines.py path/to/cb_2024_us_state_20m.kml`.
+
 Every script is idempotent — re-running never duplicates rows or double-counts dollars.
 
 ## Architecture
