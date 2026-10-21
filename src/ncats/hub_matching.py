@@ -66,11 +66,25 @@ def load_aliases(path=ALIASES_CSV):
 
 _EMAIL = re.compile(r"\S+@\S+|electronic address:?", re.IGNORECASE)
 
+# PubMed strings often lose the break between a footnote number and a name
+# ("4Massachusetts General Hospital") or between run-together names
+# ("MedicineBeth Israel Deaconess", "UCLADepartment").
+_FUSED = [re.compile(p) for p in (r"(?<=\d)(?=[A-Za-z])",
+                                  r"(?<=[a-z])(?=[A-Z])",
+                                  r"(?<=[A-Z])(?=[A-Z][a-z])")]
+
+
+def split_fused(text):
+    for rx in _FUSED:
+        text = rx.sub(" ", text)
+    return text
+
 
 def _clean(affiliation):
-    """Normalize, dropping email addresses: a domain such as ucla.edu says where
-    the author's mailbox is, not the affiliation they listed."""
-    return normalize(_EMAIL.sub(" ", affiliation or ""))
+    """Normalize for matching. Drops email addresses (a domain such as ucla.edu
+    says where the author's mailbox is, not the affiliation they listed) and
+    splits fused words first."""
+    return normalize(split_fused(_EMAIL.sub(" ", affiliation or "")))
 
 
 def _word(w):
@@ -83,19 +97,25 @@ class HubMatcher:
         for a in aliases:
             if a.tier not in TIERS:
                 raise ValueError(f"unknown tier {a.tier!r} for alias {a.alias!r}")
-            key = normalize(a.alias)
-            entries = self._by_norm.setdefault(key, [])
-            if any(prev.hub_id == a.hub_id for prev, _ in entries):
-                continue   # same name listed twice for one hub
-            entries.append((a, [_word(w) for w in a.requires]))
-            if len(entries) > 1 and not all(prev.requires for prev, _ in entries):
-                names = " / ".join(repr(prev.alias) for prev, _ in entries)
-                raise ValueError(f"alias {names} maps to several hubs without context words "
-                                 f"to tell them apart; add `requires` or block it")
+            # Text is split at internal capitals before matching, so index a
+            # name like "Partners HealthCare" both split ("partners health
+            # care") and whole ("partners healthcare", for the lowercase spelling).
+            for key in dict.fromkeys((normalize(a.alias), normalize(split_fused(a.alias)))):
+                self._add(key, a)
         # Longest alias first, so at any position the most specific name wins
         # and a block alias swallows the shorter hub name inside it.
         alts = sorted(self._by_norm, key=len, reverse=True)
         self._rx = re.compile(r"(?<![a-z0-9])(?:" + "|".join(map(re.escape, alts)) + r")(?![a-z0-9])")
+
+    def _add(self, key, a):
+        entries = self._by_norm.setdefault(key, [])
+        if any(prev.hub_id == a.hub_id for prev, _ in entries):
+            return   # same name listed twice for one hub
+        entries.append((a, [_word(w) for w in a.requires]))
+        if len(entries) > 1 and not all(prev.requires for prev, _ in entries):
+            names = " / ".join(repr(prev.alias) for prev, _ in entries)
+            raise ValueError(f"alias {names} maps to several hubs without context words "
+                             f"to tell them apart; add `requires` or block it")
 
     def _resolve(self, key, norm):
         """The one alias entry this occurrence stands for, or None."""

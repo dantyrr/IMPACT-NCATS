@@ -58,6 +58,24 @@ def test_strongest_tier_wins_for_one_hub(m):
     assert m.match("Massachusetts General Hospital and Harvard Medical School") == {4: "core"}
 
 
+@pytest.mark.parametrize("text, expected", [
+    ("4Massachusetts General Hospital, Boston, MA", {4: "partner"}),       # footnote number
+    ("6915Harvard Medical School", {4: "core"}),
+    ("Department of MedicineHarvard Medical SchoolBoston", {4: "core"}),   # run-together words
+    ("Indiana University of PennsylvaniaDepartment of Biology", {}),       # a fused block still blocks
+    ("UCLADepartment of Medicine", {7: "core"}),                           # acronym run into a word
+])
+def test_fused_text_is_split_before_matching(m, text, expected):
+    assert m.match(text) == expected
+
+
+def test_alias_with_internal_capitals_matches_either_spelling():
+    m = HubMatcher([Alias(4, "Partners HealthCare", "partner"), Alias(4, "McLean Hospital", "partner")])
+    for text in ["Partners HealthCare, Boston", "Partners Healthcare, Boston",
+                 "McLean Hospital, Belmont, MA", "Mclean Hospital, Belmont, MA"]:
+        assert m.match(text) == {4: "partner"}, text
+
+
 def test_email_addresses_are_not_affiliations(m):
     assert m.match("Dept of Medicine, Harvard Medical School. Electronic address: jdoe@ucla.edu.") == {4: "core"}
 
