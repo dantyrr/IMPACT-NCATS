@@ -1,472 +1,472 @@
-hub_id,hub_label,alias,tier,requires,note
-1288803,University of Alabama at Birmingham,University of Alabama at Birmingham,core,,
-1288803,University of Alabama at Birmingham,"University of Alabama, Birmingham",core,,
-1288803,University of Alabama at Birmingham,UAB,core,birmingham;alabama,
-1288803,University of Alabama at Birmingham,Heersink School of Medicine,core,,
-1471106,University of Arkansas for Medical Sciences,University of Arkansas for Medical Sciences,core,,
-1471106,University of Arkansas for Medical Sciences,UAMS,core,,
-1471106,University of Arkansas for Medical Sciences,Winthrop P. Rockefeller Cancer Institute,core,,
-1471106,University of Arkansas for Medical Sciences,Arkansas Children's,partner,,verify partner membership
-7375802,Scripps Research,Scripps Research,core,,
-7375802,Scripps Research,Scripps Translational Science Institute,core,,
-7375802,Scripps Research,Scripps Health,partner,,
-7375802,Scripps Research,Scripps Clinic,partner,,
-7375802,Scripps Research,Scripps Whittier Diabetes Institute,partner,,
-8046501,Stanford University,Stanford University,core,,
-8046501,Stanford University,Stanford School of Medicine,core,,
-8046501,Stanford University,Stanford Medicine,core,,
-8046501,Stanford University,Stanford Health Care,core,,
-8046501,Stanford University,Stanford Cancer Institute,core,,
-8046501,Stanford University,Stanford Prevention Research Center,core,,
-8046501,Stanford University,Lucile Packard Children's Hospital,core,,
-8046501,Stanford University,Stanford,core,ca;california;palo alto,
-577503,UC Davis,University of California Davis,core,,
-577503,UC Davis,University of California at Davis,core,,
-577503,UC Davis,UC Davis,core,,
-577503,UC Davis,UCDavis,core,,
-577503,UC Davis,MIND Institute,core,davis;sacramento,
-577504,UC Irvine,University of California Irvine,core,,
-577504,UC Irvine,University of California at Irvine,core,,
-577504,UC Irvine,UC Irvine,core,,
-577504,UC Irvine,UCI,core,irvine;orange,
-577504,UC Irvine,Children's Hospital of Orange County,partner,,verify partner membership
-577504,UC Irvine,CHOC Children's,partner,,verify partner membership
-577505,UCLA,University of California Los Angeles,core,,
-577505,UCLA,University of California at Los Angeles,core,,
-577505,UCLA,UCLA,core,,
-577505,UCLA,David Geffen School of Medicine,core,,
-577505,UCLA,Jonsson Comprehensive Cancer Center,core,,
-577505,UCLA,Fielding School of Public Health,core,,
-577505,UCLA,Harbor-UCLA,partner,,
-577505,UCLA,Lundquist Institute,partner,,
-577505,UCLA,Los Angeles Biomedical Research Institute,partner,,
-577505,UCLA,Cedars-Sinai,partner,,
-577505,UCLA,Charles R. Drew University,partner,,
-577507,UC San Diego,University of California San Diego,core,,
-577507,UC San Diego,University of California at San Diego,core,,
-577507,UC San Diego,UC San Diego,core,,
-577507,UC San Diego,UCSD,core,,
-577507,UC San Diego,Moores Cancer Center,core,,
-577507,UC San Diego,Herbert Wertheim School of Public Health,core,,
-577507,UC San Diego,Altman Clinical and Translational Research Institute,core,,
-577507,UC San Diego,Skaggs School of Pharmacy and Pharmaceutical Sciences,core,san diego;la jolla,
-577507,UC San Diego,Rady Children's,partner,,verify partner membership
-577508,UCSF,University of California San Francisco,core,,
-577508,UCSF,University of California at San Francisco,core,,
-577508,UCSF,UCSF,core,,
-577508,UCSF,Zuckerberg San Francisco General,partner,,
-577508,UCSF,San Francisco General Hospital,partner,,
-577508,UCSF,Gladstone Institutes,partner,,verify partner membership
-577508,UCSF,Gladstone Institute,partner,,verify partner membership
-7636101,University of Southern California,University of Southern California,core,,
-7636101,University of Southern California,Keck School of Medicine,core,,
-7636101,University of Southern California,Norris Comprehensive Cancer Center,core,,
-7636101,University of Southern California,USC,core,los angeles,
-7636101,University of Southern California,Children's Hospital Los Angeles,partner,,
-7636101,University of Southern California,Saban Research Institute,partner,,
-1199905,University of Colorado Anschutz,University of Colorado,core,,
-1199905,University of Colorado Anschutz,Anschutz Medical Campus,core,,
-1199905,University of Colorado Anschutz,CU Anschutz,core,,
-1199905,University of Colorado Anschutz,University of Colorado Boulder,partner,,verify partner membership
-1199905,University of Colorado Anschutz,University of Colorado at Boulder,partner,,verify partner membership
-1199905,University of Colorado Anschutz,University of Colorado Colorado Springs,partner,,verify partner membership
-1199905,University of Colorado Anschutz,Children's Hospital Colorado,partner,,
-1199905,University of Colorado Anschutz,National Jewish Health,partner,,verify partner membership
-1199905,University of Colorado Anschutz,Denver Health,partner,,verify partner membership
-1199905,University of Colorado Anschutz,UCHealth,partner,colorado;aurora;denver;co,verify partner membership; split form 'UC Health' is also Cincinnati's health system
-1199905,University of Colorado Anschutz,Colorado State University,partner,,verify partner membership
-1199905,University of Colorado Anschutz,Colorado School of Public Health,partner,,
-9420201,Yale University,Yale University,core,,
-9420201,Yale University,Yale School of Medicine,core,,
-9420201,Yale University,Yale School of Public Health,core,,
-9420201,Yale University,Yale Cancer Center,core,,
-9420201,Yale University,Yale Child Study Center,core,,
-9420201,Yale University,Yale New Haven,partner,,
-9420201,Yale University,Yale-New Haven,partner,,
-1518602,Children's National,Children's National,core,,
-1518602,Children's National,Children's Research Institute,core,district of columbia;dc;washington dc,
-1518602,Children's National,George Washington University,partner,,
-2869001,Georgetown University,Georgetown University,core,,
-2869001,Georgetown University,Lombardi Comprehensive Cancer Center,core,,
-2869001,Georgetown University,Howard University,partner,,
-2869001,Georgetown University,MedStar,partner,,
-513806,University of Florida,University of Florida,core,,
-513806,University of Florida,UF Health,core,,
-513806,University of Florida,Shands,core,gainesville;florida,
-513806,University of Florida,Florida State University,partner,,verify partner membership
-5221250,University of Miami,University of Miami,core,,
-5221250,University of Miami,Miller School of Medicine,core,,
-5221250,University of Miami,Sylvester Comprehensive Cancer Center,core,,
-5221250,University of Miami,Bascom Palmer,core,,
-5221250,University of Miami,Jackson Memorial,partner,,
-5221250,University of Miami,Jackson Health System,partner,,
-2384501,Emory University,Emory University,core,,
-2384501,Emory University,Emory School of Medicine,core,,
-2384501,Emory University,Emory Healthcare,core,,
-2384501,Emory University,Emory Clinic,core,,
-2384501,Emory University,Winship Cancer Institute,core,,
-2384501,Emory University,Rollins School of Public Health,core,,
-2384501,Emory University,Nell Hodgson Woodruff School of Nursing,core,,
-2384501,Emory University,Morehouse School of Medicine,partner,,
-2384501,Emory University,Georgia Institute of Technology,partner,,
-2384501,Emory University,Georgia Tech,partner,,
-2384501,Emory University,University of Georgia,partner,,
-2384501,Emory University,Children's Healthcare of Atlanta,partner,,
-2384501,Emory University,Grady Memorial Hospital,partner,,
-2384501,Emory University,Grady Health System,partner,,
-3972901,University of Iowa,University of Iowa,core,,
-3972901,University of Iowa,Carver College of Medicine,core,,
-3972901,University of Iowa,Holden Comprehensive Cancer Center,core,,
-577703,University of Illinois Chicago,University of Illinois at Chicago,core,,
-577703,University of Illinois Chicago,University of Illinois Chicago,core,,
-577703,University of Illinois Chicago,University of Illinois College of Medicine,core,,
-577703,University of Illinois Chicago,University of Illinois,core,chicago,
-577703,University of Illinois Chicago,UIC,core,chicago;illinois,
-1413601,University of Chicago,University of Chicago,core,,
-1413601,University of Chicago,Pritzker School of Medicine,core,,
-1413601,University of Chicago,UChicago,core,,
-6144650,Northwestern University,Northwestern University,core,,
-6144650,Northwestern University,Feinberg School of Medicine,core,,
-6144650,Northwestern University,Northwestern Medicine,core,,
-6144650,Northwestern University,Northwestern Memorial,core,,
-6144650,Northwestern University,Robert H. Lurie Comprehensive Cancer Center,core,,
-6144650,Northwestern University,Lurie Children's,partner,,
-6144650,Northwestern University,Ann and Robert H. Lurie Children's Hospital,partner,,
-577806,Indiana University,Indiana University,core,,
-577806,Indiana University,IUPUI,core,,
-577806,Indiana University,Purdue University,partner,,
-577806,Indiana University,University of Notre Dame,partner,,
-577806,Indiana University,Regenstrief Institute,partner,,
-1484303,University of Kansas Medical Center,University of Kansas,core,,
-1484303,University of Kansas Medical Center,KUMC,core,,
-1484303,University of Kansas Medical Center,Children's Mercy,partner,,
-1484303,University of Kansas Medical Center,University of Missouri-Kansas City,partner,,
-1484303,University of Kansas Medical Center,University of Missouri Kansas City,partner,,
-2793601,University of Kentucky,University of Kentucky,core,,
-2793601,University of Kentucky,Markey Cancer Center,core,,
-2793601,University of Kentucky,Sanders-Brown Center on Aging,core,,
-850903,UMass Chan Medical School,University of Massachusetts Medical School,core,,
-850903,UMass Chan Medical School,University of Massachusetts Chan Medical School,core,,
-850903,UMass Chan Medical School,UMass Chan,core,,
-850903,UMass Chan Medical School,UMass Medical School,core,,
-850903,UMass Chan Medical School,University of Massachusetts,core,worcester,
-850903,UMass Chan Medical School,UMass Memorial,partner,,
-894901,Boston University,Boston University,core,,
-894901,Boston University,Boston Medical Center,partner,,
-3212902,Harvard (Harvard Catalyst),Harvard Medical School,core,,
-3212902,Harvard (Harvard Catalyst),Harvard University,core,,
-3212902,Harvard (Harvard Catalyst),Harvard T.H. Chan School of Public Health,core,,
-3212902,Harvard (Harvard Catalyst),Harvard Chan School,core,,
-3212902,Harvard (Harvard Catalyst),Harvard School of Public Health,core,,
-3212902,Harvard (Harvard Catalyst),Harvard School of Dental Medicine,core,,
-3212902,Harvard (Harvard Catalyst),Harvard Catalyst,core,,
-3212902,Harvard (Harvard Catalyst),Massachusetts General Hospital,partner,,
-3212902,Harvard (Harvard Catalyst),Massachusetts General,partner,,
-3212902,Harvard (Harvard Catalyst),Mass General,partner,,
-3212902,Harvard (Harvard Catalyst),Brigham and Women's,partner,,
-3212902,Harvard (Harvard Catalyst),Beth Israel Deaconess,partner,,
-3212902,Harvard (Harvard Catalyst),Boston Children's Hospital,partner,,
-3212902,Harvard (Harvard Catalyst),Children's Hospital Boston,partner,,
-3212902,Harvard (Harvard Catalyst),Dana-Farber,partner,,
-3212902,Harvard (Harvard Catalyst),McLean Hospital,partner,,
-3212902,Harvard (Harvard Catalyst),Joslin Diabetes Center,partner,,
-3212902,Harvard (Harvard Catalyst),Massachusetts Eye and Ear,partner,,
-3212902,Harvard (Harvard Catalyst),Spaulding Rehabilitation,partner,,
-3212902,Harvard (Harvard Catalyst),Hebrew SeniorLife,partner,,
-3212902,Harvard (Harvard Catalyst),Cambridge Health Alliance,partner,,
-3212902,Harvard (Harvard Catalyst),Harvard Pilgrim Health Care Institute,partner,,
-3212902,Harvard (Harvard Catalyst),Partners HealthCare,partner,boston;massachusetts;ma;cambridge;somerville,
-8422704,Tufts University,Tufts,core,,
-8422704,Tufts University,Baystate,partner,,verify partner membership
-8422704,Tufts University,Maine Medical Center,partner,,verify partner membership
-8422704,Tufts University,MaineHealth,partner,,verify partner membership
-8422704,Tufts University,Lahey,partner,,verify partner membership
-4134401,Johns Hopkins University,Johns Hopkins,core,,
-4134401,Johns Hopkins University,Kennedy Krieger Institute,partner,,
-1506502,University of Michigan,University of Michigan,core,,
-1506502,University of Michigan,Michigan Medicine,core,,
-1506502,University of Michigan,Michigan Institute for Clinical and Health Research,core,,
-1450402,University of Minnesota,University of Minnesota,core,,
-1450402,University of Minnesota,Masonic Cancer Center,core,,
-4976101,Mayo Clinic,Mayo Clinic,core,,
-4976101,Mayo Clinic,Mayo Medical School,core,,
-4976101,Mayo Clinic,Mayo Graduate School,core,,
-4976101,Mayo Clinic,Mayo Foundation,core,,
-9083901,Washington University in St. Louis,Washington University,core,,
-9083901,Washington University in St. Louis,Siteman Cancer Center,core,,
-9083901,Washington University in St. Louis,Mallinckrodt Institute of Radiology,core,,
-9083901,Washington University in St. Louis,Barnes-Jewish,partner,,
-9083901,Washington University in St. Louis,St. Louis Children's Hospital,partner,,
-9083901,Washington University in St. Louis,St Louis Children's Hospital,partner,,
-578206,UNC Chapel Hill,University of North Carolina at Chapel Hill,core,,
-578206,UNC Chapel Hill,University of North Carolina Chapel Hill,core,,
-578206,UNC Chapel Hill,University of North Carolina School of Medicine,core,,
-578206,UNC Chapel Hill,University of North Carolina,core,chapel hill,
-578206,UNC Chapel Hill,UNC Chapel Hill,core,,
-578206,UNC Chapel Hill,UNC School of Medicine,core,,
-578206,UNC Chapel Hill,UNC Health,core,,
-578206,UNC Chapel Hill,Lineberger Comprehensive Cancer Center,core,,
-578206,UNC Chapel Hill,Gillings School of Global Public Health,core,,
-578206,UNC Chapel Hill,Eshelman School of Pharmacy,core,,
-578206,UNC Chapel Hill,Cecil G. Sheps Center,core,,
-578206,UNC Chapel Hill,North Carolina State University,partner,,verify partner membership
-578206,UNC Chapel Hill,RTI International,partner,,verify partner membership
-578206,UNC Chapel Hill,North Carolina A&T,partner,,verify partner membership
-2221101,Duke University,Duke University,core,,
-2221101,Duke University,Duke Clinical Research Institute,core,,
-2221101,Duke University,Duke Health,core,,
-2221101,Duke University,Duke Cancer Institute,core,,
-2221101,Duke University,Duke Global Health Institute,core,,
-2221101,Duke University,Duke Medicine,core,,
-9021205,Wake Forest University,Wake Forest,core,,
-10051750,Dartmouth,Dartmouth College,core,,
-10051750,Dartmouth,Dartmouth-Hitchcock,core,,
-10051750,Dartmouth,Dartmouth Hitchcock,core,,
-10051750,Dartmouth,Geisel School of Medicine,core,,
-10051750,Dartmouth,Dartmouth Institute,core,,
-10051750,Dartmouth,Dartmouth Health,core,,
-10051750,Dartmouth,Dartmouth Medical School,core,,
-10051750,Dartmouth,Norris Cotton Cancer Center,core,,
-10051750,Dartmouth,Dartmouth,core,nh;new hampshire;hanover;lebanon,
-10034168,Rutgers University,Rutgers,core,,
-10034168,Rutgers University,Robert Wood Johnson Medical School,core,,
-10034168,Rutgers University,New Jersey Medical School,core,,
-10034168,Rutgers University,Cancer Institute of New Jersey,core,,
-10034168,Rutgers University,Princeton University,partner,,
-10034168,Rutgers University,New Jersey Institute of Technology,partner,,
-10034168,Rutgers University,RWJBarnabas,partner,,
-10034168,Rutgers University,Robert Wood Johnson University Hospital,partner,,
-10021612,University of New Mexico,University of New Mexico,core,,
-10021612,University of New Mexico,UNM,core,new mexico;albuquerque,
-1514803,Weill Cornell Medicine,Weill Cornell,core,,
-1514803,Weill Cornell Medicine,Weill Medical College,core,,
-1514803,Weill Cornell Medicine,Cornell University,partner,,
-1514803,Weill Cornell Medicine,Memorial Sloan Kettering,partner,,
-1514803,Weill Cornell Medicine,Memorial Sloan-Kettering,partner,,
-1514803,Weill Cornell Medicine,Hospital for Special Surgery,partner,,
-1514803,Weill Cornell Medicine,Hunter College,partner,,
-1833205,Columbia University,Columbia University,core,,
-1833205,Columbia University,Mailman School of Public Health,core,,
-1833205,Columbia University,Vagelos College of Physicians and Surgeons,core,,
-1833205,Columbia University,College of Physicians and Surgeons,core,new york;ny,
-1833205,Columbia University,Herbert Irving Comprehensive Cancer Center,core,,
-3839801,Icahn School of Medicine at Mount Sinai,Icahn,core,,
-3839801,Icahn School of Medicine at Mount Sinai,Mount Sinai School of Medicine,core,,
-3839801,Icahn School of Medicine at Mount Sinai,Mount Sinai Health System,core,,
-3839801,Icahn School of Medicine at Mount Sinai,Mount Sinai,core,new york;ny;nyc;manhattan;bronx;brooklyn;queens,
-5992614,University at Buffalo,University at Buffalo,core,,
-5992614,University at Buffalo,State University of New York at Buffalo,core,,
-5992614,University at Buffalo,State University of New York Buffalo,core,,
-5992614,University at Buffalo,SUNY Buffalo,core,,
-5992614,University at Buffalo,SUNY at Buffalo,core,,
-5992614,University at Buffalo,Jacobs School of Medicine,core,,
-5992614,University at Buffalo,Roswell Park,partner,,
-5992614,University at Buffalo,Kaleida Health,partner,,
-5992614,University at Buffalo,Erie County Medical Center,partner,,
-5998304,NYU Langone,New York University,core,,
-5998304,NYU Langone,NYU,core,,
-5998304,NYU Langone,Grossman School of Medicine,core,,
-5998304,NYU Langone,Perlmutter Cancer Center,core,,
-5998304,NYU Langone,Bellevue Hospital,partner,,
-7047101,University of Rochester,University of Rochester,core,,
-7047101,University of Rochester,Strong Memorial Hospital,core,,
-7047101,University of Rochester,Wilmot Cancer Institute,core,,
-7047101,University of Rochester,Golisano Children's Hospital,core,rochester,
-7056601,Rockefeller University,Rockefeller University,core,,
-10053556,Albert Einstein College of Medicine,Albert Einstein College of Medicine,core,,
-10053556,Albert Einstein College of Medicine,Einstein College of Medicine,core,,
-10053556,Albert Einstein College of Medicine,Montefiore Einstein,core,,
-10053556,Albert Einstein College of Medicine,Montefiore,partner,bronx;new york;ny,"also UPMC Montefiore, Pittsburgh"
-218601,Case Western Reserve University,Case Western Reserve University,core,,
-218601,Case Western Reserve University,Case Western,core,,
-218601,Case Western Reserve University,Case Comprehensive Cancer Center,core,,
-218601,Case Western Reserve University,Cleveland Clinic,partner,,
-218601,Case Western Reserve University,Lerner Research Institute,partner,,
-218601,Case Western Reserve University,MetroHealth,partner,cleveland;ohio,split form 'Metro Health' is also a Michigan hospital
-218601,Case Western Reserve University,University Hospitals Cleveland,partner,,
-218601,Case Western Reserve University,University Hospitals Case Medical Center,partner,,
-218601,Case Western Reserve University,University Hospitals of Cleveland,partner,,
-218601,Case Western Reserve University,UH Cleveland Medical Center,partner,,
-1523902,University of Cincinnati,University of Cincinnati,core,,
-1523902,University of Cincinnati,Cincinnati Children's,partner,,
-6218701,Ohio State University,Ohio State University,core,,
-6218701,Ohio State University,Wexner Medical Center,core,,
-6218701,Ohio State University,Nationwide Children's,partner,,
-6297007,Oregon Health & Science University,Oregon Health and Science University,core,,
-6297007,Oregon Health & Science University,Oregon Health & Science University,core,,
-6297007,Oregon Health & Science University,OHSU,core,,
-6297007,Oregon Health & Science University,Knight Cancer Institute,core,portland;oregon,
-6297007,Oregon Health & Science University,Casey Eye Institute,core,,
-1524204,Penn State College of Medicine,Pennsylvania State University,core,,
-1524204,Penn State College of Medicine,Penn State,core,,
-1524204,Penn State College of Medicine,Milton S. Hershey Medical Center,core,,
-2059802,University of Pittsburgh,University of Pittsburgh,core,,
-2059802,University of Pittsburgh,UPMC,partner,pittsburgh;pa;pennsylvania,"also Universite Pierre et Marie Curie, Paris"
-2059802,University of Pittsburgh,Magee-Womens,partner,,
-2059802,University of Pittsburgh,Children's Hospital of Pittsburgh,partner,,
-6463801,University of Pennsylvania,University of Pennsylvania,core,,
-6463801,University of Pennsylvania,Perelman School of Medicine,core,,
-6463801,University of Pennsylvania,Penn Medicine,core,,
-6463801,University of Pennsylvania,Abramson Cancer Center,core,,
-6463801,University of Pennsylvania,Children's Hospital of Philadelphia,partner,,
-7575301,Medical University of South Carolina,Medical University of South Carolina,core,,
-7575301,Medical University of South Carolina,MUSC,core,,
-7575301,Medical University of South Carolina,Hollings Cancer Center,core,,
-10040927,Vanderbilt University Medical Center,Vanderbilt,core,,
-10040927,Vanderbilt University Medical Center,Meharry Medical College,partner,,
-481201,Baylor College of Medicine,Baylor College of Medicine,core,,
-481201,Baylor College of Medicine,Texas Children's Hospital,partner,,
-578404,UT Southwestern Medical Center,UT Southwestern,core,,
-578404,UT Southwestern Medical Center,University of Texas Southwestern,core,,
-578404,UT Southwestern Medical Center,UTSW,core,,
-578404,UT Southwestern Medical Center,Simmons Comprehensive Cancer Center,core,,
-578404,UT Southwestern Medical Center,Parkland Health,partner,,
-578404,UT Southwestern Medical Center,Parkland Memorial Hospital,partner,,
-578406,University of Texas Medical Branch,University of Texas Medical Branch,core,,
-578406,University of Texas Medical Branch,UTMB,core,,
-578406,University of Texas Medical Branch,Sealy Center,core,,
-578406,University of Texas Medical Branch,Institute for Translational Sciences,core,galveston,
-578417,UTHealth Houston,University of Texas Health Science Center at Houston,core,,
-578417,UTHealth Houston,University of Texas Health Science Center Houston,core,,
-578417,UTHealth Houston,UTHealth Houston,core,,
-578417,UTHealth Houston,UT Health Houston,core,,
-578417,UTHealth Houston,UTHealth,core,houston,
-578417,UTHealth Houston,McGovern Medical School,core,,
-578417,UTHealth Houston,University of Texas School of Public Health,core,,
-578417,UTHealth Houston,University of Texas Medical School at Houston,core,,
-578417,UTHealth Houston,MD Anderson,partner,,
-578417,UTHealth Houston,Memorial Hermann,partner,,
-578418,UT Health San Antonio,University of Texas Health Science Center at San Antonio,core,,
-578418,UT Health San Antonio,University of Texas Health Science Center San Antonio,core,,
-578418,UT Health San Antonio,University of Texas Health San Antonio,core,,
-578418,UT Health San Antonio,UT Health San Antonio,core,,
-578418,UT Health San Antonio,UTHSCSA,core,,
-578418,UT Health San Antonio,Long School of Medicine,core,,
-578418,UT Health San Antonio,Greehey Children's Cancer Research Institute,core,,
-578418,UT Health San Antonio,Research Imaging Institute,core,san antonio,
-514002,University of Utah,University of Utah,core,,
-514002,University of Utah,Huntsman Cancer Institute,core,,
-514002,University of Utah,Moran Eye Center,core,,
-353201,Virginia Commonwealth University,Virginia Commonwealth University,core,,
-353201,Virginia Commonwealth University,VCU,core,,
-353201,Virginia Commonwealth University,Massey Cancer Center,core,,
-353201,Virginia Commonwealth University,Pauley Heart Center,core,,
-353201,Virginia Commonwealth University,Medical College of Virginia,core,,
-1526402,University of Virginia,University of Virginia,core,,
-1526402,University of Virginia,UVA Health,core,,
-1526402,University of Virginia,Virginia Tech,partner,,verify partner membership
-1526402,University of Virginia,Virginia Polytechnic Institute,partner,,verify partner membership
-1526402,University of Virginia,Fralin Biomedical Research Institute,partner,,verify partner membership
-1526402,University of Virginia,Carilion,partner,,verify partner membership
-1526402,University of Virginia,Inova,partner,,verify partner membership
-9087701,University of Washington,University of Washington,core,,
-9087701,University of Washington,UW Medicine,core,,
-9087701,University of Washington,Harborview Medical Center,core,,
-9087701,University of Washington,Fred Hutchinson,partner,,
-9087701,University of Washington,Fred Hutch,partner,,
-9087701,University of Washington,Seattle Children's,partner,,
-9087701,University of Washington,Kaiser Permanente Washington,partner,,
-9087701,University of Washington,Group Health Research Institute,partner,,
-46001,Medical College of Wisconsin,Medical College of Wisconsin,core,,
-46001,Medical College of Wisconsin,Froedtert,partner,,
-46001,Medical College of Wisconsin,Children's Wisconsin,partner,,
-46001,Medical College of Wisconsin,Children's Hospital of Wisconsin,partner,,
-46001,Medical College of Wisconsin,Marquette University,partner,,
-46001,Medical College of Wisconsin,University of Wisconsin-Milwaukee,partner,,
-46001,Medical College of Wisconsin,University of Wisconsin Milwaukee,partner,,
-46001,Medical College of Wisconsin,Milwaukee School of Engineering,partner,,
-46001,Medical College of Wisconsin,Versiti,partner,,
-46001,Medical College of Wisconsin,BloodCenter of Wisconsin,partner,,
-578503,University of Wisconsin-Madison,University of Wisconsin,core,,
-578503,University of Wisconsin-Madison,UW-Madison,core,,
-578503,University of Wisconsin-Madison,School of Medicine and Public Health,core,wisconsin;madison,
-578503,University of Wisconsin-Madison,Carbone Cancer Center,core,,
-578503,University of Wisconsin-Madison,Marshfield Clinic,partner,,
-,,Indiana University of Pennsylvania,block,,IUP; contains 'Indiana University' and 'University of Pennsylvania'
-,,California University of Pennsylvania,block,,PASSHE campus
-,,Slippery Rock University of Pennsylvania,block,,PASSHE campus
-,,Edinboro University of Pennsylvania,block,,PASSHE campus
-,,Clarion University of Pennsylvania,block,,PASSHE campus
-,,Kutztown University of Pennsylvania,block,,PASSHE campus
-,,Bloomsburg University of Pennsylvania,block,,PASSHE campus
-,,Lock Haven University of Pennsylvania,block,,PASSHE campus
-,,Shippensburg University of Pennsylvania,block,,PASSHE campus
-,,Millersville University of Pennsylvania,block,,PASSHE campus
-,,Mansfield University of Pennsylvania,block,,PASSHE campus
-,,East Stroudsburg University of Pennsylvania,block,,PASSHE campus
-,,West Chester University of Pennsylvania,block,,PASSHE campus
-,,Cheyney University of Pennsylvania,block,,PASSHE campus
-,,Commonwealth University of Pennsylvania,block,,PASSHE campus
-,,Western Washington University,block,,contains 'Washington University'
-,,Eastern Washington University,block,,
-,,Central Washington University,block,,
-,,NewYork-Presbyterian,block,,shared by Columbia and Weill Cornell
-,,New York-Presbyterian,block,,shared by Columbia and Weill Cornell
-,,New York Presbyterian,block,,shared by Columbia and Weill Cornell
-,,University of Illinois at Urbana-Champaign,block,,not UIC
-,,University of Illinois Urbana-Champaign,block,,not UIC
-,,University of North Carolina at Charlotte,block,,not UNC Chapel Hill
-,,University of North Carolina at Greensboro,block,,not UNC Chapel Hill
-,,University of North Carolina at Wilmington,block,,not UNC Chapel Hill
-,,University of North Carolina at Asheville,block,,not UNC Chapel Hill
-,,University of North Carolina at Pembroke,block,,not UNC Chapel Hill
-,,University of North Carolina Charlotte,block,,not UNC Chapel Hill
-,,University of North Carolina Greensboro,block,,not UNC Chapel Hill
-,,University of North Carolina Wilmington,block,,not UNC Chapel Hill
-,,University of North Carolina Asheville,block,,not UNC Chapel Hill
-,,University of North Carolina Pembroke,block,,not UNC Chapel Hill
-,,University of Wisconsin-Eau Claire,block,,not UW-Madison
-,,University of Wisconsin-La Crosse,block,,not UW-Madison
-,,University of Wisconsin-Oshkosh,block,,not UW-Madison
-,,University of Wisconsin-Stevens Point,block,,not UW-Madison
-,,University of Wisconsin-Whitewater,block,,not UW-Madison
-,,University of Wisconsin-Green Bay,block,,not UW-Madison
-,,University of Wisconsin-Parkside,block,,not UW-Madison
-,,University of Wisconsin-Stout,block,,not UW-Madison
-,,University of Wisconsin-River Falls,block,,not UW-Madison
-,,University of Wisconsin-Platteville,block,,not UW-Madison
-,,University of Wisconsin-Superior,block,,not UW-Madison
-,,University of Massachusetts Dartmouth,block,,not Dartmouth
-,,UMass Dartmouth,block,,not Dartmouth
-,,University of Massachusetts Amherst,block,,not UMass Chan
-,,University of Massachusetts Boston,block,,not UMass Chan
-,,University of Massachusetts Lowell,block,,not UMass Chan
-,,University of Notre Dame Australia,block,,"not Notre Dame, Indiana"
-,,Duke-NUS,block,,Singapore
-,,Duke Kunshan,block,,China
-3212902,Harvard (Harvard Catalyst),Harvard TH Chan School of Public Health,core,,
-3212902,Harvard (Harvard Catalyst),Ragon Institute,partner,,"Ragon Institute of MGH, MIT and Harvard"
-3212902,Harvard (Harvard Catalyst),MGH,partner,boston;massachusetts;harvard;cambridge,
-578417,UTHealth Houston,M. D. Anderson,partner,,spelled M.D. Anderson
-9420201,Yale University,Yale School of Nursing,core,,
-9420201,Yale University,Yale,core,new haven;connecticut;ct,
-1833205,Columbia University,New York State Psychiatric Institute,partner,,Columbia's psychiatry institute
-577508,UCSF,University of California,core,san francisco,campus named elsewhere in the string
-577505,UCLA,University of California,core,los angeles;westwood,campus named elsewhere in the string
-577507,UC San Diego,University of California,core,san diego;la jolla,campus named elsewhere in the string
-577503,UC Davis,University of California,core,davis;sacramento,campus named elsewhere in the string
-577504,UC Irvine,University of California,core,irvine;orange,campus named elsewhere in the string
-578417,UTHealth Houston,University of Texas Health Science Center,core,houston,campus named elsewhere
-578418,UT Health San Antonio,University of Texas Health Science Center,core,san antonio,campus named elsewhere
-,,University of California Berkeley,block,,non-hub UC campus
-,,University of California at Berkeley,block,,non-hub UC campus
-,,University of California Santa Cruz,block,,non-hub UC campus
-,,University of California Santa Barbara,block,,non-hub UC campus
-,,University of California Riverside,block,,non-hub UC campus
-,,University of California Merced,block,,non-hub UC campus
-,,University of Texas Health Science Center at Tyler,block,,non-hub UT campus
-4134401,Johns Hopkins University,John Hopkins,core,,common misspelling
-5992614,University at Buffalo,University of Buffalo,core,,common misnaming
-7636101,University of Southern California,Children's Hospital of Los Angeles,partner,,variant of Children's Hospital Los Angeles
-578417,UTHealth Houston,University of Texas Houston,core,,
-578417,UTHealth Houston,University of Texas Health Sciences Center,core,houston,plural 'Sciences' variant
-578418,UT Health San Antonio,University of Texas Health Sciences Center,core,san antonio,plural 'Sciences' variant
-1288803,University of Alabama at Birmingham,University of Alabama School of Medicine,core,,"UAB's medical school, all campuses"
-2221101,Duke University,Duke School of Medicine,core,,
-6218701,Ohio State University,James Cancer Hospital,core,,"Arthur G. James Cancer Hospital, Ohio State"
-6144650,Northwestern University,Northwestern Medical Center,core,chicago;illinois,"also a hospital in St. Albans, Vermont"
-218601,Case Western Reserve University,MetroHealth Medical Center,partner,,safe without a city; Michigan's is Metro Health Hospital
-218601,Case Western Reserve University,Rammelkamp Center,partner,,MetroHealth's research center
-578404,UT Southwestern Medical Center,University of Texas SouthWestern,core,,capital-W spelling
-353201,Virginia Commonwealth University,Virginia CommonWealth University,core,,capital-W spelling
-577505,UCLA,Los Angeles BioMedical Research Institute,partner,,capital-M spelling
+hub_id,hub_label,alias,tier,institution,requires,note
+1288803,University of Alabama at Birmingham,University of Alabama at Birmingham,core,,,
+1288803,University of Alabama at Birmingham,"University of Alabama, Birmingham",core,,,
+1288803,University of Alabama at Birmingham,UAB,core,,birmingham;alabama,
+1288803,University of Alabama at Birmingham,Heersink School of Medicine,core,,,
+1471106,University of Arkansas for Medical Sciences,University of Arkansas for Medical Sciences,core,,,
+1471106,University of Arkansas for Medical Sciences,UAMS,core,,,
+1471106,University of Arkansas for Medical Sciences,Winthrop P. Rockefeller Cancer Institute,core,,,
+1471106,University of Arkansas for Medical Sciences,Arkansas Children's,partner,Arkansas Children's,,verify partner membership
+7375802,Scripps Research,Scripps Research,core,,,
+7375802,Scripps Research,Scripps Translational Science Institute,core,,,
+7375802,Scripps Research,Scripps Health,partner,Scripps Health,,
+7375802,Scripps Research,Scripps Clinic,partner,Scripps Health,,
+7375802,Scripps Research,Scripps Whittier Diabetes Institute,partner,Scripps Health,,
+8046501,Stanford University,Stanford University,core,,,
+8046501,Stanford University,Stanford School of Medicine,core,,,
+8046501,Stanford University,Stanford Medicine,core,,,
+8046501,Stanford University,Stanford Health Care,core,,,
+8046501,Stanford University,Stanford Cancer Institute,core,,,
+8046501,Stanford University,Stanford Prevention Research Center,core,,,
+8046501,Stanford University,Lucile Packard Children's Hospital,core,,,
+8046501,Stanford University,Stanford,core,,ca;california;palo alto,
+577503,UC Davis,University of California Davis,core,,,
+577503,UC Davis,University of California at Davis,core,,,
+577503,UC Davis,UC Davis,core,,,
+577503,UC Davis,UCDavis,core,,,
+577503,UC Davis,MIND Institute,core,,davis;sacramento,
+577504,UC Irvine,University of California Irvine,core,,,
+577504,UC Irvine,University of California at Irvine,core,,,
+577504,UC Irvine,UC Irvine,core,,,
+577504,UC Irvine,UCI,core,,irvine;orange,
+577504,UC Irvine,Children's Hospital of Orange County,partner,CHOC Children's,,verify partner membership
+577504,UC Irvine,CHOC Children's,partner,CHOC Children's,,verify partner membership
+577505,UCLA,University of California Los Angeles,core,,,
+577505,UCLA,University of California at Los Angeles,core,,,
+577505,UCLA,UCLA,core,,,
+577505,UCLA,David Geffen School of Medicine,core,,,
+577505,UCLA,Jonsson Comprehensive Cancer Center,core,,,
+577505,UCLA,Fielding School of Public Health,core,,,
+577505,UCLA,Harbor-UCLA,partner,Harbor-UCLA Medical Center,,
+577505,UCLA,Lundquist Institute,partner,The Lundquist Institute,,
+577505,UCLA,Los Angeles Biomedical Research Institute,partner,The Lundquist Institute,,
+577505,UCLA,Cedars-Sinai,partner,Cedars-Sinai Medical Center,,
+577505,UCLA,Charles R. Drew University,partner,Charles R. Drew University,,
+577507,UC San Diego,University of California San Diego,core,,,
+577507,UC San Diego,University of California at San Diego,core,,,
+577507,UC San Diego,UC San Diego,core,,,
+577507,UC San Diego,UCSD,core,,,
+577507,UC San Diego,Moores Cancer Center,core,,,
+577507,UC San Diego,Herbert Wertheim School of Public Health,core,,,
+577507,UC San Diego,Altman Clinical and Translational Research Institute,core,,,
+577507,UC San Diego,Skaggs School of Pharmacy and Pharmaceutical Sciences,core,,san diego;la jolla,
+577507,UC San Diego,Rady Children's,partner,Rady Children's Hospital,,verify partner membership
+577508,UCSF,University of California San Francisco,core,,,
+577508,UCSF,University of California at San Francisco,core,,,
+577508,UCSF,UCSF,core,,,
+577508,UCSF,Zuckerberg San Francisco General,partner,Zuckerberg San Francisco General Hospital,,
+577508,UCSF,San Francisco General Hospital,partner,Zuckerberg San Francisco General Hospital,,
+577508,UCSF,Gladstone Institutes,partner,Gladstone Institutes,,verify partner membership
+577508,UCSF,Gladstone Institute,partner,Gladstone Institutes,,verify partner membership
+7636101,University of Southern California,University of Southern California,core,,,
+7636101,University of Southern California,Keck School of Medicine,core,,,
+7636101,University of Southern California,Norris Comprehensive Cancer Center,core,,,
+7636101,University of Southern California,USC,core,,los angeles,
+7636101,University of Southern California,Children's Hospital Los Angeles,partner,Children's Hospital Los Angeles,,
+7636101,University of Southern California,Saban Research Institute,partner,Children's Hospital Los Angeles,,
+1199905,University of Colorado Anschutz,University of Colorado,core,,,
+1199905,University of Colorado Anschutz,Anschutz Medical Campus,core,,,
+1199905,University of Colorado Anschutz,CU Anschutz,core,,,
+1199905,University of Colorado Anschutz,University of Colorado Boulder,partner,University of Colorado Boulder,,verify partner membership
+1199905,University of Colorado Anschutz,University of Colorado at Boulder,partner,University of Colorado Boulder,,verify partner membership
+1199905,University of Colorado Anschutz,University of Colorado Colorado Springs,partner,University of Colorado Colorado Springs,,verify partner membership
+1199905,University of Colorado Anschutz,Children's Hospital Colorado,partner,Children's Hospital Colorado,,
+1199905,University of Colorado Anschutz,National Jewish Health,partner,National Jewish Health,,verify partner membership
+1199905,University of Colorado Anschutz,Denver Health,partner,Denver Health,,verify partner membership
+1199905,University of Colorado Anschutz,UCHealth,partner,UCHealth,colorado;aurora;denver;co,verify partner membership; split form 'UC Health' is also Cincinnati's health system
+1199905,University of Colorado Anschutz,Colorado State University,partner,Colorado State University,,verify partner membership
+1199905,University of Colorado Anschutz,Colorado School of Public Health,partner,Colorado School of Public Health,,
+9420201,Yale University,Yale University,core,,,
+9420201,Yale University,Yale School of Medicine,core,,,
+9420201,Yale University,Yale School of Public Health,core,,,
+9420201,Yale University,Yale Cancer Center,core,,,
+9420201,Yale University,Yale Child Study Center,core,,,
+9420201,Yale University,Yale New Haven,partner,Yale New Haven Health,,
+9420201,Yale University,Yale-New Haven,partner,Yale New Haven Health,,
+1518602,Children's National,Children's National,core,,,
+1518602,Children's National,Children's Research Institute,core,,district of columbia;dc;washington dc,
+1518602,Children's National,George Washington University,partner,George Washington University,,
+2869001,Georgetown University,Georgetown University,core,,,
+2869001,Georgetown University,Lombardi Comprehensive Cancer Center,core,,,
+2869001,Georgetown University,Howard University,partner,Howard University,,
+2869001,Georgetown University,MedStar,partner,MedStar Health,,
+513806,University of Florida,University of Florida,core,,,
+513806,University of Florida,UF Health,core,,,
+513806,University of Florida,Shands,core,,gainesville;florida,
+513806,University of Florida,Florida State University,partner,Florida State University,,verify partner membership
+5221250,University of Miami,University of Miami,core,,,
+5221250,University of Miami,Miller School of Medicine,core,,,
+5221250,University of Miami,Sylvester Comprehensive Cancer Center,core,,,
+5221250,University of Miami,Bascom Palmer,core,,,
+5221250,University of Miami,Jackson Memorial,partner,Jackson Health System,,
+5221250,University of Miami,Jackson Health System,partner,Jackson Health System,,
+2384501,Emory University,Emory University,core,,,
+2384501,Emory University,Emory School of Medicine,core,,,
+2384501,Emory University,Emory Healthcare,core,,,
+2384501,Emory University,Emory Clinic,core,,,
+2384501,Emory University,Winship Cancer Institute,core,,,
+2384501,Emory University,Rollins School of Public Health,core,,,
+2384501,Emory University,Nell Hodgson Woodruff School of Nursing,core,,,
+2384501,Emory University,Morehouse School of Medicine,partner,Morehouse School of Medicine,,
+2384501,Emory University,Georgia Institute of Technology,partner,Georgia Institute of Technology,,
+2384501,Emory University,Georgia Tech,partner,Georgia Institute of Technology,,
+2384501,Emory University,University of Georgia,partner,University of Georgia,,
+2384501,Emory University,Children's Healthcare of Atlanta,partner,Children's Healthcare of Atlanta,,
+2384501,Emory University,Grady Memorial Hospital,partner,Grady Health System,,
+2384501,Emory University,Grady Health System,partner,Grady Health System,,
+3972901,University of Iowa,University of Iowa,core,,,
+3972901,University of Iowa,Carver College of Medicine,core,,,
+3972901,University of Iowa,Holden Comprehensive Cancer Center,core,,,
+577703,University of Illinois Chicago,University of Illinois at Chicago,core,,,
+577703,University of Illinois Chicago,University of Illinois Chicago,core,,,
+577703,University of Illinois Chicago,University of Illinois College of Medicine,core,,,
+577703,University of Illinois Chicago,University of Illinois,core,,chicago,
+577703,University of Illinois Chicago,UIC,core,,chicago;illinois,
+1413601,University of Chicago,University of Chicago,core,,,
+1413601,University of Chicago,Pritzker School of Medicine,core,,,
+1413601,University of Chicago,UChicago,core,,,
+6144650,Northwestern University,Northwestern University,core,,,
+6144650,Northwestern University,Feinberg School of Medicine,core,,,
+6144650,Northwestern University,Northwestern Medicine,core,,,
+6144650,Northwestern University,Northwestern Memorial,core,,,
+6144650,Northwestern University,Robert H. Lurie Comprehensive Cancer Center,core,,,
+6144650,Northwestern University,Lurie Children's,partner,Lurie Children's Hospital,,
+6144650,Northwestern University,Ann and Robert H. Lurie Children's Hospital,partner,Lurie Children's Hospital,,
+577806,Indiana University,Indiana University,core,,,
+577806,Indiana University,IUPUI,core,,,
+577806,Indiana University,Purdue University,partner,Purdue University,,
+577806,Indiana University,University of Notre Dame,partner,University of Notre Dame,,
+577806,Indiana University,Regenstrief Institute,partner,Regenstrief Institute,,
+1484303,University of Kansas Medical Center,University of Kansas,core,,,
+1484303,University of Kansas Medical Center,KUMC,core,,,
+1484303,University of Kansas Medical Center,Children's Mercy,partner,Children's Mercy Kansas City,,
+1484303,University of Kansas Medical Center,University of Missouri-Kansas City,partner,University of Missouri-Kansas City,,
+1484303,University of Kansas Medical Center,University of Missouri Kansas City,partner,University of Missouri-Kansas City,,
+2793601,University of Kentucky,University of Kentucky,core,,,
+2793601,University of Kentucky,Markey Cancer Center,core,,,
+2793601,University of Kentucky,Sanders-Brown Center on Aging,core,,,
+850903,UMass Chan Medical School,University of Massachusetts Medical School,core,,,
+850903,UMass Chan Medical School,University of Massachusetts Chan Medical School,core,,,
+850903,UMass Chan Medical School,UMass Chan,core,,,
+850903,UMass Chan Medical School,UMass Medical School,core,,,
+850903,UMass Chan Medical School,University of Massachusetts,core,,worcester,
+850903,UMass Chan Medical School,UMass Memorial,partner,UMass Memorial Health,,
+894901,Boston University,Boston University,core,,,
+894901,Boston University,Boston Medical Center,partner,Boston Medical Center,,
+3212902,Harvard (Harvard Catalyst),Harvard Medical School,core,,,
+3212902,Harvard (Harvard Catalyst),Harvard University,core,,,
+3212902,Harvard (Harvard Catalyst),Harvard T.H. Chan School of Public Health,core,,,
+3212902,Harvard (Harvard Catalyst),Harvard Chan School,core,,,
+3212902,Harvard (Harvard Catalyst),Harvard School of Public Health,core,,,
+3212902,Harvard (Harvard Catalyst),Harvard School of Dental Medicine,core,,,
+3212902,Harvard (Harvard Catalyst),Harvard Catalyst,core,,,
+3212902,Harvard (Harvard Catalyst),Massachusetts General Hospital,partner,Massachusetts General Hospital,,
+3212902,Harvard (Harvard Catalyst),Massachusetts General,partner,Massachusetts General Hospital,,
+3212902,Harvard (Harvard Catalyst),Mass General,partner,Massachusetts General Hospital,,
+3212902,Harvard (Harvard Catalyst),Brigham and Women's,partner,Brigham and Women's Hospital,,
+3212902,Harvard (Harvard Catalyst),Beth Israel Deaconess,partner,Beth Israel Deaconess Medical Center,,
+3212902,Harvard (Harvard Catalyst),Boston Children's Hospital,partner,Boston Children's Hospital,,
+3212902,Harvard (Harvard Catalyst),Children's Hospital Boston,partner,Boston Children's Hospital,,
+3212902,Harvard (Harvard Catalyst),Dana-Farber,partner,Dana-Farber Cancer Institute,,
+3212902,Harvard (Harvard Catalyst),McLean Hospital,partner,McLean Hospital,,
+3212902,Harvard (Harvard Catalyst),Joslin Diabetes Center,partner,Joslin Diabetes Center,,
+3212902,Harvard (Harvard Catalyst),Massachusetts Eye and Ear,partner,Massachusetts Eye and Ear,,
+3212902,Harvard (Harvard Catalyst),Spaulding Rehabilitation,partner,Spaulding Rehabilitation Hospital,,
+3212902,Harvard (Harvard Catalyst),Hebrew SeniorLife,partner,Hebrew SeniorLife,,
+3212902,Harvard (Harvard Catalyst),Cambridge Health Alliance,partner,Cambridge Health Alliance,,
+3212902,Harvard (Harvard Catalyst),Harvard Pilgrim Health Care Institute,partner,Harvard Pilgrim Health Care Institute,,
+3212902,Harvard (Harvard Catalyst),Partners HealthCare,partner,Mass General Brigham (Partners HealthCare),boston;massachusetts;ma;cambridge;somerville,
+8422704,Tufts University,Tufts,core,,,
+8422704,Tufts University,Baystate,partner,Baystate Health,,verify partner membership
+8422704,Tufts University,Maine Medical Center,partner,MaineHealth,,verify partner membership
+8422704,Tufts University,MaineHealth,partner,MaineHealth,,verify partner membership
+8422704,Tufts University,Lahey,partner,Lahey Hospital & Medical Center,,verify partner membership
+4134401,Johns Hopkins University,Johns Hopkins,core,,,
+4134401,Johns Hopkins University,Kennedy Krieger Institute,partner,Kennedy Krieger Institute,,
+1506502,University of Michigan,University of Michigan,core,,,
+1506502,University of Michigan,Michigan Medicine,core,,,
+1506502,University of Michigan,Michigan Institute for Clinical and Health Research,core,,,
+1450402,University of Minnesota,University of Minnesota,core,,,
+1450402,University of Minnesota,Masonic Cancer Center,core,,,
+4976101,Mayo Clinic,Mayo Clinic,core,,,
+4976101,Mayo Clinic,Mayo Medical School,core,,,
+4976101,Mayo Clinic,Mayo Graduate School,core,,,
+4976101,Mayo Clinic,Mayo Foundation,core,,,
+9083901,Washington University in St. Louis,Washington University,core,,,
+9083901,Washington University in St. Louis,Siteman Cancer Center,core,,,
+9083901,Washington University in St. Louis,Mallinckrodt Institute of Radiology,core,,,
+9083901,Washington University in St. Louis,Barnes-Jewish,partner,Barnes-Jewish Hospital,,
+9083901,Washington University in St. Louis,St. Louis Children's Hospital,partner,St. Louis Children's Hospital,,
+9083901,Washington University in St. Louis,St Louis Children's Hospital,partner,St. Louis Children's Hospital,,
+578206,UNC Chapel Hill,University of North Carolina at Chapel Hill,core,,,
+578206,UNC Chapel Hill,University of North Carolina Chapel Hill,core,,,
+578206,UNC Chapel Hill,University of North Carolina School of Medicine,core,,,
+578206,UNC Chapel Hill,University of North Carolina,core,,chapel hill,
+578206,UNC Chapel Hill,UNC Chapel Hill,core,,,
+578206,UNC Chapel Hill,UNC School of Medicine,core,,,
+578206,UNC Chapel Hill,UNC Health,core,,,
+578206,UNC Chapel Hill,Lineberger Comprehensive Cancer Center,core,,,
+578206,UNC Chapel Hill,Gillings School of Global Public Health,core,,,
+578206,UNC Chapel Hill,Eshelman School of Pharmacy,core,,,
+578206,UNC Chapel Hill,Cecil G. Sheps Center,core,,,
+578206,UNC Chapel Hill,North Carolina State University,partner,North Carolina State University,,verify partner membership
+578206,UNC Chapel Hill,RTI International,partner,RTI International,,verify partner membership
+578206,UNC Chapel Hill,North Carolina A&T,partner,North Carolina A&T State University,,verify partner membership
+2221101,Duke University,Duke University,core,,,
+2221101,Duke University,Duke Clinical Research Institute,core,,,
+2221101,Duke University,Duke Health,core,,,
+2221101,Duke University,Duke Cancer Institute,core,,,
+2221101,Duke University,Duke Global Health Institute,core,,,
+2221101,Duke University,Duke Medicine,core,,,
+9021205,Wake Forest University,Wake Forest,core,,,
+10051750,Dartmouth,Dartmouth College,core,,,
+10051750,Dartmouth,Dartmouth-Hitchcock,core,,,
+10051750,Dartmouth,Dartmouth Hitchcock,core,,,
+10051750,Dartmouth,Geisel School of Medicine,core,,,
+10051750,Dartmouth,Dartmouth Institute,core,,,
+10051750,Dartmouth,Dartmouth Health,core,,,
+10051750,Dartmouth,Dartmouth Medical School,core,,,
+10051750,Dartmouth,Norris Cotton Cancer Center,core,,,
+10051750,Dartmouth,Dartmouth,core,,nh;new hampshire;hanover;lebanon,
+10034168,Rutgers University,Rutgers,core,,,
+10034168,Rutgers University,Robert Wood Johnson Medical School,core,,,
+10034168,Rutgers University,New Jersey Medical School,core,,,
+10034168,Rutgers University,Cancer Institute of New Jersey,core,,,
+10034168,Rutgers University,Princeton University,partner,Princeton University,,
+10034168,Rutgers University,New Jersey Institute of Technology,partner,New Jersey Institute of Technology,,
+10034168,Rutgers University,RWJBarnabas,partner,RWJBarnabas Health,,
+10034168,Rutgers University,Robert Wood Johnson University Hospital,partner,RWJBarnabas Health,,
+10021612,University of New Mexico,University of New Mexico,core,,,
+10021612,University of New Mexico,UNM,core,,new mexico;albuquerque,
+1514803,Weill Cornell Medicine,Weill Cornell,core,,,
+1514803,Weill Cornell Medicine,Weill Medical College,core,,,
+1514803,Weill Cornell Medicine,Cornell University,partner,Cornell University,,
+1514803,Weill Cornell Medicine,Memorial Sloan Kettering,partner,Memorial Sloan Kettering Cancer Center,,
+1514803,Weill Cornell Medicine,Memorial Sloan-Kettering,partner,Memorial Sloan Kettering Cancer Center,,
+1514803,Weill Cornell Medicine,Hospital for Special Surgery,partner,Hospital for Special Surgery,,
+1514803,Weill Cornell Medicine,Hunter College,partner,Hunter College,,
+1833205,Columbia University,Columbia University,core,,,
+1833205,Columbia University,Mailman School of Public Health,core,,,
+1833205,Columbia University,Vagelos College of Physicians and Surgeons,core,,,
+1833205,Columbia University,College of Physicians and Surgeons,core,,new york;ny,
+1833205,Columbia University,Herbert Irving Comprehensive Cancer Center,core,,,
+3839801,Icahn School of Medicine at Mount Sinai,Icahn,core,,,
+3839801,Icahn School of Medicine at Mount Sinai,Mount Sinai School of Medicine,core,,,
+3839801,Icahn School of Medicine at Mount Sinai,Mount Sinai Health System,core,,,
+3839801,Icahn School of Medicine at Mount Sinai,Mount Sinai,core,,new york;ny;nyc;manhattan;bronx;brooklyn;queens,
+5992614,University at Buffalo,University at Buffalo,core,,,
+5992614,University at Buffalo,State University of New York at Buffalo,core,,,
+5992614,University at Buffalo,State University of New York Buffalo,core,,,
+5992614,University at Buffalo,SUNY Buffalo,core,,,
+5992614,University at Buffalo,SUNY at Buffalo,core,,,
+5992614,University at Buffalo,Jacobs School of Medicine,core,,,
+5992614,University at Buffalo,Roswell Park,partner,Roswell Park Comprehensive Cancer Center,,
+5992614,University at Buffalo,Kaleida Health,partner,Kaleida Health,,
+5992614,University at Buffalo,Erie County Medical Center,partner,Erie County Medical Center,,
+5998304,NYU Langone,New York University,core,,,
+5998304,NYU Langone,NYU,core,,,
+5998304,NYU Langone,Grossman School of Medicine,core,,,
+5998304,NYU Langone,Perlmutter Cancer Center,core,,,
+5998304,NYU Langone,Bellevue Hospital,partner,Bellevue Hospital,,
+7047101,University of Rochester,University of Rochester,core,,,
+7047101,University of Rochester,Strong Memorial Hospital,core,,,
+7047101,University of Rochester,Wilmot Cancer Institute,core,,,
+7047101,University of Rochester,Golisano Children's Hospital,core,,rochester,
+7056601,Rockefeller University,Rockefeller University,core,,,
+10053556,Albert Einstein College of Medicine,Albert Einstein College of Medicine,core,,,
+10053556,Albert Einstein College of Medicine,Einstein College of Medicine,core,,,
+10053556,Albert Einstein College of Medicine,Montefiore Einstein,core,,,
+10053556,Albert Einstein College of Medicine,Montefiore,partner,Montefiore Medical Center,bronx;new york;ny,"also UPMC Montefiore, Pittsburgh"
+218601,Case Western Reserve University,Case Western Reserve University,core,,,
+218601,Case Western Reserve University,Case Western,core,,,
+218601,Case Western Reserve University,Case Comprehensive Cancer Center,core,,,
+218601,Case Western Reserve University,Cleveland Clinic,partner,Cleveland Clinic,,
+218601,Case Western Reserve University,Lerner Research Institute,partner,Cleveland Clinic,,
+218601,Case Western Reserve University,MetroHealth,partner,MetroHealth,cleveland;ohio,split form 'Metro Health' is also a Michigan hospital
+218601,Case Western Reserve University,University Hospitals Cleveland,partner,University Hospitals Cleveland Medical Center,,
+218601,Case Western Reserve University,University Hospitals Case Medical Center,partner,University Hospitals Cleveland Medical Center,,
+218601,Case Western Reserve University,University Hospitals of Cleveland,partner,University Hospitals Cleveland Medical Center,,
+218601,Case Western Reserve University,UH Cleveland Medical Center,partner,University Hospitals Cleveland Medical Center,,
+1523902,University of Cincinnati,University of Cincinnati,core,,,
+1523902,University of Cincinnati,Cincinnati Children's,partner,Cincinnati Children's Hospital,,
+6218701,Ohio State University,Ohio State University,core,,,
+6218701,Ohio State University,Wexner Medical Center,core,,,
+6218701,Ohio State University,Nationwide Children's,partner,Nationwide Children's Hospital,,
+6297007,Oregon Health & Science University,Oregon Health and Science University,core,,,
+6297007,Oregon Health & Science University,Oregon Health & Science University,core,,,
+6297007,Oregon Health & Science University,OHSU,core,,,
+6297007,Oregon Health & Science University,Knight Cancer Institute,core,,portland;oregon,
+6297007,Oregon Health & Science University,Casey Eye Institute,core,,,
+1524204,Penn State College of Medicine,Pennsylvania State University,core,,,
+1524204,Penn State College of Medicine,Penn State,core,,,
+1524204,Penn State College of Medicine,Milton S. Hershey Medical Center,core,,,
+2059802,University of Pittsburgh,University of Pittsburgh,core,,,
+2059802,University of Pittsburgh,UPMC,partner,UPMC,pittsburgh;pa;pennsylvania,"also Universite Pierre et Marie Curie, Paris"
+2059802,University of Pittsburgh,Magee-Womens,partner,Magee-Womens Hospital (UPMC),,
+2059802,University of Pittsburgh,Children's Hospital of Pittsburgh,partner,Children's Hospital of Pittsburgh,,
+6463801,University of Pennsylvania,University of Pennsylvania,core,,,
+6463801,University of Pennsylvania,Perelman School of Medicine,core,,,
+6463801,University of Pennsylvania,Penn Medicine,core,,,
+6463801,University of Pennsylvania,Abramson Cancer Center,core,,,
+6463801,University of Pennsylvania,Children's Hospital of Philadelphia,partner,Children's Hospital of Philadelphia,,
+7575301,Medical University of South Carolina,Medical University of South Carolina,core,,,
+7575301,Medical University of South Carolina,MUSC,core,,,
+7575301,Medical University of South Carolina,Hollings Cancer Center,core,,,
+10040927,Vanderbilt University Medical Center,Vanderbilt,core,,,
+10040927,Vanderbilt University Medical Center,Meharry Medical College,partner,Meharry Medical College,,
+481201,Baylor College of Medicine,Baylor College of Medicine,core,,,
+481201,Baylor College of Medicine,Texas Children's Hospital,partner,Texas Children's Hospital,,
+578404,UT Southwestern Medical Center,UT Southwestern,core,,,
+578404,UT Southwestern Medical Center,University of Texas Southwestern,core,,,
+578404,UT Southwestern Medical Center,UTSW,core,,,
+578404,UT Southwestern Medical Center,Simmons Comprehensive Cancer Center,core,,,
+578404,UT Southwestern Medical Center,Parkland Health,partner,Parkland Health,,
+578404,UT Southwestern Medical Center,Parkland Memorial Hospital,partner,Parkland Health,,
+578406,University of Texas Medical Branch,University of Texas Medical Branch,core,,,
+578406,University of Texas Medical Branch,UTMB,core,,,
+578406,University of Texas Medical Branch,Sealy Center,core,,,
+578406,University of Texas Medical Branch,Institute for Translational Sciences,core,,galveston,
+578417,UTHealth Houston,University of Texas Health Science Center at Houston,core,,,
+578417,UTHealth Houston,University of Texas Health Science Center Houston,core,,,
+578417,UTHealth Houston,UTHealth Houston,core,,,
+578417,UTHealth Houston,UT Health Houston,core,,,
+578417,UTHealth Houston,UTHealth,core,,houston,
+578417,UTHealth Houston,McGovern Medical School,core,,,
+578417,UTHealth Houston,University of Texas School of Public Health,core,,,
+578417,UTHealth Houston,University of Texas Medical School at Houston,core,,,
+578417,UTHealth Houston,MD Anderson,partner,MD Anderson Cancer Center,,
+578417,UTHealth Houston,Memorial Hermann,partner,Memorial Hermann,,
+578418,UT Health San Antonio,University of Texas Health Science Center at San Antonio,core,,,
+578418,UT Health San Antonio,University of Texas Health Science Center San Antonio,core,,,
+578418,UT Health San Antonio,University of Texas Health San Antonio,core,,,
+578418,UT Health San Antonio,UT Health San Antonio,core,,,
+578418,UT Health San Antonio,UTHSCSA,core,,,
+578418,UT Health San Antonio,Long School of Medicine,core,,,
+578418,UT Health San Antonio,Greehey Children's Cancer Research Institute,core,,,
+578418,UT Health San Antonio,Research Imaging Institute,core,,san antonio,
+514002,University of Utah,University of Utah,core,,,
+514002,University of Utah,Huntsman Cancer Institute,core,,,
+514002,University of Utah,Moran Eye Center,core,,,
+353201,Virginia Commonwealth University,Virginia Commonwealth University,core,,,
+353201,Virginia Commonwealth University,VCU,core,,,
+353201,Virginia Commonwealth University,Massey Cancer Center,core,,,
+353201,Virginia Commonwealth University,Pauley Heart Center,core,,,
+353201,Virginia Commonwealth University,Medical College of Virginia,core,,,
+1526402,University of Virginia,University of Virginia,core,,,
+1526402,University of Virginia,UVA Health,core,,,
+1526402,University of Virginia,Virginia Tech,partner,Virginia Tech,,verify partner membership
+1526402,University of Virginia,Virginia Polytechnic Institute,partner,Virginia Tech,,verify partner membership
+1526402,University of Virginia,Fralin Biomedical Research Institute,partner,Virginia Tech,,verify partner membership
+1526402,University of Virginia,Carilion,partner,Carilion Clinic,,verify partner membership
+1526402,University of Virginia,Inova,partner,Inova Health,,verify partner membership
+9087701,University of Washington,University of Washington,core,,,
+9087701,University of Washington,UW Medicine,core,,,
+9087701,University of Washington,Harborview Medical Center,core,,,
+9087701,University of Washington,Fred Hutchinson,partner,Fred Hutchinson Cancer Center,,
+9087701,University of Washington,Fred Hutch,partner,Fred Hutchinson Cancer Center,,
+9087701,University of Washington,Seattle Children's,partner,Seattle Children's,,
+9087701,University of Washington,Kaiser Permanente Washington,partner,Kaiser Permanente Washington,,
+9087701,University of Washington,Group Health Research Institute,partner,Kaiser Permanente Washington,,
+46001,Medical College of Wisconsin,Medical College of Wisconsin,core,,,
+46001,Medical College of Wisconsin,Froedtert,partner,Froedtert Health,,
+46001,Medical College of Wisconsin,Children's Wisconsin,partner,Children's Wisconsin,,
+46001,Medical College of Wisconsin,Children's Hospital of Wisconsin,partner,Children's Wisconsin,,
+46001,Medical College of Wisconsin,Marquette University,partner,Marquette University,,
+46001,Medical College of Wisconsin,University of Wisconsin-Milwaukee,partner,University of Wisconsin-Milwaukee,,
+46001,Medical College of Wisconsin,University of Wisconsin Milwaukee,partner,University of Wisconsin-Milwaukee,,
+46001,Medical College of Wisconsin,Milwaukee School of Engineering,partner,Milwaukee School of Engineering,,
+46001,Medical College of Wisconsin,Versiti,partner,Versiti,,
+46001,Medical College of Wisconsin,BloodCenter of Wisconsin,partner,Versiti,,
+578503,University of Wisconsin-Madison,University of Wisconsin,core,,,
+578503,University of Wisconsin-Madison,UW-Madison,core,,,
+578503,University of Wisconsin-Madison,School of Medicine and Public Health,core,,wisconsin;madison,
+578503,University of Wisconsin-Madison,Carbone Cancer Center,core,,,
+578503,University of Wisconsin-Madison,Marshfield Clinic,partner,Marshfield Clinic,,
+,,Indiana University of Pennsylvania,block,,,IUP; contains 'Indiana University' and 'University of Pennsylvania'
+,,California University of Pennsylvania,block,,,PASSHE campus
+,,Slippery Rock University of Pennsylvania,block,,,PASSHE campus
+,,Edinboro University of Pennsylvania,block,,,PASSHE campus
+,,Clarion University of Pennsylvania,block,,,PASSHE campus
+,,Kutztown University of Pennsylvania,block,,,PASSHE campus
+,,Bloomsburg University of Pennsylvania,block,,,PASSHE campus
+,,Lock Haven University of Pennsylvania,block,,,PASSHE campus
+,,Shippensburg University of Pennsylvania,block,,,PASSHE campus
+,,Millersville University of Pennsylvania,block,,,PASSHE campus
+,,Mansfield University of Pennsylvania,block,,,PASSHE campus
+,,East Stroudsburg University of Pennsylvania,block,,,PASSHE campus
+,,West Chester University of Pennsylvania,block,,,PASSHE campus
+,,Cheyney University of Pennsylvania,block,,,PASSHE campus
+,,Commonwealth University of Pennsylvania,block,,,PASSHE campus
+,,Western Washington University,block,,,contains 'Washington University'
+,,Eastern Washington University,block,,,
+,,Central Washington University,block,,,
+,,NewYork-Presbyterian,block,,,shared by Columbia and Weill Cornell
+,,New York-Presbyterian,block,,,shared by Columbia and Weill Cornell
+,,New York Presbyterian,block,,,shared by Columbia and Weill Cornell
+,,University of Illinois at Urbana-Champaign,block,,,not UIC
+,,University of Illinois Urbana-Champaign,block,,,not UIC
+,,University of North Carolina at Charlotte,block,,,not UNC Chapel Hill
+,,University of North Carolina at Greensboro,block,,,not UNC Chapel Hill
+,,University of North Carolina at Wilmington,block,,,not UNC Chapel Hill
+,,University of North Carolina at Asheville,block,,,not UNC Chapel Hill
+,,University of North Carolina at Pembroke,block,,,not UNC Chapel Hill
+,,University of North Carolina Charlotte,block,,,not UNC Chapel Hill
+,,University of North Carolina Greensboro,block,,,not UNC Chapel Hill
+,,University of North Carolina Wilmington,block,,,not UNC Chapel Hill
+,,University of North Carolina Asheville,block,,,not UNC Chapel Hill
+,,University of North Carolina Pembroke,block,,,not UNC Chapel Hill
+,,University of Wisconsin-Eau Claire,block,,,not UW-Madison
+,,University of Wisconsin-La Crosse,block,,,not UW-Madison
+,,University of Wisconsin-Oshkosh,block,,,not UW-Madison
+,,University of Wisconsin-Stevens Point,block,,,not UW-Madison
+,,University of Wisconsin-Whitewater,block,,,not UW-Madison
+,,University of Wisconsin-Green Bay,block,,,not UW-Madison
+,,University of Wisconsin-Parkside,block,,,not UW-Madison
+,,University of Wisconsin-Stout,block,,,not UW-Madison
+,,University of Wisconsin-River Falls,block,,,not UW-Madison
+,,University of Wisconsin-Platteville,block,,,not UW-Madison
+,,University of Wisconsin-Superior,block,,,not UW-Madison
+,,University of Massachusetts Dartmouth,block,,,not Dartmouth
+,,UMass Dartmouth,block,,,not Dartmouth
+,,University of Massachusetts Amherst,block,,,not UMass Chan
+,,University of Massachusetts Boston,block,,,not UMass Chan
+,,University of Massachusetts Lowell,block,,,not UMass Chan
+,,University of Notre Dame Australia,block,,,"not Notre Dame, Indiana"
+,,Duke-NUS,block,,,Singapore
+,,Duke Kunshan,block,,,China
+3212902,Harvard (Harvard Catalyst),Harvard TH Chan School of Public Health,core,,,
+3212902,Harvard (Harvard Catalyst),Ragon Institute,partner,"Ragon Institute of MGH, MIT and Harvard",,"Ragon Institute of MGH, MIT and Harvard"
+3212902,Harvard (Harvard Catalyst),MGH,partner,Massachusetts General Hospital,boston;massachusetts;harvard;cambridge,
+578417,UTHealth Houston,M. D. Anderson,partner,MD Anderson Cancer Center,,spelled M.D. Anderson
+9420201,Yale University,Yale School of Nursing,core,,,
+9420201,Yale University,Yale,core,,new haven;connecticut;ct,
+1833205,Columbia University,New York State Psychiatric Institute,partner,New York State Psychiatric Institute,,Columbia's psychiatry institute
+577508,UCSF,University of California,core,,san francisco,campus named elsewhere in the string
+577505,UCLA,University of California,core,,los angeles;westwood,campus named elsewhere in the string
+577507,UC San Diego,University of California,core,,san diego;la jolla,campus named elsewhere in the string
+577503,UC Davis,University of California,core,,davis;sacramento,campus named elsewhere in the string
+577504,UC Irvine,University of California,core,,irvine;orange,campus named elsewhere in the string
+578417,UTHealth Houston,University of Texas Health Science Center,core,,houston,campus named elsewhere
+578418,UT Health San Antonio,University of Texas Health Science Center,core,,san antonio,campus named elsewhere
+,,University of California Berkeley,block,,,non-hub UC campus
+,,University of California at Berkeley,block,,,non-hub UC campus
+,,University of California Santa Cruz,block,,,non-hub UC campus
+,,University of California Santa Barbara,block,,,non-hub UC campus
+,,University of California Riverside,block,,,non-hub UC campus
+,,University of California Merced,block,,,non-hub UC campus
+,,University of Texas Health Science Center at Tyler,block,,,non-hub UT campus
+4134401,Johns Hopkins University,John Hopkins,core,,,common misspelling
+5992614,University at Buffalo,University of Buffalo,core,,,common misnaming
+7636101,University of Southern California,Children's Hospital of Los Angeles,partner,Children's Hospital Los Angeles,,variant of Children's Hospital Los Angeles
+578417,UTHealth Houston,University of Texas Houston,core,,,
+578417,UTHealth Houston,University of Texas Health Sciences Center,core,,houston,plural 'Sciences' variant
+578418,UT Health San Antonio,University of Texas Health Sciences Center,core,,san antonio,plural 'Sciences' variant
+1288803,University of Alabama at Birmingham,University of Alabama School of Medicine,core,,,"UAB's medical school, all campuses"
+2221101,Duke University,Duke School of Medicine,core,,,
+6218701,Ohio State University,James Cancer Hospital,core,,,"Arthur G. James Cancer Hospital, Ohio State"
+6144650,Northwestern University,Northwestern Medical Center,core,,chicago;illinois,"also a hospital in St. Albans, Vermont"
+218601,Case Western Reserve University,MetroHealth Medical Center,partner,MetroHealth,,safe without a city; Michigan's is Metro Health Hospital
+218601,Case Western Reserve University,Rammelkamp Center,partner,MetroHealth,,MetroHealth's research center
+578404,UT Southwestern Medical Center,University of Texas SouthWestern,core,,,capital-W spelling
+353201,Virginia Commonwealth University,Virginia CommonWealth University,core,,,capital-W spelling
+577505,UCLA,Los Angeles BioMedical Research Institute,partner,The Lundquist Institute,,capital-M spelling

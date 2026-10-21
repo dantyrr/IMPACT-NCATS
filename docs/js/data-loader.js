@@ -19,7 +19,7 @@ const R2_BASE_URL = 'https://pub-4368cf00a45748488f64d2b648550d4d.r2.dev/ncats';
  *
  * Bump this whenever exported data changes.
  */
-const DATA_VERSION = '2026-10-21a';
+const DATA_VERSION = '2026-10-21b';
 
 class DataLoader {
     constructor() {
@@ -44,6 +44,11 @@ class DataLoader {
 
     async loadCollaboration() {
         return this._fetch(`${this.baseUrl}/collaboration.json`);
+    }
+
+    /** Partner and non-hub institutions for the Collaboration map; loaded on demand. */
+    async loadCollaborationInstitutions() {
+        return this._fetch(`${this.baseUrl}/collaboration_institutions.json`);
     }
 
     /** US state outlines (Census cartographic boundaries), served with the site itself. */

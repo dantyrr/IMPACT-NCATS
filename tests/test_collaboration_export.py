@@ -39,7 +39,8 @@ def test_sole_grant_hubs(conn):
 
 
 def test_build_orders_hubs_by_label_and_encodes_papers(conn):
-    d = build(conn, HUBS, gaz=None, slugs={10: "beta"}, outreach={})
+    d, pmids, idx = build(conn, HUBS, gaz=None, slugs={10: "beta"}, outreach={})
+    assert pmids == [1, 2, 3] and idx == {20: 0, 10: 1}
     assert [h["label"] for h in d["hubs"]] == ["Alpha Hub", "Beta Hub"]   # Alpha = 0, Beta = 1
     beta = d["hubs"][1]
     assert beta["slug"] == "beta" and (beta["award_first"], beta["award_last"]) == (2015, 2016)
@@ -51,3 +52,39 @@ def test_build_orders_hubs_by_label_and_encodes_papers(conn):
     assert p["f"] == [[0, 1], [1], [0]]
     assert p["s"] == [-1, 1, -1]
     assert d["n_papers"] == 3
+
+
+def test_institution_layer_places_partners_and_other_institutions(conn):
+    from scripts.export_collaboration_json import institution_layer
+    from scripts.build_nonhub_collaboration import Part
+    from src.ncats.gazetteer import Point
+    from src.ncats.hub_matching import Alias, HubMatcher
+
+    class FakeGazetteer:
+        def city_point(self, city, state):
+            return Point(42.36, -71.06, "x", "Boston city", "place") if (city or "").lower() == "boston" else None
+
+        def zip_point(self, zip5):
+            return None
+
+    cullowhee = Point(35.31, -83.18, "y", "Cullowhee CDP", "place")
+    wcu = lambda pmid: Part(pmid, 2, 1, country="USA", state="NC", city="Cullowhee",
+                            inst_key="western carolina university", inst_name="Western Carolina University",
+                            inst_type="university", point=cullowhee)
+    by_paper = {1: [wcu(1)], 2: [wcu(2)], 3: [wcu(3)]}
+    conn.execute("INSERT INTO pub_author_affils (pmid, position, affil_order, affiliation) VALUES "
+                 "(1, 1, 1, 'Massachusetts General Hospital, Boston, MA, USA')")
+    conn.execute("INSERT INTO pub_author_hubs (pmid, position, hub_id, tier) VALUES (1, 1, 20, 'partner')")
+    matcher = HubMatcher([Alias(20, "Massachusetts General Hospital", "partner",
+                                institution="Massachusetts General Hospital")])
+    layer = institution_layer(conn, FakeGazetteer(), matcher, by_paper,
+                              {"western carolina university": "Western Carolina University"},
+                              layer_pos={1: 0, 2: 1, 3: 2}, hub_idx={20: 0, 10: 1})
+    insts = layer["institutions"]
+    assert [(d["name"], d["kind"], d["hub"], d["papers"]) for d in insts] == [
+        ("Massachusetts General Hospital", "partner", 0, 1),
+        ("Western Carolina University", "other", None, 3)]
+    assert (insts[0]["city"], insts[0]["state"]) == ("Boston", "MA")
+    assert insts[1]["lat"] == 35.31
+    assert layer["rows"] == [0, 1, 2]
+    assert layer["inst"] == [[0, 1], [1], [1]]

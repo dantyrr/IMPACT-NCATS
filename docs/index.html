@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=21">
+    <link rel="stylesheet" href="css/style.css?v=22">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -100,11 +100,13 @@
     <section id="collaboration" class="section">
         <h2>Collaboration</h2>
         <p class="data-note">
-            How CTSA hubs work together. Each dot is a hub; a line joins two hubs that share
-            papers, and gets thicker the more they share. Co-authorship links come from authors'
-            PubMed affiliations; co-funding links from papers that cite two hubs' CTSA awards.
-            Hover a hub or link for numbers, click a hub to see its partners, zoom with the + and − buttons (or pinch, or Ctrl/⌘ + scroll), and use the
-            controls to hide outliers or leave out large consortium papers.
+            How CTSA hubs work together. Each blue dot is a hub, and a line joins two hubs that
+            publish together. By default a line's strength is <strong>relative</strong>: how many
+            more papers the pair shares than you'd expect from how much each hub collaborates
+            overall (×1 = as expected). That shows who prefers whom, rather than just which hubs are
+            biggest. Click a hub to see its strongest partners; switch on partner institutions
+            (orange) or other non-hub institutions (green) to see who else a hub publishes with.
+            Zoom with the + and − buttons, a pinch, or Ctrl/⌘ + scroll.
         </p>
         <div id="co-controls"></div>
         <p class="data-note" id="co-status"></p>
@@ -137,6 +139,10 @@
                     also one of its affiliated hospitals or institutes. Names come from a curated list.</li>
                 <li><strong>Co-funding:</strong> a hub is on a paper when the paper cites that hub's
                     CTSA program award (hub award, KL2/TL1, K12/T32) in NIH RePORTER.</li>
+                <li><strong>Relative link strength</strong> (association strength): a pair's shared
+                    papers divided by the number expected if each hub spread its collaboration across
+                    the others in proportion to their size. ×1 is as expected; ×3 is three times as many
+                    shared papers as expected. Pairs need at least 10 shared papers to be ranked this way.</li>
                 <li><strong>Counting:</strong> full counting adds 1 for each paper two hubs share.
                     Fractional counting gives each pair on a paper with <em>k</em> hubs 1/(<em>k</em>−1),
                     so a 40-hub consortium paper weighs as much in total as a two-hub paper.</li>
@@ -146,6 +152,12 @@
                     acknowledges its grant on more papers (Yale most of all) contributes more papers,
                     and so more links. Hiding a hub with "drop papers only in the data through a hidden
                     hub's grants" removes that effect.</li>
+                <li><strong>Partner institutions</strong> (orange) are the affiliated hospitals and
+                    institutes in the curated hub name list, such as Massachusetts General Hospital for
+                    Harvard. <strong>Other non-hub institutions</strong> (green) are parsed from the
+                    affiliations of authors who match no hub; only US institutions with a located city,
+                    and at least 3 papers with hubs since 2014, can be drawn. Dot size is papers with
+                    hubs, or with the selected hub.</li>
                 <li><strong>Locations:</strong> each hub sits at its city's center point from the US Census
                     Gazetteer; hubs in the same city are spread slightly so each is visible.
                     State outlines: US Census Bureau 2024 cartographic boundary file.</li>
@@ -172,13 +184,13 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=21"></script>
-<script src="js/site-picker.js?v=21"></script>
-<script src="js/chart-manager.js?v=21"></script>
-<script src="js/metrics-def.js?v=21"></script>
-<script src="js/search-tab.js?v=21"></script>
-<script src="js/themes-tab.js?v=21"></script>
-<script src="js/collab-tab.js?v=21"></script>
-<script src="js/app.js?v=21"></script>
+<script src="js/data-loader.js?v=22"></script>
+<script src="js/site-picker.js?v=22"></script>
+<script src="js/chart-manager.js?v=22"></script>
+<script src="js/metrics-def.js?v=22"></script>
+<script src="js/search-tab.js?v=22"></script>
+<script src="js/themes-tab.js?v=22"></script>
+<script src="js/collab-tab.js?v=22"></script>
+<script src="js/app.js?v=22"></script>
 </body>
 </html>
