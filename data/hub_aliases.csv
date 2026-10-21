@@ -73,7 +73,7 @@ hub_id,hub_label,alias,tier,requires,note
 1199905,University of Colorado Anschutz,Children's Hospital Colorado,partner,,
 1199905,University of Colorado Anschutz,National Jewish Health,partner,,verify partner membership
 1199905,University of Colorado Anschutz,Denver Health,partner,,verify partner membership
-1199905,University of Colorado Anschutz,UCHealth,partner,,verify partner membership
+1199905,University of Colorado Anschutz,UCHealth,partner,colorado;aurora;denver;co,verify partner membership; split form 'UC Health' is also Cincinnati's health system
 1199905,University of Colorado Anschutz,Colorado State University,partner,,verify partner membership
 1199905,University of Colorado Anschutz,Colorado School of Public Health,partner,,
 9420201,Yale University,Yale University,core,,
@@ -175,7 +175,7 @@ hub_id,hub_label,alias,tier,requires,note
 3212902,Harvard (Harvard Catalyst),Hebrew SeniorLife,partner,,
 3212902,Harvard (Harvard Catalyst),Cambridge Health Alliance,partner,,
 3212902,Harvard (Harvard Catalyst),Harvard Pilgrim Health Care Institute,partner,,
-3212902,Harvard (Harvard Catalyst),Partners HealthCare,partner,,
+3212902,Harvard (Harvard Catalyst),Partners HealthCare,partner,boston;massachusetts;ma;cambridge;somerville,
 8422704,Tufts University,Tufts,core,,
 8422704,Tufts University,Baystate,partner,,verify partner membership
 8422704,Tufts University,Maine Medical Center,partner,,verify partner membership
@@ -282,7 +282,7 @@ hub_id,hub_label,alias,tier,requires,note
 218601,Case Western Reserve University,Case Comprehensive Cancer Center,core,,
 218601,Case Western Reserve University,Cleveland Clinic,partner,,
 218601,Case Western Reserve University,Lerner Research Institute,partner,,
-218601,Case Western Reserve University,MetroHealth,partner,,
+218601,Case Western Reserve University,MetroHealth,partner,cleveland;ohio,split form 'Metro Health' is also a Michigan hospital
 218601,Case Western Reserve University,University Hospitals Cleveland,partner,,
 218601,Case Western Reserve University,University Hospitals Case Medical Center,partner,,
 218601,Case Western Reserve University,University Hospitals of Cleveland,partner,,
@@ -455,3 +455,18 @@ hub_id,hub_label,alias,tier,requires,note
 ,,University of California Riverside,block,,non-hub UC campus
 ,,University of California Merced,block,,non-hub UC campus
 ,,University of Texas Health Science Center at Tyler,block,,non-hub UT campus
+4134401,Johns Hopkins University,John Hopkins,core,,common misspelling
+5992614,University at Buffalo,University of Buffalo,core,,common misnaming
+7636101,University of Southern California,Children's Hospital of Los Angeles,partner,,variant of Children's Hospital Los Angeles
+578417,UTHealth Houston,University of Texas Houston,core,,
+578417,UTHealth Houston,University of Texas Health Sciences Center,core,houston,plural 'Sciences' variant
+578418,UT Health San Antonio,University of Texas Health Sciences Center,core,san antonio,plural 'Sciences' variant
+1288803,University of Alabama at Birmingham,University of Alabama School of Medicine,core,,"UAB's medical school, all campuses"
+2221101,Duke University,Duke School of Medicine,core,,
+6218701,Ohio State University,James Cancer Hospital,core,,"Arthur G. James Cancer Hospital, Ohio State"
+6144650,Northwestern University,Northwestern Medical Center,core,chicago;illinois,"also a hospital in St. Albans, Vermont"
+218601,Case Western Reserve University,MetroHealth Medical Center,partner,,safe without a city; Michigan's is Metro Health Hospital
+218601,Case Western Reserve University,Rammelkamp Center,partner,,MetroHealth's research center
+578404,UT Southwestern Medical Center,University of Texas SouthWestern,core,,capital-W spelling
+353201,Virginia Commonwealth University,Virginia CommonWealth University,core,,capital-W spelling
+577505,UCLA,Los Angeles BioMedical Research Institute,partner,,capital-M spelling
