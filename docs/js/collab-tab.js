@@ -152,6 +152,7 @@ class CollabTab {
             from: this.data.coauthor_reliable_from, to: maxYear,
             noConsortium: true, dropSole: true, topN: 60, partnersShown: 10,
             showPartner: false, showOther: false, instType: 'all', instMin: 5, instTop: 250,
+            showHubLinks: true, partnerLines: false, otherLines: false, instLinesPer: 3, labels: 'auto',
         };
     }
 
@@ -192,7 +193,7 @@ class CollabTab {
                     Also drop papers that are in the data only through a hidden hub's grants</label>
             </div>
             <div class="controls-row co-layers">
-                <span class="co-layers-title">Also show:</span>
+                <span class="co-layers-title">Dots:</span>
                 <label class="co-check"><input type="checkbox" id="co-show-partner">
                     <span class="co-swatch" style="background:${COLLAB_COLORS.partner}"></span> Partner institutions</label>
                 <label class="co-check"><input type="checkbox" id="co-show-other">
@@ -203,6 +204,19 @@ class CollabTab {
                     <label>Show <select id="co-inst-top">${opts([[100, 'top 100'], [250, 'top 250'], [500, 'top 500'], [0, 'all']], st.instTop)}</select></label>
                 </span>
                 <span class="data-note" id="co-inst-note"></span>
+            </div>
+            <div class="controls-row">
+                <span class="co-layers-title">Lines:</span>
+                <label class="co-check"><input type="checkbox" id="co-hub-lines"${st.showHubLinks ? ' checked' : ''}>
+                    <span class="co-swatch co-swatch-line" style="background:${COLLAB_RAMP(0.7)}"></span> Between hubs</label>
+                <label class="co-check"><input type="checkbox" id="co-partner-lines">
+                    <span class="co-swatch co-swatch-line" style="background:${COLLAB_COLORS.partner}"></span> Hubs – partner institutions</label>
+                <label class="co-check"><input type="checkbox" id="co-other-lines">
+                    <span class="co-swatch co-swatch-line" style="background:${COLLAB_COLORS.other}"></span> Hubs – other non-hub institutions</label>
+                <label>Per institution: <select id="co-inst-lines">${opts([[1, 'Top hub'], [3, 'Top 3 hubs'],
+                    [5, 'Top 5 hubs'], [0, 'All hubs']], st.instLinesPer)}</select></label>
+                <label>Labels: <select id="co-labels">${opts([['auto', 'Largest hubs'], ['all', 'As many as fit'],
+                    ['none', 'None']], st.labels)}</select></label>
             </div>
             <details class="co-more" id="co-more">
                 <summary>More filters: theme, funding, grant or PI, lead authors, citation impact</summary>
@@ -242,6 +256,22 @@ class CollabTab {
         };
         on('co-show-partner', 'change', layer('showPartner'));
         on('co-show-other', 'change', layer('showOther'));
+        on('co-hub-lines', 'change', e => { st.showHubLinks = e.target.checked; this.render(); });
+        on('co-inst-lines', 'change', set('instLinesPer', Number));
+        on('co-labels', 'change', set('labels'));
+        // Lines to institutions need their dots: switching lines on turns the dots on too.
+        const lines = (key, dotKey, dotId) => async e => {
+            st[key] = e.target.checked;
+            if (e.target.checked && !st[dotKey]) {
+                st[dotKey] = true;
+                document.getElementById(dotId).checked = true;
+                document.getElementById('co-other-filters').style.display = st.showOther ? '' : 'none';
+            }
+            if (e.target.checked) await this._loadInstitutions();
+            this.render();
+        };
+        on('co-partner-lines', 'change', lines('partnerLines', 'showPartner', 'co-show-partner'));
+        on('co-other-lines', 'change', lines('otherLines', 'showOther', 'co-show-other'));
         on('co-more', 'toggle', e => { if (e.target.open) this._loadAttributes(); });
         on('co-hide', 'change', e => {
             if (e.target.value !== '') this.hideHub(+e.target.value);
@@ -449,7 +479,9 @@ class CollabTab {
     computeInstitutions() {
         if (!this.inst) return null;
         const m = this.inst.institutions.length, sel = this.selected;
+        const n = this.n;
         const count = new Uint32Array(m), withSel = new Uint32Array(m);
+        const byHub = new Uint32Array(m * n);          // papers per (institution, hub)
         const { rows, inst } = this.inst;
         for (let r = 0; r < rows.length; r++) {
             const hs = this._paperHubs(rows[r]);
@@ -458,9 +490,10 @@ class CollabTab {
             for (const id of inst[r]) {
                 count[id]++;
                 if (has) withSel[id]++;
+                for (const h of hs) byHub[id * n + h]++;
             }
         }
-        return { count, withSel };
+        return { count, withSel, byHub };
     }
 
     // ---------------------------------------------------------------- render
@@ -565,6 +598,31 @@ class CollabTab {
         return marks.sort((a, b) => b.r - a.r);
     }
 
+    /** Lines from shown institutions to the hubs they publish with: each
+     *  institution's top hubs, or only the selected hub. A partner's line to
+     *  its own hub is affiliation, not collaboration, so it is not drawn. */
+    _institutionLines(marks, pos) {
+        const st = this.state, sel = this.selected, n = this.n;
+        if (!marks.length || !(st.partnerLines || st.otherLines)) return [];
+        const { byHub } = this.instNet;
+        const out = [];
+        for (const m of marks) {
+            const kind = m.d.kind;
+            if (!(kind === 'partner' ? st.partnerLines : st.otherLines)) continue;
+            let hubs = [];
+            for (let h = 0; h < n; h++) {
+                const c = byHub[m.id * n + h];
+                if (!c || !pos[h] || (kind === 'partner' && h === m.d.hub)) continue;
+                if (sel != null && h !== sel) continue;
+                hubs.push([h, c]);
+            }
+            hubs.sort((x, y) => y[1] - x[1]);
+            if (sel == null && st.instLinesPer) hubs = hubs.slice(0, st.instLinesPer);
+            for (const [h, c] of hubs) out.push({ m, h, c });
+        }
+        return out.sort((a, b) => a.c - b.c);   // strongest on top
+    }
+
     _drawMap() {
         const wrap = document.getElementById('co-map-wrap');
         const width = Math.max(320, wrap.clientWidth - 16);
@@ -600,6 +658,7 @@ class CollabTab {
 
         // Link strokes keep their screen width when zoomed (vector-effect in CSS).
         const gl = root.append('g').attr('class', 'co-links');
+        if (!this.state.showHubLinks) shown = [];
         gl.selectAll(null).data([...shown].reverse()).join('line')
             .attr('x1', l => pos[l.a][0]).attr('y1', l => pos[l.a][1])
             .attr('x2', l => pos[l.b][0]).attr('y2', l => pos[l.b][1])
@@ -617,6 +676,20 @@ class CollabTab {
 
         // Partner and non-hub institutions, under the hubs.
         const marks = this._institutionMarks(projection);
+        const instLines = this._institutionLines(marks, pos);
+        this._instLineMax = Math.max(1, ...instLines.map(d => d.c));
+        const iw = c => 0.5 + 3.5 * Math.sqrt(c / this._instLineMax);
+        const gil = root.append('g').attr('class', 'co-links co-inst-links');
+        gil.selectAll(null).data(instLines).join('line')
+            .attr('x1', d => d.m.x).attr('y1', d => d.m.y).attr('x2', d => pos[d.h][0]).attr('y2', d => pos[d.h][1])
+            .attr('stroke', d => COLLAB_COLORS[d.m.d.kind]).attr('stroke-linecap', 'round')
+            .attr('stroke-width', d => iw(d.c)).attr('stroke-opacity', d => 0.2 + 0.5 * Math.sqrt(d.c / this._instLineMax));
+        gil.selectAll(null).data(instLines).join('line').attr('class', 'co-link-hit')
+            .attr('x1', d => d.m.x).attr('y1', d => d.m.y).attr('x2', d => pos[d.h][0]).attr('y2', d => pos[d.h][1])
+            .attr('stroke', 'transparent').attr('stroke-width', 7)
+            .on('pointermove', (e, d) => this._tip(e, [[`${d.c.toLocaleString()} shared papers`, 'strong'],
+                [`${d.m.d.name} – ${this.hubs[d.h].label}`, 'muted']]))
+            .on('pointerleave', () => this._tip(null));
         const gi = root.append('g').attr('class', 'co-insts');
         const instDots = gi.selectAll('circle').data(marks).join('circle')
             .attr('cx', m => m.x).attr('cy', m => m.y)
@@ -650,9 +723,12 @@ class CollabTab {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.select(i === this.selected ? null : i); }
             });
 
-        const order = sel != null
-            ? [sel, ...shown.slice(0, 10).map(l => (l.a === sel ? l.b : l.a))]
-            : [...visible].sort((a, b) => papers[b] - papers[a]).slice(0, width < 560 ? 7 : 14);
+        const bySize = [...visible].sort((a, b) => papers[b] - papers[a]);
+        const mode = this.state.labels;
+        const order = mode === 'none' ? []
+            : sel != null ? [sel, ...this.shownLinks.slice(0, mode === 'all' ? this.shownLinks.length : 10).map(l => (l.a === sel ? l.b : l.a)),
+                             ...(mode === 'all' ? bySize : [])]
+            : (mode === 'all' ? bySize : bySize.slice(0, width < 560 ? 7 : 14));
         const labels = this._labelLayout(order, sel, radius, width, height);
         const texts = root.append('g').attr('class', 'co-labels').selectAll('text').data(labels).join('text')
             .attr('text-anchor', d => d.anchor).attr('class', d => d.cls).text(d => d.text);
@@ -716,35 +792,209 @@ class CollabTab {
         return out;
     }
 
+    /** The legend as data, drawn as HTML on the page and as SVG in exports. */
+    _legendModel(maxP, marks) {
+        const st = this.state, relative = st.measure === 'relative', sel = this.selected;
+        const r = v => 3 + 16 * Math.sqrt(v / maxP);
+        const dot = (radius, color, label) => ({ type: 'dot', r: radius, color, label });
+        const groups = [];
+        const kinds = [dot(5, COLLAB_COLORS.hub, 'CTSA hub')];
+        if (st.showPartner) kinds.push(dot(4, COLLAB_COLORS.partner, 'Partner institution'));
+        if (st.showOther) kinds.push(dot(4, COLLAB_COLORS.other, 'Other non-hub institution'));
+        groups.push({ title: null, items: kinds });
+        groups.push({ title: 'Hub size: papers', items: [maxP, maxP / 4, maxP / 16].map(v =>
+            dot(r(v), COLLAB_COLORS.hub, Math.round(v).toLocaleString())) });
+        if (st.showHubLinks) {
+            const top = this._linkTop;
+            const fake = v => this._linkT(relative ? { rel: v } : { w: v });
+            const samples = relative
+                ? [Math.sqrt(top), Math.pow(top, 0.75), top].filter((v, k, a) => k === 0 || v > a[k - 1] + 0.05)
+                : [top / 4, top / 2, top];
+            groups.push({
+                title: `Hub link: ${relative ? 'times the expected rate' : (st.counting === 'fractional' ? 'fractional papers' : 'shared papers')}` +
+                       (sel != null ? ` (scaled to ${this.hubs[sel].label}'s strongest tie)` : ''),
+                items: samples.map(v => {
+                    const t = fake(v);
+                    return { type: 'line', width: 0.8 + 6.2 * t, color: COLLAB_RAMP(t), opacity: 0.35 + 0.6 * t,
+                             label: relative ? `${fmtX(v)}${sel == null && v === RELATIVE_MAX ? '+' : ''}` : Math.round(v).toLocaleString() };
+                }) });
+        }
+        const instKinds = [st.partnerLines && 'partner', st.otherLines && 'other'].filter(Boolean);
+        if (instKinds.length && marks.length) {
+            const mx = this._instLineMax || 1;
+            groups.push({ title: 'Institution link: shared papers', items: [mx, mx / 4].map(v => ({
+                type: 'line', width: 0.5 + 3.5 * Math.sqrt(v / mx), color: COLLAB_COLORS[instKinds[0]],
+                opacity: 0.2 + 0.5 * Math.sqrt(v / mx), label: Math.max(1, Math.round(v)).toLocaleString() })) });
+        }
+        if (marks.length) {
+            groups.push({ title: `Institution size: papers ${sel == null ? 'with hubs' : 'with the selected hub'}`,
+                          items: [{ type: 'text', label: `${marks.length.toLocaleString()} shown, from ${this.inst.from_year}` }] });
+        }
+        return groups;
+    }
+
     _drawLegend(maxP, marks) {
         // HTML, not SVG, so the keys wrap onto separate lines on a phone.
-        const st = this.state, relative = st.measure === 'relative';
-        const r = v => 3 + 16 * Math.sqrt(v / maxP);
-        const dot = (radius, color) => `<svg width="${2 * radius + 4}" height="${Math.max(16, 2 * radius + 4)}" aria-hidden="true">
-            <circle cx="${radius + 2}" cy="${Math.max(8, radius + 2)}" r="${radius}" fill="${color}" stroke="#fff" stroke-width="1.5"/></svg>`;
-        const line = t => `<svg width="30" height="16" aria-hidden="true">
-            <line x1="2" x2="28" y1="8" y2="8" stroke="${COLLAB_RAMP(t)}" stroke-linecap="round"
-                  stroke-opacity="${0.35 + 0.6 * t}" stroke-width="${0.8 + 6.2 * t}"/></svg>`;
-        const item = (mark, text) => `<span class="co-legend-item">${mark}${escHtml(text)}</span>`;
-        const top = this._linkTop;
-        const fake = v => this._linkT(relative ? { rel: v } : { w: v });
-        const samples = relative ? [Math.sqrt(top), Math.pow(top, 0.75), top].filter((v, k, a) => k === 0 || v > a[k - 1] + 0.05)
-                                 : [top / 4, top / 2, top];
-        const linkItems = samples.map(v => item(line(fake(v)), relative
-            ? `${fmtX(v)}${this.selected == null && v === RELATIVE_MAX ? '+' : ''}`
-            : Math.round(v).toLocaleString()));
-        const kinds = [item(dot(5, COLLAB_COLORS.hub), 'CTSA hub')];
-        if (st.showPartner) kinds.push(item(dot(4, COLLAB_COLORS.partner), 'Partner institution'));
-        if (st.showOther) kinds.push(item(dot(4, COLLAB_COLORS.other), 'Other non-hub institution'));
-        document.getElementById('co-legend').innerHTML = `
-            <div class="co-legend-group">${kinds.join('')}</div>
-            <div class="co-legend-group"><span class="co-legend-title">Hub size: papers</span>
-                ${[maxP, maxP / 4, maxP / 16].map(v => item(dot(r(v), COLLAB_COLORS.hub), Math.round(v).toLocaleString())).join('')}</div>
-            <div class="co-legend-group"><span class="co-legend-title">Link: ${relative ? 'times the expected rate' :
-                (st.counting === 'fractional' ? 'fractional papers' : 'shared papers')}${this.selected != null
-                ? ` (scaled to ${escHtml(this.hubs[this.selected].label)}'s strongest tie)` : ''}</span>${linkItems.join('')}</div>
-            ${marks.length ? `<div class="co-legend-group"><span class="co-legend-title">Institution size: papers ${this.selected == null ? 'with hubs' : 'with the selected hub'}</span>
-                ${item('', `${marks.length.toLocaleString()} shown, from ${this.inst.from_year}`)}</div>` : ''}`;
+        this._legend = this._legendModel(maxP, marks);
+        const mark = it => {
+            if (it.type === 'dot') {
+                const h = Math.max(16, 2 * it.r + 4);
+                return `<svg width="${2 * it.r + 4}" height="${h}" aria-hidden="true"><circle cx="${it.r + 2}" cy="${h / 2}"
+                    r="${it.r}" fill="${it.color}" stroke="#fff" stroke-width="1.5"/></svg>`;
+            }
+            if (it.type === 'line') {
+                return `<svg width="30" height="16" aria-hidden="true"><line x1="2" x2="28" y1="8" y2="8" stroke="${it.color}"
+                    stroke-linecap="round" stroke-opacity="${it.opacity}" stroke-width="${it.width}"/></svg>`;
+            }
+            return '';
+        };
+        document.getElementById('co-legend').innerHTML = this._legend.map(g => `
+            <div class="co-legend-group">${g.title ? `<span class="co-legend-title">${escHtml(g.title)}</span>` : ''}
+                ${g.items.map(it => `<span class="co-legend-item">${mark(it)}${escHtml(it.label)}</span>`).join('')}</div>`).join('');
+    }
+
+    // ---------------------------------------------------------------- export
+
+    /** One line per setting that shapes the picture, for the exported caption. */
+    _captionLines() {
+        const st = this.state, f = this.filters, A = this.attrs;
+        const parts = [NETWORKS[st.network].label,
+            st.measure === 'relative' ? 'link strength relative to expected' : 'link strength in shared papers',
+            `${st.counting} counting`, `${st.from}–${st.to}`];
+        if (st.noConsortium) parts.push(`papers naming ${this.data.consortium_hubs}+ hubs left out`);
+        const lines = [parts.join(' · ')];
+        const more = [];
+        if (this.selected != null) more.push(`selected: ${this.hubs[this.selected].label}`);
+        if (this.hidden.size) more.push(`hidden: ${[...this.hidden].map(i => this.hubs[i].label).join(', ')}`);
+        if (this._active) {
+            if (f.theme >= 0) more.push(`theme: ${A.themes[f.theme].label.split(';')[0]}`);
+            if (f.funding !== 'all') more.push(`funding: ${FUNDING_LABELS[f.funding].split(' (')[0]}`);
+            if (f.grant) more.push(f.grant.label);
+            if (f.role !== 'any') more.push('first or last author only');
+            if (f.researchOnly) more.push('research articles');
+            if (f.rcrMin > 0) more.push(`RCR ≥ ${f.rcrMin}`);
+            if (f.tri >= 0) more.push(`translational: ${TRI_LABELS[f.tri]}`);
+        }
+        if (more.length) lines.push(more.join(' · '));
+        lines.push(document.getElementById('co-summary').textContent);
+        return lines;
+    }
+
+    /** The figure as a standalone SVG: title, caption, the map as shown
+     *  (including zoom), legend and source line. */
+    _exportSvg() {
+        const map = document.getElementById('co-map');
+        const mw = +map.getAttribute('width'), mh = +map.getAttribute('height');
+        const pad = 20, W = mw + 2 * pad, cw = 5.7;                 // cw: approx. px per 11px legend character
+        const wrap = (text, size) => {
+            const max = Math.floor((W - 2 * pad) / (size * 0.55)), out = [];
+            let line = '';
+            for (const word of text.split(' ')) {
+                if ((line + ' ' + word).trim().length > max) { out.push(line); line = word; }
+                else line = (line + ' ' + word).trim();
+            }
+            if (line) out.push(line);
+            return out;
+        };
+        const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        let y = pad + 18;
+        let out = `<text x="${pad}" y="${y}" class="x-title">CTSA hub collaboration</text>`;
+        y += 8;
+        for (const line of this._captionLines().flatMap(l => wrap(l, 11))) {
+            y += 15;
+            out += `<text x="${pad}" y="${y}" class="x-cap">${esc(line)}</text>`;
+        }
+        y += 12;
+        out += `<svg x="${pad}" y="${y}" width="${mw}" height="${mh}" viewBox="0 0 ${mw} ${mh}">${map.innerHTML}</svg>`;
+        out += `<rect x="${pad}" y="${y}" width="${mw}" height="${mh}" fill="none" stroke="#e0e0e0"/>`;
+        y += mh + 18;
+        // Legend: items flow left to right and wrap.
+        let x = pad;
+        for (const g of this._legend || []) {
+            const titleW = g.title ? g.title.length * cw + 10 : 0;
+            const itemsW = g.items.reduce((sum, it) => sum + (it.type === 'dot' ? 2 * it.r + 8 : it.type === 'line' ? 34 : 0)
+                                                           + it.label.length * cw + 14, 0);
+            if (x > pad && x + titleW + itemsW > W - pad) { x = pad; y += 26; }
+            if (g.title) { out += `<text x="${x}" y="${y + 4}" class="x-leg-t">${esc(g.title)}</text>`; x += titleW; }
+            for (const it of g.items) {
+                if (it.type === 'dot') {
+                    out += `<circle cx="${x + it.r + 2}" cy="${y}" r="${it.r}" fill="${it.color}" stroke="#fff" stroke-width="1.5"/>`;
+                    x += 2 * it.r + 8;
+                } else if (it.type === 'line') {
+                    out += `<line x1="${x}" x2="${x + 26}" y1="${y}" y2="${y}" stroke="${it.color}" stroke-linecap="round"
+                        stroke-opacity="${it.opacity}" stroke-width="${it.width}"/>`;
+                    x += 34;
+                }
+                out += `<text x="${x}" y="${y + 4}" class="x-leg">${esc(it.label)}</text>`;
+                x += it.label.length * cw + 14;
+            }
+            x += 16;
+        }
+        y += 12;
+        const source = `Source: IMPACT-NCATS (dantyrr.github.io/IMPACT-NCATS), data of ${this.data.generated}. ` +
+                       'PubMed affiliations, NIH RePORTER, iCite; US Census Bureau boundaries and Gazetteer.';
+        for (const line of wrap(source, 10)) {
+            y += 14;
+            out += `<text x="${pad}" y="${y}" class="x-src">${esc(line)}</text>`;
+        }
+        const H = y + pad;
+        const style = `
+            .co-states path { fill: #eef2f5; stroke: #c9d3dc; stroke-width: 0.8; vector-effect: non-scaling-stroke; }
+            .co-links line { vector-effect: non-scaling-stroke; }
+            .co-label { font-family: Helvetica, Arial, sans-serif; fill: #2c3e50; paint-order: stroke; stroke: #fff; stroke-linejoin: round; }
+            .co-label-sel { font-weight: 700; }
+            text.x-title { font: 700 18px Helvetica, Arial, sans-serif; fill: #1a5276; }
+            text.x-cap { font: 11px Helvetica, Arial, sans-serif; fill: #2c3e50; }
+            text.x-leg-t { font: 700 11px Helvetica, Arial, sans-serif; fill: #7f8c8d; }
+            text.x-leg { font: 11px Helvetica, Arial, sans-serif; fill: #7f8c8d; }
+            text.x-src { font: 10px Helvetica, Arial, sans-serif; fill: #7f8c8d; }`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
+                    `<style>${style}</style><rect width="${W}" height="${H}" fill="#fff"/>${out}</svg>`;
+        return { svg, W, H };
+    }
+
+    /** Rasterize the export SVG at `scale` times its size. */
+    async _exportCanvas(scale = 3) {
+        const { svg, W, H } = this._exportSvg();
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error('Could not render the map image'));
+            img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(W * scale);
+        canvas.height = Math.round(H * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        return { canvas, W, H };
+    }
+
+    async _downloadFigure(format) {
+        const name = `${this._filename()}_map`;
+        if (format === 'svg') {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([this._exportSvg().svg], { type: 'image/svg+xml' }));
+            a.download = `${name}.svg`;
+            a.click();
+            return;
+        }
+        const { canvas, W, H } = await this._exportCanvas(3);
+        const png = canvas.toDataURL('image/png');
+        if (format === 'png') {
+            const a = document.createElement('a');
+            a.href = png;
+            a.download = `${name}.png`;
+            a.click();
+        } else {
+            const { jsPDF } = window.jspdf;
+            // Compressed: without it jsPDF stores the 3x image raw (about 16 MB).
+            const pdf = new jsPDF({ orientation: W >= H ? 'landscape' : 'portrait', unit: 'pt', format: [W, H], compress: true });
+            pdf.addImage(png, 'PNG', 0, 0, W, H, undefined, 'FAST');
+            pdf.save(`${name}.pdf`);
+        }
     }
 
     // ---------------------------------------------------------------- tooltip
@@ -1000,12 +1250,22 @@ class CollabTab {
         const el = document.getElementById('co-downloads');
         if (el.dataset.ready) return;
         el.dataset.ready = '1';
-        el.innerHTML = `<div class="download-bar"><span>Download:</span>
+        el.innerHTML = `<div class="download-bar"><span>Figure:</span>
+            <button class="download-btn" data-fig="png">PNG</button>
+            <button class="download-btn" data-fig="pdf">PDF</button>
+            <button class="download-btn" data-fig="svg">SVG</button>
+            <span>Data:</span>
             <button class="download-btn" data-dl="links">Links CSV</button>
             <button class="download-btn" data-dl="hubs">Hubs CSV</button>
-            <button class="download-btn" data-dl="insts">Institutions CSV</button>
-            <button class="download-btn" data-dl="svg">Map SVG</button></div>`;
+            <button class="download-btn" data-dl="insts">Institutions CSV</button></div>
+            <p class="data-note">The figure is the map exactly as shown (including zoom), with a legend and a caption listing the settings.</p>`;
         el.querySelectorAll('[data-dl]').forEach(b => b.addEventListener('click', () => this._download(b.dataset.dl)));
+        el.querySelectorAll('[data-fig]').forEach(b => b.addEventListener('click', async () => {
+            b.disabled = true;
+            try { await this._downloadFigure(b.dataset.fig); }
+            catch (e) { console.error('Figure export failed', e); alert('Sorry, the figure could not be exported in this browser.'); }
+            finally { b.disabled = false; }
+        }));
     }
 
     _filename() {
@@ -1037,18 +1297,6 @@ class CollabTab {
                 ...this.inst.institutions.map((d, id) => [d.name, d.kind, d.type, d.hub != null ? this.hubs[d.hub].label : '',
                     d.city, d.state, d.lat, d.lon, net.count[id], ...(sel != null ? [net.withSel[id]] : [])])
                     .filter(r => r[8] > 0)], `${this._filename()}_institutions`);
-        } else {
-            const svg = document.getElementById('co-map').cloneNode(true);
-            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            const style = document.createElement('style');
-            style.textContent = '.co-states path{fill:#eef2f5;stroke:#c9d3dc;stroke-width:0.8}' +
-                '.co-label{font:11px sans-serif;fill:#2c3e50;paint-order:stroke;stroke:#fff;stroke-width:3px}' +
-                '.co-label-sel{font-weight:700}';
-            svg.prepend(style);
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' }));
-            a.download = `${this._filename()}_map.svg`;
-            a.click();
         }
     }
 }
