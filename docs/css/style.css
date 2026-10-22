@@ -1668,3 +1668,11 @@ tr.row-excluded td {
 #co-other-filters { display: inline-flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; }
 .co-sub { color: var(--text-light); font-size: 0.8em; }
 .co-list li > span:first-child { min-width: 0; }
+.co-more { margin: 0.25rem 0 0.6rem; border: 1px solid var(--border); border-radius: var(--radius);
+           padding: 0.5rem 0.75rem; background: var(--surface); }
+.co-more summary { cursor: pointer; font-weight: 600; color: var(--primary); font-size: 0.9rem; }
+.co-more[open] summary { margin-bottom: 0.6rem; }
+#co-f-grant { padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius);
+              font-size: 0.9rem; max-width: 100%; }
+.co-active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.3rem 0; font-size: 0.85rem; }
+.co-active-filters:empty { display: none; }

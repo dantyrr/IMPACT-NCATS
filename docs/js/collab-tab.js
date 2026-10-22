@@ -14,7 +14,9 @@
  * each hub collaborates overall (association strength; 1 = as expected).
  *
  * collaboration_institutions.json (partner and non-hub institutions with map
- * points) is loaded only when one of those layers is switched on.
+ * points) is loaded only when one of those layers is switched on, and
+ * collaboration_papers.json (theme, funding, grants, citation impact, lead
+ * authors and PMIDs per paper) when the extra filters or a paper list are used.
  * Kept in its own file rather than added to app.js, which is already large.
  */
 
@@ -30,6 +32,11 @@ const NETWORKS = {
     fund:  { label: 'Co-funding (shared CTSA award citations)', coauthor: false },
 };
 const INST_TYPES = ['university', 'hospital', 'government', 'industry', 'other'];
+const FUNDING_LABELS = { hub: 'Hub awards (UL1/UM1)', training: 'Career & training (KL2, K12, TL1, T32…)',
+                         research: 'Research grants (R, U…)', small_business: 'Small business (R41–R44)' };
+const TRI_LABELS = ['Human', 'Animal', 'Molecular/cellular', 'Mixed'];
+const DEFAULT_FILTERS = { theme: -1, funding: 'all', grant: null, role: 'any', researchOnly: false, rcrMin: 0, tri: -1 };
+const PUBMED_MAX = 200;   // PubMed shows at most 200 results per page
 
 function escHtml(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
@@ -47,6 +54,10 @@ class CollabTab {
         this.hidden = new Set();       // hub indices
         this.state = null;
         this.inst = null;              // institution layer data, once loaded
+        this.attrs = null;             // per-paper attributes, once loaded
+        this.filters = { ...DEFAULT_FILTERS };
+        this.selectedLink = null;      // {a, b} when a link was clicked
+        this.selectedInst = null;      // institution index when an institution was clicked
         window.addEventListener('resize', () => {
             clearTimeout(this._resizeTimer);
             this._resizeTimer = setTimeout(() => this._isVisible() && this.render(), 150);
@@ -98,6 +109,28 @@ class CollabTab {
             console.error('Failed to load collaboration_institutions.json', e);
         });
         return this._instLoading;
+    }
+
+    async _loadAttributes() {
+        if (this.attrs || this._attrLoading) return this._attrLoading;
+        const note = document.getElementById('co-filter-note');
+        if (note) note.textContent = 'Loading paper details…';
+        this._attrLoading = this.app.loader.loadCollaborationPapers().then(d => {
+            if (d.build !== this.data.build) {
+                console.warn('collaboration_papers.json is from a different export', d.build, this.data.build);
+            }
+            const pm = new Float64Array(d.pmid_delta.length);
+            let acc = 0;
+            d.pmid_delta.forEach((v, i) => { acc += v; pm[i] = acc; });
+            d.pmids = pm;
+            this.attrs = d;
+            this._renderFilterControls();
+            if (note) note.textContent = '';
+        }).catch(e => {
+            if (note) note.textContent = 'Paper details are not available.';
+            console.error('Failed to load collaboration_papers.json', e);
+        });
+        return this._attrLoading;
     }
 
     _prepare() {
@@ -171,6 +204,12 @@ class CollabTab {
                 </span>
                 <span class="data-note" id="co-inst-note"></span>
             </div>
+            <details class="co-more" id="co-more">
+                <summary>More filters: theme, funding, grant or PI, lead authors, citation impact</summary>
+                <div id="co-filter-controls"><p class="data-note">Opening this loads paper details (about 1 MB).</p></div>
+                <span class="data-note" id="co-filter-note"></span>
+            </details>
+            <div class="co-active-filters" id="co-active-filters"></div>
             <p class="data-note co-warning" id="co-warning"></p>`;
 
         const on = (id, ev, fn) => document.getElementById(id).addEventListener(ev, fn);
@@ -203,6 +242,7 @@ class CollabTab {
         };
         on('co-show-partner', 'change', layer('showPartner'));
         on('co-show-other', 'change', layer('showOther'));
+        on('co-more', 'toggle', e => { if (e.target.open) this._loadAttributes(); });
         on('co-hide', 'change', e => {
             if (e.target.value !== '') this.hideHub(+e.target.value);
             e.target.value = '';
@@ -210,6 +250,92 @@ class CollabTab {
         document.querySelectorAll('[data-outlier]').forEach(btn => btn.addEventListener('click', () => {
             const i = this.hubs.findIndex(h => h.label === btn.dataset.outlier);
             if (i >= 0) this.hideHub(i);
+        }));
+    }
+
+    _renderFilterControls() {
+        const A = this.attrs, f = this.filters;
+        if (!A) return;
+        const opts = (pairs, sel) => pairs.map(([v, l]) =>
+            `<option value="${v}"${String(v) === String(sel) ? ' selected' : ''}>${escHtml(l)}</option>`).join('');
+        const shorten = l => (l.length > 70 ? `${l.slice(0, 68)}…` : l);
+        // Search options: every grant and every PI, mapped to the grants they stand for.
+        this._searchOptions = new Map();
+        A.grant_list.forEach((g, k) => this._searchOptions.set(
+            `${g.num} · ${g.code} · ${g.org} · ${g.title}`, { label: `Grant ${g.num} · ${g.org}`, grants: [k] }));
+        A.pis.forEach(pi => this._searchOptions.set(
+            `${pi.name} · PI on ${pi.g.length} grant${pi.g.length === 1 ? '' : 's'}`,
+            { label: `${pi.name}'s grants`, grants: pi.g }));
+        const nTheme = A.theme.filter(t => t >= 0).length;
+        document.getElementById('co-filter-controls').innerHTML = `
+            <div class="controls-row">
+                <label>Theme: <select id="co-f-theme">${opts([[-1, 'All papers'], ...A.themes.map((t, k) =>
+                    [k, `${shorten(t.label)} (${t.size.toLocaleString()})`])], f.theme)}</select></label>
+                <span class="data-note">${Math.round(100 * nTheme / A.theme.length)}% of papers have a theme.</span>
+            </div>
+            <div class="controls-row">
+                <label>Funding: <select id="co-f-funding">${opts([['all', 'Any NCATS grant'],
+                    ...Object.entries(FUNDING_LABELS)], f.funding)}</select></label>
+                <label>Grant or PI: <input type="search" id="co-f-grant" list="co-f-grant-list"
+                    placeholder="Grant number or PI name…" autocomplete="off" size="34"></label>
+                <datalist id="co-f-grant-list">${[...this._searchOptions.keys()].map(k =>
+                    `<option value="${escHtml(k)}"></option>`).join('')}</datalist>
+            </div>
+            <div class="controls-row">
+                <label>Count a hub when it has: <select id="co-f-role">${opts([['any', 'Any author'],
+                    ['lead', 'The first or last author']], f.role)}</select></label>
+                <label class="co-check"><input type="checkbox" id="co-f-research"${f.researchOnly ? ' checked' : ''}>
+                    Research articles only</label>
+                <label>Citation impact: <select id="co-f-rcr">${opts([[0, 'Any'], [1, 'RCR ≥ 1 (field average or above)'],
+                    [2, 'RCR ≥ 2'], [5, 'RCR ≥ 5']], f.rcrMin)}</select></label>
+                <label>Translational: <select id="co-f-tri">${opts([[-1, 'Any'],
+                    ...TRI_LABELS.map((l, k) => [k, l])], f.tri)}</select></label>
+            </div>`;
+        const on = (id, ev, fn) => document.getElementById(id).addEventListener(ev, fn);
+        const set = (key, conv) => e => { this.filters[key] = conv(e.target.value); this.render(); };
+        on('co-f-theme', 'change', set('theme', Number));
+        on('co-f-funding', 'change', set('funding', v => v));
+        on('co-f-role', 'change', set('role', v => v));
+        on('co-f-rcr', 'change', set('rcrMin', Number));
+        on('co-f-tri', 'change', set('tri', Number));
+        on('co-f-research', 'change', e => { this.filters.researchOnly = e.target.checked; this.render(); });
+        on('co-f-grant', 'change', e => {
+            const hit = this._searchOptions.get(e.target.value);
+            if (!hit) return;
+            this.filters.grant = { label: hit.label, grants: new Set(hit.grants) };
+            e.target.value = '';
+            this.render();
+        });
+    }
+
+    _filtersActive() {
+        const f = this.filters;
+        return !!this.attrs && (f.theme >= 0 || f.funding !== 'all' || f.grant || f.role !== 'any' ||
+                                f.researchOnly || f.rcrMin > 0 || f.tri >= 0);
+    }
+
+    _renderActiveFilters() {
+        const el = document.getElementById('co-active-filters');
+        if (!this._filtersActive()) { el.innerHTML = ''; return; }
+        const f = this.filters, A = this.attrs, chips = [];
+        if (f.theme >= 0) chips.push(['theme', `Theme: ${A.themes[f.theme].label.split(';')[0]}`]);
+        if (f.funding !== 'all') chips.push(['funding', `Funding: ${FUNDING_LABELS[f.funding].split(' (')[0]}`]);
+        if (f.grant) chips.push(['grant', f.grant.label]);
+        if (f.role !== 'any') chips.push(['role', this.state.network === 'fund'
+            ? 'Lead authors only (not used for co-funding)' : 'Lead authors only']);
+        if (f.researchOnly) chips.push(['researchOnly', 'Research articles']);
+        if (f.rcrMin > 0) chips.push(['rcrMin', `RCR ≥ ${f.rcrMin}`]);
+        if (f.tri >= 0) chips.push(['tri', `Translational: ${TRI_LABELS[f.tri]}`]);
+        el.innerHTML = `<span>Filters:</span>${chips.map(([k, l]) =>
+            `<span class="picker-chip" style="background:var(--primary)">${escHtml(l)}
+                <button class="chip-remove" data-clear="${k}" aria-label="Remove filter">×</button></span>`).join('')}
+            <button class="co-link-btn" data-clear="all">Clear all</button>`;
+        el.querySelectorAll('[data-clear]').forEach(b => b.addEventListener('click', () => {
+            const k = b.dataset.clear;
+            if (k === 'all') this.filters = { ...DEFAULT_FILTERS };
+            else this.filters[k] = DEFAULT_FILTERS[k];
+            this._renderFilterControls();
+            this.render();
         }));
     }
 
@@ -239,12 +365,36 @@ class CollabTab {
         const st = this.state, P = this.data.papers;
         const y = P.y[i];
         if (y < st.from || y > st.to) return null;
-        const raw = this.sets[st.network][i];
+        let raw = this.sets[st.network][i];
         if (!raw.length) return null;
         if (st.noConsortium && raw.length >= this.data.consortium_hubs) return null;
         if (st.dropSole && P.s[i] >= 0 && this.hidden.has(P.s[i])) return null;
+        if (this._active) {
+            const A = this.attrs, f = this.filters;
+            if (f.theme >= 0 && A.theme[i] !== f.theme) return null;
+            if (f.funding !== 'all' && !(A.funding[i] & A.funding_bits[f.funding])) return null;
+            if (f.grant && !A.grants[i].some(g => f.grant.grants.has(g))) return null;
+            if (f.researchOnly && A.research[i] !== 1) return null;
+            if (f.rcrMin > 0 && A.rcr10[i] < f.rcrMin * 10) return null;
+            if (f.tri >= 0 && A.tri[i] !== f.tri) return null;
+            // A hub counts only through its first or last author (co-authorship only).
+            if (f.role === 'lead' && st.network !== 'fund') {
+                raw = st.network === 'core' ? A.lead_core[i] : A.lead_broad[i];
+                if (!raw.length) return null;
+            }
+        }
         const hs = this.hidden.size ? raw.filter(h => !this.hidden.has(h)) : raw;
         return hs.length ? hs : null;
+    }
+
+    /** Paper positions under the current controls that pass pred(i, hubs). */
+    _papersWhere(pred) {
+        const out = [];
+        for (let i = 0; i < this.data.papers.y.length; i++) {
+            const hs = this._paperHubs(i);
+            if (hs && pred(i, hs)) out.push(i);
+        }
+        return out;
     }
 
     /** The hub network for the current controls. */
@@ -324,6 +474,8 @@ class CollabTab {
             ? `Before ${this.data.coauthor_reliable_from}, PubMed recorded only the first author's ` +
               'affiliation, so co-authorship links in earlier years are undercounted.'
             : '';
+        this._active = this._filtersActive();
+        this._renderActiveFilters();
         this.net = this.compute();
         this.instNet = (st.showPartner || st.showOther) ? this.computeInstitutions() : null;
         const { nPapers, nMulti, links } = this.net;
@@ -460,7 +612,8 @@ class CollabTab {
             .attr('x2', l => pos[l.b][0]).attr('y2', l => pos[l.b][1])
             .attr('stroke', 'transparent').attr('stroke-width', 9)
             .on('pointermove', (e, l) => this._tip(e, this._linkTip(l)))
-            .on('pointerleave', () => this._tip(null));
+            .on('pointerleave', () => this._tip(null))
+            .on('click', (e, l) => { this.selectedLink = { a: l.a, b: l.b }; this.selectedInst = null; this._renderPanel(); });
 
         // Partner and non-hub institutions, under the hubs.
         const marks = this._institutionMarks(projection);
@@ -468,9 +621,10 @@ class CollabTab {
         const instDots = gi.selectAll('circle').data(marks).join('circle')
             .attr('cx', m => m.x).attr('cy', m => m.y)
             .attr('fill', m => COLLAB_COLORS[m.d.kind]).attr('fill-opacity', 0.85)
-            .attr('stroke', '#fff')
+            .attr('stroke', '#fff').style('cursor', 'pointer')
             .on('pointermove', (e, m) => this._tip(e, this._instTip(m)))
-            .on('pointerleave', () => this._tip(null));
+            .on('pointerleave', () => this._tip(null))
+            .on('click', (e, m) => { this.selectedInst = m.id; this.selectedLink = null; this._renderPanel(); });
 
         const visible = this.hubs.map((_, i) => i).filter(i => pos[i] && !this.hidden.has(i) && papers[i]);
         const maxP = Math.max(1, ...visible.map(i => papers[i]));
@@ -648,7 +802,50 @@ class CollabTab {
 
     select(i) {
         this.selected = i;
+        this.selectedLink = null;
+        this.selectedInst = null;
         this.render();
+    }
+
+    // ---------------------------------------------------------------- papers
+
+    /** Newest first; opens up to PUBMED_MAX of them in PubMed. */
+    async openPubMed(positions) {
+        await this._loadAttributes();
+        if (!this.attrs) return;
+        const P = this.data.papers, pm = this.attrs.pmids;
+        const ids = [...positions].sort((x, y) => P.y[y] - P.y[x] || pm[y] - pm[x])
+            .slice(0, PUBMED_MAX).map(i => pm[i]);
+        window.open(`https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(ids.join(','))}&size=${PUBMED_MAX}`,
+                    '_blank', 'noopener');
+    }
+
+    async downloadPapers(positions, name) {
+        await this._loadAttributes();
+        if (!this.attrs) return;
+        const P = this.data.papers, A = this.attrs, st = this.state;
+        const hubsOf = i => this.sets[st.network][i].map(h => this.hubs[h].label).join('; ');
+        ChartManager.downloadCSV([
+            ['pmid', 'year', 'hubs', 'theme', 'rcr', 'research_article', 'grants', 'pubmed_url'],
+            ...[...positions].sort((x, y) => P.y[y] - P.y[x]).map(i => [
+                A.pmids[i], P.y[i], hubsOf(i), A.theme[i] >= 0 ? A.themes[A.theme[i]].label : '',
+                A.rcr10[i] >= 0 ? (A.rcr10[i] / 10).toFixed(1) : '', A.research[i] === 1 ? 1 : 0,
+                A.grants[i].map(g => A.grant_list[g].num).join('; '),
+                `https://pubmed.ncbi.nlm.nih.gov/${A.pmids[i]}/`])], `${this._filename()}_${name}_papers`);
+    }
+
+    /** The two paper buttons for a set of paper positions, wired by _wirePaperButtons. */
+    _paperButtons(key, n) {
+        return n ? `<div class="co-actions">
+            <button class="download-btn" data-papers-open="${key}">Open ${n > PUBMED_MAX ? `newest ${PUBMED_MAX}` : 'all'} in PubMed</button>
+            <button class="download-btn" data-papers-csv="${key}">Paper list CSV</button></div>` : '';
+    }
+
+    _wirePaperButtons(el, sets) {
+        el.querySelectorAll('[data-papers-open]').forEach(b => b.addEventListener('click', () =>
+            this.openPubMed(sets[b.dataset.papersOpen]())));
+        el.querySelectorAll('[data-papers-csv]').forEach(b => b.addEventListener('click', () =>
+            this.downloadPapers(sets[b.dataset.papersCsv](), b.dataset.papersCsv)));
     }
 
     _partnerCell(l) {
@@ -660,16 +857,20 @@ class CollabTab {
 
     _renderPanel() {
         const el = document.getElementById('co-panel');
+        if (this.selectedLink) return this._renderLinkPanel(el);
+        if (this.selectedInst != null && this.inst) return this._renderInstPanel(el);
         const { papers, cross, strength, links, ranked } = this.net;
         const st = this.state, relative = st.measure === 'relative';
         const i = this.selected;
+        const paperSets = {};
         if (i == null) {
             const top = ranked.slice(0, 10);
             el.innerHTML = `
                 <h3>${relative ? 'Strongest ties' : 'Most shared papers'}</h3>
                 <p class="data-note">${relative
                     ? `Pairs that share the most papers relative to what their overall collaboration predicts (at least ${MIN_SHARED_FOR_RELATIVE} shared papers).`
-                    : 'Pairs with the most shared papers.'} Click a hub, on the map or here, to see its partners.</p>
+                    : 'Pairs with the most shared papers.'} Click a hub, on the map or here, to see its partners;
+                    click a line or an institution dot to list its papers.</p>
                 <ol class="co-list">${top.map(l => `
                     <li><span><button class="co-link-btn" data-select="${l.a}">${escHtml(this.hubs[l.a].label)}</button> –
                         <button class="co-link-btn" data-select="${l.b}">${escHtml(this.hubs[l.b].label)}</button></span>
@@ -700,6 +901,7 @@ class CollabTab {
                     <dt>With another hub</dt><dd>${cross[i].toLocaleString()} (${papers[i] ? (100 * cross[i] / papers[i]).toFixed(1) : 0}%)</dd>
                     <dt>Hubs it shares papers with</dt><dd>${nPartners}</dd>
                 </dl>
+                ${this._paperButtons('hub', papers[i])}
                 <h4>${relative ? 'Strongest ties' : 'Most shared papers'}</h4>
                 ${relative ? `<p class="data-note">Times the expected rate (shared papers). At least ${MIN_SHARED_FOR_RELATIVE} shared papers.</p>` : ''}
                 <ol class="co-list">${mine.slice(0, 10).map(l => {
@@ -727,6 +929,50 @@ class CollabTab {
             this.select(b.dataset.select === '' ? null : +b.dataset.select)));
         el.querySelectorAll('[data-hide]').forEach(b => b.addEventListener('click', () => this.hideHub(+b.dataset.hide)));
         el.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => this.app.openSite(b.dataset.open)));
+        if (i != null) paperSets.hub = () => this._papersWhere((_, hs) => hs.includes(i));
+        this._wirePaperButtons(el, paperSets);
+    }
+
+    _renderLinkPanel(el) {
+        const { a, b } = this.selectedLink;
+        const l = this.net.links.find(x => x.a === a && x.b === b);
+        const frac = this.state.counting === 'fractional';
+        el.innerHTML = `
+            <p><button class="co-link-btn" data-back="1">← Back</button></p>
+            <h3>${escHtml(this.hubs[a].label)} – ${escHtml(this.hubs[b].label)}</h3>
+            ${l ? `<dl class="co-stats">
+                <dt>Shared papers</dt><dd>${l.f.toLocaleString()}</dd>
+                ${frac ? `<dt>Fractional papers</dt><dd>${fmt1(l.w)}</dd>` : ''}
+                <dt>Times the expected rate</dt><dd>${fmtX(l.rel)}</dd>
+            </dl>
+            <p class="data-note">With the current controls and filters. The list opens newest first.</p>
+            ${this._paperButtons('link', l.f)}` : '<p class="data-note">These hubs share no papers with the current settings.</p>'}`;
+        el.querySelector('[data-back]').addEventListener('click', () => { this.selectedLink = null; this._renderPanel(); });
+        this._wirePaperButtons(el, { link: () => this._papersWhere((_, hs) => hs.includes(a) && hs.includes(b)) });
+    }
+
+    _renderInstPanel(el) {
+        const id = this.selectedInst, d = this.inst.institutions[id], sel = this.selected;
+        const { count, withSel } = this.instNet || this.computeInstitutions();
+        const rowsOf = new Map(this.inst.rows.map((r, k) => [r, k]));
+        const has = i => { const k = rowsOf.get(i); return k !== undefined && this.inst.inst[k].includes(id); };
+        el.innerHTML = `
+            <p><button class="co-link-btn" data-back="1">← Back</button></p>
+            <h3>${escHtml(d.name)}</h3>
+            <p class="data-note">${d.kind === 'partner' ? `Partner of ${escHtml(this.hubs[d.hub]?.label ?? 'a hub')}` : 'Non-hub institution'}
+                · ${escHtml(d.type)}${d.city ? ` · ${escHtml(d.city)}, ${escHtml(d.state)}` : ''}</p>
+            <dl class="co-stats">
+                <dt>Papers with hubs</dt><dd>${count[id].toLocaleString()}</dd>
+                ${sel != null ? `<dt>With ${escHtml(this.hubs[sel].label)}</dt><dd>${withSel[id].toLocaleString()}</dd>` : ''}
+            </dl>
+            <p class="data-note">Papers from ${this.inst.from_year} on, with the current controls and filters.</p>
+            <h4>All papers with hubs</h4>${this._paperButtons('inst', count[id])}
+            ${sel != null ? `<h4>With ${escHtml(this.hubs[sel].label)}</h4>${this._paperButtons('instsel', withSel[id])}` : ''}`;
+        el.querySelector('[data-back]').addEventListener('click', () => { this.selectedInst = null; this._renderPanel(); });
+        this._wirePaperButtons(el, {
+            inst: () => this._papersWhere(i => has(i)),
+            instsel: () => this._papersWhere((i, hs) => hs.includes(sel) && has(i)),
+        });
     }
 
     _renderPairs() {

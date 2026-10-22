@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=22">
+    <link rel="stylesheet" href="css/style.css?v=23">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -106,7 +106,9 @@
             overall (×1 = as expected). That shows who prefers whom, rather than just which hubs are
             biggest. Click a hub to see its strongest partners; switch on partner institutions
             (orange) or other non-hub institutions (green) to see who else a hub publishes with.
-            Zoom with the + and − buttons, a pinch, or Ctrl/⌘ + scroll.
+            Click a line, hub or institution to list its papers in PubMed. "More filters" narrows
+            everything to a theme, a type of funding, one grant or PI, lead authors, or highly
+            cited papers. Zoom with the + and − buttons, a pinch, or Ctrl/⌘ + scroll.
         </p>
         <div id="co-controls"></div>
         <p class="data-note" id="co-status"></p>
@@ -158,6 +160,13 @@
                     affiliations of authors who match no hub; only US institutions with a located city,
                     and at least 3 papers with hubs since 2014, can be drawn. Dot size is papers with
                     hubs, or with the selected hub.</li>
+                <li><strong>More filters:</strong> <em>theme</em> uses the abstract-based themes
+                    (Themes &amp; Translation tab; about 56% of papers have one). <em>Funding</em> keeps
+                    papers that cite at least one NCATS grant of that type. <em>Grant or PI</em> keeps papers
+                    citing that grant, or any grant on which the person is a PI. <em>First or last author</em>
+                    counts a hub on a paper only when the hub has the first or last author (co-authorship
+                    networks only). <em>Citation impact</em> uses iCite's Relative Citation Ratio, where 1 is
+                    the field average. <em>Translational</em> uses iCite's Triangle of Biomedicine.</li>
                 <li><strong>Locations:</strong> each hub sits at its city's center point from the US Census
                     Gazetteer; hubs in the same city are spread slightly so each is visible.
                     State outlines: US Census Bureau 2024 cartographic boundary file.</li>
@@ -184,13 +193,13 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=22"></script>
-<script src="js/site-picker.js?v=22"></script>
-<script src="js/chart-manager.js?v=22"></script>
-<script src="js/metrics-def.js?v=22"></script>
-<script src="js/search-tab.js?v=22"></script>
-<script src="js/themes-tab.js?v=22"></script>
-<script src="js/collab-tab.js?v=22"></script>
-<script src="js/app.js?v=22"></script>
+<script src="js/data-loader.js?v=23"></script>
+<script src="js/site-picker.js?v=23"></script>
+<script src="js/chart-manager.js?v=23"></script>
+<script src="js/metrics-def.js?v=23"></script>
+<script src="js/search-tab.js?v=23"></script>
+<script src="js/themes-tab.js?v=23"></script>
+<script src="js/collab-tab.js?v=23"></script>
+<script src="js/app.js?v=23"></script>
 </body>
 </html>

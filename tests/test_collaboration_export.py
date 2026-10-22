@@ -88,3 +88,42 @@ def test_institution_layer_places_partners_and_other_institutions(conn):
     assert insts[1]["lat"] == 35.31
     assert layer["rows"] == [0, 1, 2]
     assert layer["inst"] == [[0, 1], [1], [1]]
+
+
+@pytest.mark.parametrize("code, num, group", [
+    ("UL1", "UL1TR000433", "hub"), ("UM1", "UM1TR004404", "hub"),
+    ("UM1", "UM1TR006029", "research"),          # NAMs center, not a hub award
+    ("KL2", "KL2X", "training"), ("TL1", "TL1X", "training"), ("K12", "K12X", "training"),
+    ("T32", "T32X", "training"), ("R25", "R25X", "training"),
+    ("R43", "R43X", "small_business"), ("R44", "R44X", "small_business"), ("R41", "R41X", "small_business"),
+    ("R21", "R21X", "research"), ("U01", "U01X", "research"), ("UH3", "UH3X", "research"),
+])
+def test_funding_group(code, num, group):
+    from scripts.export_collaboration_json import funding_group
+    assert funding_group(code, num) == group
+
+
+def test_paper_attributes(conn):
+    from scripts.export_collaboration_json import paper_attributes, FUNDING_BITS
+    conn.execute("INSERT INTO themes (theme_id, label, size, mesh_label) VALUES (7, 'diab', 2, 'Diabetes Mellitus')")
+    conn.executemany("INSERT INTO pub_themes (pmid, theme_id) VALUES (?, 7)", [(1,), (3,)])
+    conn.executemany("INSERT INTO pub_metrics (pmid, pub_year, is_research, rcr, human, animal, molecular_cellular) "
+                     "VALUES (?,?,?,?,?,?,?)",
+                     [(1, 2015, 1, 2.34, 0.9, 0.0, 0.1), (2, 2016, 0, None, None, None, None)])
+    conn.execute("INSERT INTO investigators (profile_id, full_name) VALUES (5, 'JANE A DOE')")
+    conn.execute("INSERT INTO grant_pis (core_project_num, profile_id) VALUES ('UL1A', 5)")
+    conn.execute("INSERT INTO pub_author_hubs (pmid, position, hub_id, tier) VALUES (1, 1, 10, 'core'), "
+                 "(1, 2, 20, 'partner'), (1, 3, 20, 'core')")    # pmid 1 has 2 authors: position 3 is not last
+    d = paper_attributes(conn, [1, 2, 3], HUBS, {20: 0, 10: 1})
+    assert d["pmid_delta"] == [1, 1, 1]
+    assert [t["label"] for t in d["themes"]] == ["Diabetes Mellitus"]
+    assert d["theme"] == [0, -1, 0]
+    assert d["research"] == [1, 0, -1]
+    assert d["rcr10"] == [23, -1, -1]
+    assert d["tri"] == [0, -1, -1]                  # human
+    nums = [g["num"] for g in d["grant_list"]]
+    assert d["funding"] == [FUNDING_BITS["hub"], FUNDING_BITS["hub"], FUNDING_BITS["hub"] | FUNDING_BITS["research"]]
+    assert [sorted(nums[i] for i in gs) for gs in d["grants"]] == [["UL1A", "UL1B"], ["UL1A"], ["R01C", "UL1B"]]
+    assert d["pis"] == [{"name": "Jane A Doe", "g": [nums.index("UL1A")]}]
+    assert d["lead_core"] == [[1], [], []]          # first author at hub 10 (index 1)
+    assert d["lead_broad"] == [[0, 1], [], []]      # plus the partner-tier last author at hub 20
