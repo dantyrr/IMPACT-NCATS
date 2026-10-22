@@ -84,6 +84,10 @@ const FIGURE_SIZES = {
     double: { label: 'Journal, 2 columns (180 mm)', width: 760, mm: 180 },
 };
 const PLAY_MS = 900;
+const COLLAB_PICK_INST = '#566573';   // lines between two picked institutions
+const MAX_ZOOM = 96;            // about 75 m per pixel: city neighborhoods come apart
+// Dots shrink a little as the map zooms in, so places a few km apart come apart.
+const dotScale = k => Math.pow(k, -0.3);
 
 function escHtml(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
@@ -105,6 +109,8 @@ class CollabTab {
         this.filters = { ...DEFAULT_FILTERS };
         this.selectedLink = null;      // {a, b} when a link was clicked
         this.selectedInst = null;      // institution index when an institution was clicked
+        this.picked = { hubs: new Set(), insts: new Set() };   // Cmd/Ctrl-clicked dots
+        this.selectedPair = null;      // a pair in the picked view
         window.addEventListener('resize', () => {
             clearTimeout(this._resizeTimer);
             this._resizeTimer = setTimeout(() => this._isVisible() && this.render(), 150);
@@ -201,7 +207,7 @@ class CollabTab {
             showPartner: false, showOther: false, instType: 'all', instMin: 5, instTop: 250,
             showHubLinks: true, partnerLines: false, otherLines: false, instLinesPer: 3, labels: 'auto',
             showHubs: true, colorBy: 'none', sizeBy: 'papers', region: 'all', curved: false,
-            minLink: 0, shadeStates: false,
+            minLink: 0, shadeStates: false, pickMode: false,
         };
     }
 
@@ -287,6 +293,9 @@ class CollabTab {
                     <label>Show <select id="co-inst-top">${opts([[100, 'top 100'], [250, 'top 250'], [500, 'top 500'], [0, 'all']], st.instTop)}</select></label>
                 </span>
                 <span class="data-note" id="co-inst-note"></span>
+                <label class="co-check co-pick-toggle" title="Show only the links among dots you pick. With this off, ⌘/Ctrl- or Shift-click picks.">
+                    <input type="checkbox" id="co-pick-mode"${st.pickMode ? ' checked' : ''}> Pick several</label>
+                <span class="data-note">or ⌘/Ctrl-click dots to compare just those</span>
             </div>
             <div class="controls-row">
                 <span class="co-layers-title">Lines:</span>
@@ -351,6 +360,7 @@ class CollabTab {
             this.render();
         });
         on('co-show-hubs', 'change', e => { st.showHubs = e.target.checked; this.render(); });
+        on('co-pick-mode', 'change', e => { st.pickMode = e.target.checked; if (!st.pickMode && this._picking()) this.clearPicks(); });
         on('co-partners', 'change', set('partnersShown', Number));
         on('co-inst-type', 'change', set('instType'));
         on('co-inst-min', 'change', set('instMin', Number));
@@ -480,6 +490,7 @@ class CollabTab {
 
     hideHub(i) {
         this.hidden.add(i);
+        this.picked.hubs.delete(i);
         if (this.selected === i) this.selected = null;
         this.render();
     }
@@ -689,28 +700,78 @@ class CollabTab {
         return Math.min(1, l.w / top);
     }
 
+    /** Each hub's map point (its ZIP or city centroid), or null when it is
+     *  not on the map or outside the region in focus. */
     _positions(projection) {
-        // Hubs in the same city share a Gazetteer point; spread them on a small
-        // circle so each stays visible and clickable. Hubs outside the region in focus get no position.
         const R = this._regionSet;
-        const pts = this.hubs.map(h => (h.lat == null || (R && !R.has(h.state)) ? null : projection([h.lon, h.lat])));
-        const groups = new Map();
-        pts.forEach((p, i) => {
-            if (!p || this.hidden.has(i)) return;
-            const key = `${Math.round(p[0] / 8)},${Math.round(p[1] / 8)}`;
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key).push(i);
+        return this.hubs.map(h => (h.lat == null || (R && !R.has(h.state)) ? null : projection([h.lon, h.lat])));
+    }
+
+    /** Paints each state in its own color on a hidden canvas, so the state
+     *  under a map point is one pixel read. */
+    _buildStateMask(projection, width, height) {
+        const key = `${width}|${this.state.region}`;
+        if (this._mask?.key === key) return;
+        const s = 2, canvas = document.createElement('canvas');
+        canvas.width = width * s;
+        canvas.height = height * s;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.scale(s, s);
+        const path = d3.geoPath(projection, ctx);
+        this.geo.features.forEach((f, k) => {
+            ctx.fillStyle = `rgb(${k + 1},0,0)`;
+            ctx.beginPath();
+            path(f);
+            ctx.fill();
         });
-        const out = pts.map(p => (p ? [...p] : null));
-        for (const members of groups.values()) {
-            if (members.length < 2) continue;
-            const [cx, cy] = members.reduce(([x, y], i) => [x + pts[i][0], y + pts[i][1]], [0, 0])
-                .map(v => v / members.length);
-            const r = 6 + 2.5 * members.length;
-            members.forEach((i, j) => {
-                const t = -Math.PI / 2 + 2 * Math.PI * j / members.length;
-                out[i] = [cx + r * Math.cos(t), cy + r * Math.sin(t)];
-            });
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        const codes = this.geo.features.map(f => f.properties.stusps);
+        this._mask = { key, at: ([x, y]) => {
+            const px = Math.round(x * s), py = Math.round(y * s);
+            if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) return null;
+            const o = (py * canvas.width + px) * 4;
+            return data[o + 3] === 255 ? (codes[data[o] - 1] ?? null) : null;   // edge pixels are blends
+        } };
+    }
+
+    /** Drawn positions at zoom k. Marks closer than `gap` screen pixels form a
+     *  cluster: its first (largest) mark stays at its point and the others take
+     *  spots `spacing` pixels apart around it (overlapping it, at a wide zoom),
+     *  inside their own state where there is room, else on land, so none sits
+     *  in a lake or the sea. Zooming in breaks clusters up until each mark is
+     *  at its own point. items: [{x, y, state}] in map units, largest first. */
+    _spread(items, k, gap, spacing) {
+        const cell = gap / k, grid = new Map(), clusters = [];
+        const out = items.map(it => [it.x, it.y]);
+        items.forEach((it, n) => {
+            const gx = Math.floor(it.x / cell), gy = Math.floor(it.y / cell);
+            let hit = null;
+            for (let dx = -1; dx <= 1 && !hit; dx++) {
+                for (let dy = -1; dy <= 1 && !hit; dy++) {
+                    hit = (grid.get(`${gx + dx},${gy + dy}`) || []).find(c => Math.hypot(c.x - it.x, c.y - it.y) < cell);
+                }
+            }
+            if (hit) { hit.members.push(n); return; }
+            const c = { x: it.x, y: it.y, members: [n] };
+            clusters.push(c);
+            grid.set(`${gx},${gy}`, [...(grid.get(`${gx},${gy}`) || []), c]);
+        });
+        const stateAt = this._mask?.at;
+        const spot = (c, j) => {
+            const r = spacing * Math.sqrt(j) / k, t = j * 2.39996;
+            return [c.x + r * Math.cos(t), c.y + r * Math.sin(t)];
+        };
+        for (const c of clusters) {
+            const used = new Set();
+            for (const n of c.members.slice(1)) {
+                const tries = 4 * c.members.length + 40;
+                const free = ok => { let j = 1; while (j < tries && (used.has(j) || !ok(spot(c, j)))) j++; return j; };
+                let j = stateAt ? free(p => stateAt(p) === items[n].state) : 1;
+                if (j >= tries) j = free(p => stateAt(p) != null);       // no room in the state: any land
+                if (j >= tries) for (j = 1; used.has(j); j++);           // none: the nearest free spot
+                used.add(j);
+                out[n] = spot(c, j);
+            }
         }
         return out;
     }
@@ -734,18 +795,13 @@ class CollabTab {
             const others = pick('other');
             ids = ids.concat(st.instTop ? others.slice(0, st.instTop) : others);
         }
-        // Spread institutions that share a city center on a sunflower spiral.
-        const byPoint = new Map();
+        // Picked institutions stay on the map whatever the filters above.
+        for (const id of this.picked.insts) if (!ids.includes(id) && val[id]) ids.push(id);
         const marks = [];
         for (const id of ids) {
             const d = list[id];
             const p = projection([d.lon, d.lat]);
-            if (!p) continue;
-            const key = `${d.lat},${d.lon}`;
-            const j = byPoint.get(key) || 0;
-            byPoint.set(key, j + 1);
-            const r = 3.2 * Math.sqrt(j), t = j * 2.39996;
-            marks.push({ id, d, v: val[id], x: p[0] + r * Math.cos(t), y: p[1] + r * Math.sin(t) });
+            if (p) marks.push({ id, d, v: val[id], x: p[0], y: p[1], px: p[0], py: p[1] });
         }
         const maxV = Math.max(1, ...marks.map(m => m.v));
         for (const m of marks) m.r = 1.8 + 6 * Math.sqrt(m.v / maxV);
@@ -842,10 +898,13 @@ class CollabTab {
             } : null)
             .on('pointerleave', byState ? () => this._tip(null) : null);
 
-        const pos = this._positions(projection);
-        this.pos = pos;
+        const pos = this._positions(projection);           // true points
+        const P = pos.map(p => (p ? [...p] : null));      // drawn points at the current zoom
+        this.pos = P;
+        this._buildStateMask(projection, width, height);
         const { papers, ranked } = this.net;
         const sel = this.selected;
+        const picking = this._picking();
         const drawable = l => pos[l.a] && pos[l.b];
         let shown;
         if (sel == null) {
@@ -863,15 +922,13 @@ class CollabTab {
 
         // Link strokes keep their screen width when zoomed (vector-effect in CSS).
         const gl = root.append('g').attr('class', 'co-links');
-        if (!this.state.showHubLinks) shown = [];
-        gl.selectAll(null).data([...shown].reverse()).join('path')
-            .attr('d', l => this._arc(pos[l.a], pos[l.b])).attr('fill', 'none')
+        if (!this.state.showHubLinks || picking) shown = [];
+        const hubLinks = gl.selectAll(null).data([...shown].reverse()).join('path').attr('fill', 'none')
             .attr('stroke', l => COLLAB_RAMP(this._linkT(l))).attr('stroke-linecap', 'round')
             .attr('stroke-width', l => 0.8 + 6.2 * this._linkT(l))
             .attr('stroke-opacity', l => 0.35 + 0.6 * this._linkT(l));
         // Wide transparent strokes so a thin link is still easy to hover.
-        gl.selectAll(null).data(shown).join('path').attr('class', 'co-link-hit')
-            .attr('d', l => this._arc(pos[l.a], pos[l.b])).attr('fill', 'none')
+        const hubLinkHits = gl.selectAll(null).data(shown).join('path').attr('class', 'co-link-hit').attr('fill', 'none')
             .attr('stroke', 'transparent').attr('stroke-width', 9)
             .on('pointermove', (e, l) => this._tip(e, this._linkTip(l)))
             .on('pointerleave', () => this._tip(null))
@@ -879,36 +936,58 @@ class CollabTab {
 
         // Partner and non-hub institutions, under the hubs.
         const marks = this._institutionMarks(projection);
-        const instLines = this._institutionLines(marks, pos);
+        const instLines = picking ? [] : this._institutionLines(marks, pos);
         this._instLineMax = Math.max(1, ...instLines.map(d => d.c));
         const iw = c => 0.5 + 3.5 * Math.sqrt(c / this._instLineMax);
         const gil = root.append('g').attr('class', 'co-links co-inst-links');
-        gil.selectAll(null).data(instLines).join('path')
-            .attr('d', d => this._arc([d.m.x, d.m.y], pos[d.h])).attr('fill', 'none')
+        const instLinePaths = gil.selectAll(null).data(instLines).join('path').attr('fill', 'none')
             .attr('stroke', d => COLLAB_COLORS[d.m.d.kind]).attr('stroke-linecap', 'round')
             .attr('stroke-width', d => iw(d.c)).attr('stroke-opacity', d => 0.2 + 0.5 * Math.sqrt(d.c / this._instLineMax));
-        gil.selectAll(null).data(instLines).join('path').attr('class', 'co-link-hit')
-            .attr('d', d => this._arc([d.m.x, d.m.y], pos[d.h])).attr('fill', 'none')
+        const instLineHits = gil.selectAll(null).data(instLines).join('path').attr('class', 'co-link-hit').attr('fill', 'none')
             .attr('stroke', 'transparent').attr('stroke-width', 7)
             .on('pointermove', (e, d) => this._tip(e, [[`${d.c.toLocaleString()} shared papers`, 'strong'],
                 [`${d.m.d.name} – ${this.hubs[d.h].label}`, 'muted']]))
             .on('pointerleave', () => this._tip(null));
+
+        // Picked view: lines among the picked hubs and institutions only.
+        const markOf = new Map(marks.map(m => [m.id, m]));
+        const endAt = end => (end.hub != null ? P[end.hub] : (m => m && [m.px, m.py])(markOf.get(end.inst)));
+        const pickLines = picking ? this._pickPairs().filter(d => d.c > 0 && endAt(d.a) && endAt(d.b)).reverse() : [];
+        this._pickMax = Math.max(1, ...pickLines.map(d => d.c));
+        const pt = d => Math.sqrt(d.c / this._pickMax);
+        const pickColor = d => (d.a.hub != null && d.b.hub != null ? COLLAB_RAMP(0.3 + 0.7 * pt(d))
+            : d.b.inst != null && d.a.hub != null ? COLLAB_COLORS[this.inst.institutions[d.b.inst].kind] : COLLAB_PICK_INST);
+        const gpl = root.append('g').attr('class', 'co-links co-pick-links');
+        const pickPaths = gpl.selectAll(null).data(pickLines).join('path').attr('fill', 'none')
+            .attr('stroke', pickColor).attr('stroke-linecap', 'round')
+            .attr('stroke-width', d => 1 + 6 * pt(d)).attr('stroke-opacity', d => 0.45 + 0.5 * pt(d));
+        const pickHits = gpl.selectAll(null).data(pickLines).join('path').attr('class', 'co-link-hit').attr('fill', 'none')
+            .attr('stroke', 'transparent').attr('stroke-width', 9)
+            .on('pointermove', (e, d) => this._tip(e, this._pairTip(d)))
+            .on('pointerleave', () => this._tip(null))
+            .on('click', (e, d) => { this.selectedPair = d; this._renderPanel(); });
+
+        const pickedInst = id => this.picked.insts.has(id);
         const gi = root.append('g').attr('class', 'co-insts');
         const instDots = gi.selectAll('circle').data(marks).join('circle')
-            .attr('cx', m => m.x).attr('cy', m => m.y)
-            .attr('fill', m => COLLAB_COLORS[m.d.kind]).attr('fill-opacity', 0.85)
-            .attr('stroke', '#fff').style('cursor', 'pointer')
+            .attr('fill', m => COLLAB_COLORS[m.d.kind])
+            .attr('fill-opacity', m => (picking && !pickedInst(m.id) ? 0.2 : 0.85))
+            .attr('stroke', m => (pickedInst(m.id) ? COLLAB_SELECT : '#fff')).style('cursor', 'pointer')
             .on('pointermove', (e, m) => this._tip(e, this._instTip(m)))
             .on('pointerleave', () => this._tip(null))
-            .on('click', (e, m) => { this.selectedInst = m.id; this.selectedLink = null; this._renderPanel(); });
+            .on('click', (e, m) => this._dotClick(e, { inst: m.id }))
+            .on('contextmenu', (e, m) => this._dotMenu(e, { inst: m.id }));
 
         // Hubs on the map. Scales use all of them, so sizes and colors hold
         // when the hub dots are switched off and only the selected hub shows.
         const onMap = this.hubs.map((_, i) => i).filter(i => pos[i] && !this.hidden.has(i) && papers[i]);
-        const visible = st.showHubs ? onMap : onMap.filter(i => i === sel);
+        const pickedHub = i => this.picked.hubs.has(i);
         const sizeV = this._hubValues(st.sizeBy);
         const maxP = Math.max(1, ...onMap.map(i => sizeV[i] || 0));
         const radius = i => 3 + 16 * Math.sqrt((sizeV[i] || 0) / maxP);
+        // Large first, so smaller hubs drawn over them stay visible and hoverable.
+        const visible = (st.showHubs ? onMap : onMap.filter(i => i === sel || pickedHub(i)))
+            .sort((a, b) => radius(b) - radius(a));
         this._hubSize = { max: maxP };
         let fill = () => COLLAB_COLORS.hub;
         this._hubColor = null;
@@ -919,35 +998,70 @@ class CollabTab {
             fill = i => (Number.isFinite(cv[i]) ? COLLAB_METRIC_RAMP(hi > lo ? (cv[i] - lo) / (hi - lo) : 0.5) : COLLAB_NO_VALUE);
             this._hubColor = { lo, hi, missing: known.length < onMap.length, values: cv };
         }
-        const dim = i => sel != null && i !== sel && !partners.has(i);
+        const dim = i => (picking ? !pickedHub(i) : sel != null && i !== sel && !partners.has(i));
+        const ringed = i => i === sel || pickedHub(i);
         const gn = root.append('g').attr('class', 'co-nodes');
         const dots = gn.selectAll('circle').data(visible).join('circle')
-            .attr('cx', i => pos[i][0]).attr('cy', i => pos[i][1])
             .attr('fill', fill)
-            .attr('fill-opacity', i => (dim(i) ? 0.25 : 0.95))
-            .attr('stroke', i => (i === sel ? COLLAB_SELECT : '#fff'));
+            .attr('fill-opacity', i => (dim(i) ? (picking ? 0.15 : 0.25) : 0.95))
+            .attr('stroke', i => (ringed(i) ? COLLAB_SELECT : '#fff'));
         // 24px hit areas, focusable, with the same tooltip on hover and focus.
         const hits = gn.selectAll(null).data(visible).join('circle')
-            .attr('class', 'co-hit').attr('cx', i => pos[i][0]).attr('cy', i => pos[i][1])
-            .attr('fill', 'transparent').attr('tabindex', 0).attr('role', 'button')
+            .attr('class', 'co-hit').attr('fill', 'transparent').attr('tabindex', 0).attr('role', 'button')
             .attr('aria-label', i => `${this.hubs[i].label}: ${papers[i]} papers`)
             .on('pointermove', (e, i) => this._tip(e, this._hubTip(i)))
             .on('pointerleave', () => this._tip(null))
             .on('focus', (e, i) => this._tip({ target: e.target, focus: true }, this._hubTip(i)))
             .on('blur', () => this._tip(null))
-            .on('click', (e, i) => this.select(i === this.selected ? null : i))
+            .on('click', (e, i) => this._dotClick(e, { hub: i }))
+            .on('contextmenu', (e, i) => this._dotMenu(e, { hub: i }))
             .on('keydown', (e, i) => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.select(i === this.selected ? null : i); }
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this._dotClick(e, { hub: i }); }
             });
+
+        // Positions depend on the zoom: marks that overlap on screen are spread
+        // around the largest one, and come apart as the map zooms in.
+        const hubItems = visible.map(i => ({ i, x: pos[i][0], y: pos[i][1], state: this.hubs[i].state, r: radius(i) }))
+            .sort((a, b) => b.r - a.r);
+        const markItems = [...marks].sort((a, b) => b.v - a.v).map(m => ({ m, x: m.x, y: m.y, state: m.d.state }));
+        let placedK = null;
+        const place = k => {
+            if (k === placedK) return;
+            placedK = k;
+            const z = dotScale(k);
+            this._spread(hubItems, k, 14 * z, 5 * z).forEach((p, n) => { P[hubItems[n].i] = p; });
+            this._spread(markItems, k, 4 * z, 3 * z).forEach((p, n) => { markItems[n].m.px = p[0]; markItems[n].m.py = p[1]; });
+            dots.attr('cx', i => P[i][0]).attr('cy', i => P[i][1]);
+            hits.attr('cx', i => P[i][0]).attr('cy', i => P[i][1]);
+            instDots.attr('cx', m => m.px).attr('cy', m => m.py);
+            const hubD = l => this._arc(P[l.a], P[l.b]);
+            hubLinks.attr('d', hubD);
+            hubLinkHits.attr('d', hubD);
+            const instD = d => this._arc([d.m.px, d.m.py], P[d.h]);
+            instLinePaths.attr('d', instD);
+            instLineHits.attr('d', instD);
+            const pickD = d => this._arc(endAt(d.a), endAt(d.b));
+            pickPaths.attr('d', pickD);
+            pickHits.attr('d', pickD);
+        };
+        place(this.zoomWidth === width ? (this.zoomT?.k ?? 1) : 1);
 
         const bySize = [...visible].sort((a, b) => papers[b] - papers[a]);
         const mode = this.state.labels;
         const isVisible = new Set(visible);
         const order = (mode === 'none' ? []
+            : picking ? [...this.picked.hubs]
             : sel != null ? [sel, ...this.shownLinks.slice(0, mode === 'all' ? this.shownLinks.length : 10).map(l => (l.a === sel ? l.b : l.a)),
                              ...(mode === 'all' ? bySize : [])]
             : (mode === 'all' ? bySize : bySize.slice(0, width < 560 ? 7 : 14))).filter(i => isVisible.has(i));
-        const labels = this._labelLayout(order, sel, radius, width, height);
+        const items = order.map(i => ({ at: () => P[i], r: radius(i), text: this.hubs[i].label.replace(' (Harvard Catalyst)', ''),
+                                        cls: ringed(i) ? 'co-label co-label-sel' : 'co-label' }));
+        if (picking && mode !== 'none') {
+            for (const m of marks) {
+                if (pickedInst(m.id)) items.push({ at: () => [m.px, m.py], r: m.r, text: m.d.name, cls: 'co-label co-label-sel' });
+            }
+        }
+        const labels = this._labelLayout(items, width, height);
         const texts = root.append('g').attr('class', 'co-labels').selectAll('text').data(labels).join('text')
             .attr('text-anchor', d => d.anchor).attr('class', d => d.cls).text(d => d.text);
 
@@ -956,14 +1070,16 @@ class CollabTab {
         const fit = t => {
             const k = t.k;
             root.attr('transform', t);
-            dots.attr('r', i => radius(i) / k).attr('stroke-width', i => (i === sel ? 3.5 : 2) / k);
-            hits.attr('r', i => Math.max(12, radius(i) + 4) / k);
-            instDots.attr('r', m => m.r / k).attr('stroke-width', 0.8 / k);
-            texts.attr('x', d => d.x + d.dx / k).attr('y', d => d.y + d.dy / k)
+            place(k);
+            const z = dotScale(k);
+            dots.attr('r', i => radius(i) * z / k).attr('stroke-width', i => (ringed(i) ? 3.5 : 2) / k);
+            hits.attr('r', i => Math.max(12, radius(i) * z + 4) / k);
+            instDots.attr('r', m => Math.max(1.5, m.r * z) / k).attr('stroke-width', m => (pickedInst(m.id) ? 2.5 : 0.8) / k);
+            texts.attr('x', d => d.at()[0] + d.dx / k).attr('y', d => d.at()[1] + d.dy / k)
                 .style('font-size', `${11 / k}px`).style('stroke-width', `${3 / k}px`);
             document.getElementById('co-reset').style.display = k > 1.01 ? '' : 'none';
         };
-        const zoom = d3.zoom().scaleExtent([1, 12])
+        const zoom = d3.zoom().scaleExtent([1, MAX_ZOOM])
             .extent([[0, 0], [width, height]]).translateExtent([[0, 0], [width, height]])
             // A plain scroll wheel keeps scrolling the page; Ctrl/Cmd+scroll or a
             // trackpad pinch (sent as ctrl+wheel) zooms. One finger on a touch
@@ -978,6 +1094,7 @@ class CollabTab {
         if (this.zoomWidth !== width) this.zoomT = d3.zoomIdentity;   // reset after a resize
         this.zoomWidth = width;
         svg.call(zoom.transform, this.zoomT || d3.zoomIdentity);
+        this._zoomTo = t => svg.call(zoom.transform, t);
         document.getElementById('co-reset').onclick = () =>
             svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
         document.getElementById('co-zoom-in').onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1.8);
@@ -986,24 +1103,24 @@ class CollabTab {
         this._drawLegend(maxP, marks);
     }
 
-    _labelLayout(order, sel, radius, width, height) {
-        // Placed greedily: a label that would overlap another or leave the map is skipped.
-        const pos = this.pos;
+    /** Labels placed greedily beside their dots, skipping any that would
+     *  overlap another or leave the map. items: [{at, r, text, cls}], where
+     *  at() gives the dot's drawn position (it moves as the map zooms). */
+    _labelLayout(items, width, height) {
         const placed = [], out = [];
-        for (const i of order) {
-            if (!pos[i]) continue;
-            const text = this.hubs[i].label.replace(' (Harvard Catalyst)', '');
-            const w = text.length * 6.3, h = 13, r = radius(i);
+        for (const it of items) {
+            const p = it.at();
+            if (!p) continue;
+            const w = it.text.length * 6.3, h = 13, r = it.r;
             const candidates = [[r + 4, 4, 'start'], [-r - 4, 4, 'end'], [0, -r - 5, 'middle'], [0, r + 13, 'middle']];
             for (const [dx, dy, anchor] of candidates) {
-                const x0 = pos[i][0] + dx - (anchor === 'end' ? w : anchor === 'middle' ? w / 2 : 0);
-                const y0 = pos[i][1] + dy - 10;
+                const x0 = p[0] + dx - (anchor === 'end' ? w : anchor === 'middle' ? w / 2 : 0);
+                const y0 = p[1] + dy - 10;
                 const box = [x0, y0, x0 + w, y0 + h];
                 if (box[0] < 2 || box[2] > width - 2 || box[1] < 2 || box[3] > height - 2) continue;
                 if (placed.some(b => !(box[2] < b[0] || box[0] > b[2] || box[3] < b[1] || box[1] > b[3]))) continue;
                 placed.push(box);
-                out.push({ x: pos[i][0], y: pos[i][1], dx, dy, anchor, text,
-                           cls: i === sel ? 'co-label co-label-sel' : 'co-label' });
+                out.push({ at: it.at, dx, dy, anchor, text: it.text, cls: it.cls });
                 break;
             }
         }
@@ -1034,7 +1151,16 @@ class CollabTab {
                 groups.push({ title: `Hub color: ${color.label}`, items });
             }
         }
-        if (st.showHubLinks) {
+        const picking = this._picking();
+        if (picking && this._pickMax) {
+            const mx = this._pickMax;
+            groups.push({ title: 'Lines among picked: shared papers', items: [mx, mx / 4].map(v => {
+                const t = Math.sqrt(v / mx);
+                return { type: 'line', width: 1 + 6 * t, color: COLLAB_RAMP(0.3 + 0.7 * t), opacity: 0.45 + 0.5 * t,
+                         label: Math.max(1, Math.round(v)).toLocaleString() };
+            }) });
+        }
+        if (st.showHubLinks && !picking) {
             const top = this._linkTop;
             const fake = v => this._linkT(relative ? { rel: v } : { w: v });
             const samples = relative
@@ -1050,7 +1176,7 @@ class CollabTab {
                 }) });
         }
         const instKinds = [st.partnerLines && 'partner', st.otherLines && 'other'].filter(Boolean);
-        if (instKinds.length && marks.length) {
+        if (instKinds.length && marks.length && !picking) {
             const mx = this._instLineMax || 1;
             groups.push({ title: 'Institution link: shared papers', items: [mx, mx / 4].map(v => ({
                 type: 'line', width: 0.5 + 3.5 * Math.sqrt(v / mx), color: COLLAB_COLORS[instKinds[0]],
@@ -1109,6 +1235,10 @@ class CollabTab {
         if (st.sizeBy !== 'papers') more.push(`hub size: ${HUB_SIZE_BY[st.sizeBy].label}`);
         if (st.colorBy !== 'none') more.push(`hub color: ${HUB_COLOR_BY[st.colorBy].label}`);
         if (this.selected != null) more.push(`selected: ${this.hubs[this.selected].label}`);
+        if (this._picking()) {
+            more.push(`picked: ${[...[...this.picked.hubs].map(i => this.hubs[i].label),
+                                  ...(this.inst ? [...this.picked.insts].map(id => this.inst.institutions[id].name) : [])].join(', ')}`);
+        }
         if (this.hidden.size) more.push(`hidden: ${[...this.hidden].map(i => this.hubs[i].label).join(', ')}`);
         if (this._active) {
             if (f.theme >= 0) more.push(`theme: ${A.themes[f.theme].label.split(';')[0]}`);
@@ -1279,6 +1409,146 @@ class CollabTab {
         }
     }
 
+    // ---------------------------------------------------------------- picking
+
+    _picking() {
+        return this.picked.hubs.size + this.picked.insts.size > 0;
+    }
+
+    /** A click on a dot selects it; with Cmd, Ctrl or Shift held, with "Pick
+     *  several" on, or once anything is picked, it adds or removes a pick. */
+    _dotClick(e, item) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || this.state.pickMode || this._picking()) return this._togglePick(item);
+        if (item.hub != null) return this.select(item.hub === this.selected ? null : item.hub);
+        this.selectedInst = item.inst;
+        this.selectedLink = null;
+        this._renderPanel();
+    }
+
+    /** Ctrl-click on a Mac arrives as a context-menu event. */
+    _dotMenu(e, item) {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        this._togglePick(item);
+    }
+
+    _togglePick(item) {
+        const pk = this.picked;
+        if (!this._picking() && this.selected != null) pk.hubs.add(this.selected);   // start from the selected hub
+        const set = item.hub != null ? pk.hubs : pk.insts, v = item.hub ?? item.inst;
+        if (set.has(v)) set.delete(v); else set.add(v);
+        this.selected = null;
+        this.selectedLink = null;
+        this.selectedInst = null;
+        this.selectedPair = null;
+        this.render();
+    }
+
+    clearPicks() {
+        this.picked.hubs.clear();
+        this.picked.insts.clear();
+        this.selectedPair = null;
+        this.render();
+    }
+
+    _endName(end) {
+        return end.hub != null ? this.hubs[end.hub].label : this.inst.institutions[end.inst].name;
+    }
+
+    /** Every pair among the picked hubs and institutions, with its shared
+     *  papers under the current controls (2014 on when an institution is in
+     *  the pair). A partner institution and its own hub are affiliation, not
+     *  collaboration, and are left out. */
+    _pickPairs() {
+        const n = this.n, pk = this.picked, out = [];
+        const hubs = [...pk.hubs].filter(i => !this.hidden.has(i)).sort((a, b) => a - b);
+        const insts = this.inst ? [...pk.insts].sort((a, b) => a - b) : [];
+        const link = new Map(this.net.links.map(l => [l.a * n + l.b, l]));
+        hubs.forEach((a, x) => hubs.slice(x + 1).forEach(b => {
+            const l = link.get(a * n + b);
+            out.push({ a: { hub: a }, b: { hub: b }, c: l ? l.f : 0, rel: l?.rel });
+        }));
+        if (insts.length && this.instNet) {
+            const list = this.inst.institutions, { byHub } = this.instNet;
+            for (const h of hubs) {
+                for (const id of insts) {
+                    if (list[id].kind === 'partner' && list[id].hub === h) continue;
+                    out.push({ a: { hub: h }, b: { inst: id }, c: byHub[id * n + h] });
+                }
+            }
+            const wanted = new Set(insts), both = new Map();
+            const { rows, inst } = this.inst;
+            for (let r = 0; r < rows.length; r++) {
+                const ids = inst[r].filter(id => wanted.has(id));     // ascending, as exported
+                if (ids.length < 2 || !this._paperHubs(rows[r])) continue;
+                ids.forEach((a, x) => ids.slice(x + 1).forEach(b => both.set(`${a},${b}`, (both.get(`${a},${b}`) || 0) + 1)));
+            }
+            insts.forEach((a, x) => insts.slice(x + 1).forEach(b =>
+                out.push({ a: { inst: a }, b: { inst: b }, c: both.get(`${a},${b}`) || 0 })));
+        }
+        return out.sort((x, y) => y.c - x.c);
+    }
+
+    /** Paper positions for a picked pair. */
+    _pairPapers(d) {
+        const rowOf = this.inst ? new Map(this.inst.rows.map((r, k) => [r, k])) : new Map();
+        const has = (i, id) => { const k = rowOf.get(i); return k !== undefined && this.inst.inst[k].includes(id); };
+        const on = (i, hs, end) => (end.hub != null ? hs.includes(end.hub) : has(i, end.inst));
+        return this._papersWhere((i, hs) => on(i, hs, d.a) && on(i, hs, d.b));
+    }
+
+    _pairTip(d) {
+        const lines = [[`${d.c.toLocaleString()} shared papers`, 'strong']];
+        if (d.rel != null) lines.push([`${fmtX(d.rel)} the expected rate`, '']);
+        lines.push([`${this._endName(d.a)} – ${this._endName(d.b)}`, 'muted']);
+        return lines;
+    }
+
+    _renderPickPanel(el) {
+        if (this.selectedPair) {
+            const d = this.selectedPair;
+            el.innerHTML = `
+                <p><button class="co-link-btn" data-back="1">← Back</button></p>
+                <h3>${escHtml(this._endName(d.a))} – ${escHtml(this._endName(d.b))}</h3>
+                <dl class="co-stats"><dt>Shared papers</dt><dd>${d.c.toLocaleString()}</dd>
+                    ${d.rel != null ? `<dt>Times the expected rate</dt><dd>${fmtX(d.rel)}</dd>` : ''}</dl>
+                <p class="data-note">With the current controls and filters${d.a.inst != null || d.b.inst != null
+                    ? `, from ${this.inst.from_year}` : ''}. The list opens newest first.</p>
+                ${this._paperButtons('pair', d.c)}`;
+            el.querySelector('[data-back]').addEventListener('click', () => { this.selectedPair = null; this._renderPanel(); });
+            this._wirePaperButtons(el, { pair: () => this._pairPapers(d) });
+            return;
+        }
+        const pk = this.picked;
+        const chips = [...[...pk.hubs].map(i => ['hub', i, this.hubs[i].label]),
+                       ...(this.inst ? [...pk.insts].map(id => ['inst', id, this.inst.institutions[id].name]) : [])];
+        const pairs = this._pickPairs();
+        el.innerHTML = `
+            <h3>Picked: ${chips.length}</h3>
+            <p class="data-note">Click more dots to add them, or a picked dot to drop it. The map shows only lines among
+                the picked (shared papers, with the current controls and filters).</p>
+            <div class="picker-chips co-pick-chips">${chips.map(([kind, v, label]) =>
+                `<span class="picker-chip" style="background:${kind === 'hub' ? COLLAB_COLORS.hub : COLLAB_COLORS[this.inst.institutions[v].kind]}">
+                    ${escHtml(label)}<button class="chip-remove" data-unpick="${kind}:${v}" aria-label="Drop ${escHtml(label)}">×</button></span>`).join('')}</div>
+            <h4>Pairs</h4>
+            ${pairs.length ? `<ol class="co-list">${pairs.slice(0, 40).map((d, k) => `
+                <li><button class="co-link-btn" data-pair="${k}">${escHtml(this._endName(d.a))} – ${escHtml(this._endName(d.b))}</button>
+                    <span class="co-num">${d.c.toLocaleString()}${d.rel != null ? ` <span class="co-sub">(${fmtX(d.rel)})</span>` : ''}</span></li>`).join('')}
+                </ol>${pairs.length > 40 ? `<p class="data-note">Top 40 of ${pairs.length} pairs.</p>` : ''}`
+                : '<p class="data-note">Pick at least two dots to see the pairs between them.</p>'}
+            <div class="co-actions"><button class="download-btn" data-clear-picks="1">Clear picks</button></div>`;
+        el.querySelectorAll('[data-unpick]').forEach(b => b.addEventListener('click', () => {
+            const [kind, v] = b.dataset.unpick.split(':');
+            (kind === 'hub' ? pk.hubs : pk.insts).delete(+v);
+            this.render();
+        }));
+        el.querySelectorAll('[data-pair]').forEach(b => b.addEventListener('click', () => {
+            this.selectedPair = pairs[+b.dataset.pair];
+            this._renderPanel();
+        }));
+        el.querySelector('[data-clear-picks]').addEventListener('click', () => this.clearPicks());
+    }
+
     // ---------------------------------------------------------------- tooltip
 
     _hubTip(i) {
@@ -1343,6 +1613,9 @@ class CollabTab {
         this.selected = i;
         this.selectedLink = null;
         this.selectedInst = null;
+        this.selectedPair = null;
+        this.picked.hubs.clear();
+        this.picked.insts.clear();
         // A hub picked from a list may be outside the region in focus: show the whole US.
         if (i != null && this._regionSet && !this._regionSet.has(this.hubs[i].state)) {
             this.state.region = 'all';
@@ -1402,6 +1675,7 @@ class CollabTab {
 
     _renderPanel() {
         const el = document.getElementById('co-panel');
+        if (this._picking()) return this._renderPickPanel(el);
         if (this.selectedLink) return this._renderLinkPanel(el);
         if (this.selectedInst != null && this.inst) return this._renderInstPanel(el);
         const { papers, cross, strength, links, ranked } = this.net;

@@ -108,7 +108,8 @@
             (orange) or other non-hub institutions (green) to see who else a hub publishes with.
             Click a line, hub or institution to list its papers in PubMed. "More filters" narrows
             everything to a theme, a type of funding, one grant or PI, lead authors, or highly
-            cited papers. Zoom with the + and − buttons, a pinch, or Ctrl/⌘ + scroll.
+            cited papers. Zoom with the + and − buttons, a pinch, or Ctrl/⌘ + scroll. ⌘/Ctrl-click dots
+            (or switch on "Pick several") to compare just those hubs and institutions.
         </p>
         <div id="co-controls"></div>
         <p class="data-note" id="co-status"></p>
@@ -159,7 +160,13 @@
                     Harvard. <strong>Other non-hub institutions</strong> (green) are parsed from the
                     affiliations of authors who match no hub; only US institutions with a located city,
                     and at least 3 papers with hubs since 2014, can be drawn. Dot size is papers with
-                    hubs, or with the selected hub.</li>
+                    hubs, or with the selected hub. Spellings and parts of one institution are one dot (Rush
+                    University and Rush University Medical Center; Stroger Hospital, Hektoen Institute and Cook
+                    County Health), by name rules plus a short curated list for names that share no words; NIH's
+                    institutes are one dot per state.</li>
+                <li><strong>Picking:</strong> with dots picked, the map shows only lines among them, each the
+                    papers the pair shares under the current controls (from 2014 when an institution is in the pair).
+                    A partner institution and its own hub are affiliation, not collaboration, and have no line.</li>
                 <li><strong>More filters:</strong> <em>theme</em> uses the abstract-based themes
                     (Themes &amp; Translation tab; about 56% of papers have one). <em>Funding</em> keeps
                     papers that cite at least one NCATS grant of that type. <em>Grant or PI</em> keeps papers
@@ -180,8 +187,10 @@
                     it. Times-the-expected-rate values stay those of the national network.</li>
                 <li><strong>State shading</strong> counts papers with a co-author at a located non-hub institution
                     (one with at least 3 papers) in each state, with the selected hub if one is selected.</li>
-                <li><strong>Locations:</strong> each hub sits at its city's center point from the US Census
-                    Gazetteer; hubs in the same city are spread slightly so each is visible.
+                <li><strong>Locations:</strong> hubs and institutions sit at the US Census ZIP (ZCTA) centroid
+                    that their PubMed affiliations give most often, when it lies near their city, and otherwise at the
+                    city's point (Census Gazetteer). Dots that overlap at the current zoom are spread around the
+                    largest, inside their own state where there is room; zooming in (up to 96×) separates them.
                     State outlines: US Census Bureau 2024 cartographic boundary file.</li>
             </ul>
         </details>

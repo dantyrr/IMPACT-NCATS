@@ -1683,3 +1683,5 @@ tr.row-excluded td {
 .co-play { white-space: nowrap; }
 .co-figure-bar label { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.9rem; }
 #co-fig-title { padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; max-width: 100%; }
+.co-pick-toggle { margin-left: auto; }
+.co-pick-chips { margin: 0.4rem 0; }
