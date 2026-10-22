@@ -76,6 +76,17 @@ def test_alias_with_internal_capitals_matches_either_spelling():
         assert m.match(text) == {4: "partner"}, text
 
 
+def test_partners_found_names_the_partner_institution():
+    m = HubMatcher([Alias(4, "Harvard Medical School", "core"),
+                    Alias(4, "Massachusetts General Hospital", "partner", institution="Massachusetts General Hospital"),
+                    Alias(4, "MGH", "partner", ("boston",), institution="Massachusetts General Hospital"),
+                    Alias(4, "Dana-Farber", "partner")])
+    assert m.partners_found("MGH, Harvard Medical School, Boston") == [("Massachusetts General Hospital", 4)]
+    assert m.partners_found("Dana-Farber Cancer Institute; Massachusetts General Hospital") == [
+        ("Dana-Farber", 4), ("Massachusetts General Hospital", 4)]   # no institution given: the alias
+    assert m.partners_found("Harvard Medical School, Boston") == []
+
+
 def test_email_addresses_are_not_affiliations(m):
     assert m.match("Dept of Medicine, Harvard Medical School. Electronic address: jdoe@ucla.edu.") == {4: "core"}
 
@@ -117,12 +128,14 @@ def test_unknown_tier_is_rejected():
 
 def test_load_aliases_from_csv(tmp_path):
     p = tmp_path / "aliases.csv"
-    p.write_text("hub_id,alias,tier,requires,note\n"
-                 "3,Mount Sinai,core,new york;ny,\n"
-                 ",Mount Sinai Hospital Toronto,block,,Canada\n")
+    p.write_text("hub_id,alias,tier,institution,requires,note\n"
+                 "3,Mount Sinai,core,,new york;ny,\n"
+                 ",Mount Sinai Hospital Toronto,block,,,Canada\n"
+                 "4,MGH,partner,Massachusetts General Hospital,boston,\n")
     a = load_aliases(p)
     assert a[0] == Alias(3, "Mount Sinai", "core", ("new york", "ny"))
     assert a[1] == Alias(None, "Mount Sinai Hospital Toronto", "block", ())
+    assert a[2] == Alias(4, "MGH", "partner", ("boston",), "Massachusetts General Hospital")
 
 
 def test_institution_segments_skip_departments():

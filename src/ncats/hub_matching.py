@@ -52,6 +52,7 @@ class Alias:
     alias: str
     tier: str
     requires: tuple = ()
+    institution: str = ""   # partner rows: the institution several spellings name
 
 
 def load_aliases(path=ALIASES_CSV):
@@ -60,7 +61,8 @@ def load_aliases(path=ALIASES_CSV):
         for row in csv.DictReader(fh):
             req = tuple(w.strip() for w in (row.get("requires") or "").split(";") if w.strip())
             out.append(Alias(int(row["hub_id"]) if row["hub_id"].strip() else None,
-                             row["alias"].strip(), row["tier"].strip(), req))
+                             row["alias"].strip(), row["tier"].strip(), req,
+                             (row.get("institution") or "").strip()))
     return out
 
 
@@ -135,6 +137,19 @@ class HubMatcher:
             if prev is None or TIERS[a.tier] < TIERS[prev]:
                 hits[a.hub_id] = a.tier
         return hits
+
+    def partners_found(self, affiliation):
+        """(partner institution, hub_id) for each partner the string names, in
+        order and without repeats. Used to place partner institutions on the map."""
+        norm = _clean(affiliation)
+        out = []
+        for m in self._rx.finditer(norm):
+            a = self._resolve(m.group(0), norm)
+            if a is not None and a.tier == "partner":
+                hit = (a.institution or a.alias, a.hub_id)
+                if hit not in out:
+                    out.append(hit)
+        return out
 
     def aliases_found(self, affiliation):
         """(alias, hub_id, tier) for each name matched, for auditing a match."""

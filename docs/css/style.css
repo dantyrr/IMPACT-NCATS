@@ -1661,3 +1661,18 @@ tr.row-excluded td {
 #co-map:active { cursor: grabbing; }
 .co-zoom { position: absolute; top: 0.75rem; right: 0.75rem; z-index: 5; display: flex; gap: 0.25rem; }
 .co-zoom .download-btn { background: var(--surface); min-width: 2rem; }
+.co-layers { padding-top: 0.4rem; border-top: 1px solid var(--border); }
+.co-layers-title { font-weight: 600; font-size: 0.9rem; }
+.co-swatch { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 50%;
+             border: 1px solid #fff; box-shadow: 0 0 0 1px var(--border); }
+#co-other-filters { display: inline-flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; }
+.co-sub { color: var(--text-light); font-size: 0.8em; }
+.co-list li > span:first-child { min-width: 0; }
+.co-more { margin: 0.25rem 0 0.6rem; border: 1px solid var(--border); border-radius: var(--radius);
+           padding: 0.5rem 0.75rem; background: var(--surface); }
+.co-more summary { cursor: pointer; font-weight: 600; color: var(--primary); font-size: 0.9rem; }
+.co-more[open] summary { margin-bottom: 0.6rem; }
+#co-f-grant { padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius);
+              font-size: 0.9rem; max-width: 100%; }
+.co-active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.3rem 0; font-size: 0.85rem; }
+.co-active-filters:empty { display: none; }
