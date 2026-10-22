@@ -246,6 +246,13 @@ def build(conn, hubs, gaz, slugs, outreach):
     idx = {h: i for i, h in enumerate(order)}
     active = hub_active_years(conn, hubs)
 
+    # NCATS award dollars across all awards at each hub's sites.
+    to_hub = site_to_hub(hubs)
+    dollars = defaultdict(float)
+    for ipf, amount in conn.execute("SELECT ipf_code, total_award_amount FROM grants"):
+        if ipf in to_hub and amount:
+            dollars[to_hub[ipf]] += amount
+
     hub_rows = []
     for h in order:
         pt = gaz.city_point(hubs[h]["city"], hubs[h]["state"]) if gaz else None
@@ -254,6 +261,7 @@ def build(conn, hubs, gaz, slugs, outreach):
             "id": h, "label": hubs[h]["label"], "city": hubs[h]["city"], "state": hubs[h]["state"],
             "lat": round(pt.lat, 4) if pt else None, "lon": round(pt.lon, 4) if pt else None,
             "award_first": yrs[0] if yrs else None, "award_last": yrs[-1] if yrs else None,
+            "award_total": round(dollars.get(h, 0.0)),
             "slug": slugs.get(h), "outreach": outreach.get(h)})
 
     years = _years(conn)

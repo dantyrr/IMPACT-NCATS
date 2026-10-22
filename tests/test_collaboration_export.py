@@ -16,8 +16,8 @@ def conn():
     create_schema(c)
     for ipf in (10, 20, 30):   # 30 is not a hub
         c.execute("INSERT INTO sites (ipf_code, org_name) VALUES (?, 'X')", (ipf,))
-    c.executemany("INSERT INTO grants (core_project_num, ipf_code, activity_code) VALUES (?,?,?)",
-                  [("UL1A", 10, "UL1"), ("UL1B", 20, "UL1"), ("R01C", 30, "R01")])
+    c.executemany("INSERT INTO grants (core_project_num, ipf_code, activity_code, total_award_amount) VALUES (?,?,?,?)",
+                  [("UL1A", 10, "UL1", 5e6), ("UL1B", 20, "UL1", 2e6), ("R01C", 30, "R01", 1e6)])
     c.executemany("INSERT INTO grant_years (core_project_num, fiscal_year, project_num) VALUES (?,?,?)",
                   [("UL1A", 2015, "x"), ("UL1A", 2016, "x"), ("UL1B", 2014, "y")])
     c.executemany("INSERT INTO grant_pubs (core_project_num, pmid) VALUES (?,?)",
@@ -45,6 +45,7 @@ def test_build_orders_hubs_by_label_and_encodes_papers(conn):
     beta = d["hubs"][1]
     assert beta["slug"] == "beta" and (beta["award_first"], beta["award_last"]) == (2015, 2016)
     assert beta["lat"] is None                      # no gazetteer
+    assert (d["hubs"][0]["award_total"], beta["award_total"]) == (2000000, 5000000)
     p = d["papers"]
     assert p["y"] == [2015, 2016, 2017]             # 2010 paper dropped
     assert p["c"] == [[1], [1], [0]]

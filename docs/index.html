@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=24">
+    <link rel="stylesheet" href="css/style.css?v=25">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -171,6 +171,15 @@
                     publishes with: each institution's top hubs by shared papers, or, with a hub selected,
                     only that hub. A partner's line to its own hub (MGH to Harvard) is affiliation rather than
                     collaboration and is not drawn.</li>
+                <li><strong>Hub color and size:</strong> hubs can be colored by the share of their papers
+                    with another hub, the share with a non-hub co-author (2014 on, all papers), mean citation impact
+                    (RCR) or first CTSA award year at NCATS (hubs funded before NCATS took over the program in 2012
+                    show 2012), and sized by papers, cross-hub papers, or NCATS award dollars (all NCATS awards to the
+                    hub's institutions in NIH RePORTER, all years).</li>
+                <li><strong>Region</strong> zooms to a Census region or division and keeps links with both hubs in
+                    it. Times-the-expected-rate values stay those of the national network.</li>
+                <li><strong>State shading</strong> counts papers with a co-author at a located non-hub institution
+                    (one with at least 3 papers) in each state, with the selected hub if one is selected.</li>
                 <li><strong>Locations:</strong> each hub sits at its city's center point from the US Census
                     Gazetteer; hubs in the same city are spread slightly so each is visible.
                     State outlines: US Census Bureau 2024 cartographic boundary file.</li>
@@ -197,13 +206,13 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=24"></script>
-<script src="js/site-picker.js?v=24"></script>
-<script src="js/chart-manager.js?v=24"></script>
-<script src="js/metrics-def.js?v=24"></script>
-<script src="js/search-tab.js?v=24"></script>
-<script src="js/themes-tab.js?v=24"></script>
-<script src="js/collab-tab.js?v=24"></script>
-<script src="js/app.js?v=24"></script>
+<script src="js/data-loader.js?v=25"></script>
+<script src="js/site-picker.js?v=25"></script>
+<script src="js/chart-manager.js?v=25"></script>
+<script src="js/metrics-def.js?v=25"></script>
+<script src="js/search-tab.js?v=25"></script>
+<script src="js/themes-tab.js?v=25"></script>
+<script src="js/collab-tab.js?v=25"></script>
+<script src="js/app.js?v=25"></script>
 </body>
 </html>

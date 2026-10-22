@@ -38,6 +38,53 @@ const TRI_LABELS = ['Human', 'Animal', 'Molecular/cellular', 'Mixed'];
 const DEFAULT_FILTERS = { theme: -1, funding: 'all', grant: null, role: 'any', researchOnly: false, rcrMin: 0, tri: -1 };
 const PUBMED_MAX = 200;   // PubMed shows at most 200 results per page
 
+// Hub color by a metric: one purple hue, light (low) to dark (high), so it
+// reads apart from the blue hub links. The light end keeps 2.5:1 on the states.
+const COLLAB_METRIC_RAMP = d3.interpolateRgb('#a48fd0', '#3f1d6e');
+const COLLAB_NO_VALUE = '#b0b7bf';
+// State shading stays light so the institution dots on top remain visible.
+const COLLAB_STATE_RAMP = d3.interpolateRgb('#eef2f5', '#5cb592');
+const fmtPct = v => `${Math.round(v)}%`;
+const fmtDollars = v => (v >= 1e9 ? `$${(v / 1e9).toFixed(1)}B` : `$${Math.round(v / 1e6).toLocaleString()}M`);
+const HUB_COLOR_BY = {
+    none:   { label: 'One color' },
+    cross:  { label: 'Papers with another hub (%)', fmt: fmtPct },
+    nonhub: { label: 'Papers with a non-hub co-author (%, 2014 on)', fmt: fmtPct },
+    rcr:    { label: 'Mean citation impact (RCR)', fmt: v => v.toFixed(2) },
+    first:  { label: 'First CTSA award year at NCATS', fmt: v => String(Math.round(v)) },
+};
+const HUB_SIZE_BY = {
+    papers:   { label: 'Papers', fmt: v => Math.round(v).toLocaleString() },
+    cross:    { label: 'Papers with another hub', fmt: v => Math.round(v).toLocaleString() },
+    dollars:  { label: 'NCATS award dollars', fmt: fmtDollars },
+};
+const CENSUS_DIVISIONS = {
+    'New England': ['CT', 'ME', 'MA', 'NH', 'RI', 'VT'],
+    'Middle Atlantic': ['NJ', 'NY', 'PA'],
+    'East North Central': ['IL', 'IN', 'MI', 'OH', 'WI'],
+    'West North Central': ['IA', 'KS', 'MN', 'MO', 'NE', 'ND', 'SD'],
+    'South Atlantic': ['DE', 'DC', 'FL', 'GA', 'MD', 'NC', 'SC', 'VA', 'WV'],
+    'East South Central': ['AL', 'KY', 'MS', 'TN'],
+    'West South Central': ['AR', 'LA', 'OK', 'TX'],
+    'Mountain': ['AZ', 'CO', 'ID', 'MT', 'NV', 'NM', 'UT', 'WY'],
+    'Pacific': ['AK', 'CA', 'HI', 'OR', 'WA'],
+};
+const CENSUS_REGIONS = {
+    Northeast: ['New England', 'Middle Atlantic'],
+    Midwest: ['East North Central', 'West North Central'],
+    South: ['South Atlantic', 'East South Central', 'West South Central'],
+    West: ['Mountain', 'Pacific'],
+};
+// Figure sizes: `width` is the layout width in screen pixels (text stays 11px
+// there), then the figure is scaled to its physical size: about 7 pt text in print.
+const FIGURE_SIZES = {
+    shown:  { label: 'As shown on screen' },
+    slide:  { label: 'Slide (1920 px wide)', width: 1280, px: 1920 },
+    single: { label: 'Journal, 1 column (85 mm)', width: 360, mm: 85 },
+    double: { label: 'Journal, 2 columns (180 mm)', width: 760, mm: 180 },
+};
+const PLAY_MS = 900;
+
 function escHtml(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
         ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -153,7 +200,28 @@ class CollabTab {
             noConsortium: true, dropSole: true, topN: 60, partnersShown: 10,
             showPartner: false, showOther: false, instType: 'all', instMin: 5, instTop: 250,
             showHubLinks: true, partnerLines: false, otherLines: false, instLinesPer: 3, labels: 'auto',
+            showHubs: true, colorBy: 'none', sizeBy: 'papers', region: 'all', curved: false,
+            minLink: 0, shadeStates: false,
         };
+    }
+
+    /** The states of the region in focus ('r:South', 'd:Pacific'), or null for the whole US. */
+    _regionStates(value = this.state.region) {
+        if (value === 'all') return null;
+        const [kind, name] = [value.slice(0, 1), value.slice(2)];
+        const divisions = kind === 'r' ? CENSUS_REGIONS[name] : [name];
+        return new Set(divisions.flatMap(d => CENSUS_DIVISIONS[d]));
+    }
+
+    _regionLabel() {
+        const v = this.state.region;
+        return v === 'all' ? 'United States' : `${v.slice(2)} (Census ${v[0] === 'r' ? 'region' : 'division'})`;
+    }
+
+    _minLinkOptions() {
+        return this.state.measure === 'relative'
+            ? [[0, 'No minimum'], [1.5, '×1.5 expected'], [2, '×2 expected'], [3, '×3 expected'], [5, '×5 expected']]
+            : [[0, 'No minimum'], [10, '10 papers'], [25, '25 papers'], [50, '50 papers'], [100, '100 papers'], [250, '250 papers']];
     }
 
     // ---------------------------------------------------------------- controls
@@ -168,6 +236,7 @@ class CollabTab {
                 <label>Network: <select id="co-network">${opts(Object.entries(NETWORKS).map(([k, v]) => [k, v.label]), st.network)}</select></label>
                 <label>From: <select id="co-from">${opts(years, st.from)}</select></label>
                 <label>To: <select id="co-to">${opts(years, st.to)}</select></label>
+                <button class="download-btn co-play" id="co-play" title="Step the To year forward from the From year, one year at a time">▶ Play years</button>
             </div>
             <div class="controls-row">
                 <label>Link strength: <select id="co-measure">${opts([
@@ -175,7 +244,19 @@ class CollabTab {
                 <label>Count: <select id="co-counting">${opts([
                     ['fractional', 'Fractional (each paper counts once)'], ['full', 'Full (1 per shared paper)']], st.counting)}</select></label>
                 <label>Links shown: <select id="co-topn">${opts([[30, 'Top 30'], [60, 'Top 60'], [120, 'Top 120'], [250, 'Top 250'], [0, 'All']], st.topN)}</select></label>
+                <label>Weakest link: <select id="co-minlink">${opts(this._minLinkOptions(), st.minLink)}</select></label>
                 <label>Selected hub's partners: <select id="co-partners">${opts([[5, 'Top 5'], [10, 'Top 10'], [20, 'Top 20'], [0, 'All']], st.partnersShown)}</select></label>
+            </div>
+            <div class="controls-row">
+                <label>Hub color: <select id="co-colorby">${opts(Object.entries(HUB_COLOR_BY).map(([k, v]) => [k, v.label]), st.colorBy)}</select></label>
+                <label>Hub size: <select id="co-sizeby">${opts(Object.entries(HUB_SIZE_BY).map(([k, v]) => [k, v.label]), st.sizeBy)}</select></label>
+                <label>Region: <select id="co-region">${opts([['all', 'Whole US'],
+                    ...Object.entries(CENSUS_REGIONS).flatMap(([r, ds]) => [[`r:${r}`, r],
+                        ...ds.map(d => [`d:${d}`, `   ${d}`])])], st.region)}</select></label>
+                <label class="co-check"><input type="checkbox" id="co-curved"${st.curved ? ' checked' : ''}> Curved lines</label>
+                <label class="co-check" title="Papers with a co-author at a located non-hub institution in each state (institutions with at least 3 papers)">
+                    <input type="checkbox" id="co-shade"${st.shadeStates ? ' checked' : ''}>
+                    <span class="co-swatch co-swatch-box" style="background:${COLLAB_STATE_RAMP(0.8)}"></span> Shade states by non-hub co-authors</label>
             </div>
             <div class="controls-row">
                 <label class="co-check"><input type="checkbox" id="co-noconsortium"${st.noConsortium ? ' checked' : ''}>
@@ -194,6 +275,8 @@ class CollabTab {
             </div>
             <div class="controls-row co-layers">
                 <span class="co-layers-title">Dots:</span>
+                <label class="co-check" title="A selected hub stays on the map"><input type="checkbox" id="co-show-hubs"${st.showHubs ? ' checked' : ''}>
+                    <span class="co-swatch" style="background:${COLLAB_COLORS.hub}"></span> Hubs</label>
                 <label class="co-check"><input type="checkbox" id="co-show-partner">
                     <span class="co-swatch" style="background:${COLLAB_COLORS.partner}"></span> Partner institutions</label>
                 <label class="co-check"><input type="checkbox" id="co-show-other">
@@ -213,8 +296,8 @@ class CollabTab {
                     <span class="co-swatch co-swatch-line" style="background:${COLLAB_COLORS.partner}"></span> Hubs – partner institutions</label>
                 <label class="co-check"><input type="checkbox" id="co-other-lines">
                     <span class="co-swatch co-swatch-line" style="background:${COLLAB_COLORS.other}"></span> Hubs – other non-hub institutions</label>
-                <label>Per institution: <select id="co-inst-lines">${opts([[1, 'Top hub'], [3, 'Top 3 hubs'],
-                    [5, 'Top 5 hubs'], [0, 'All hubs']], st.instLinesPer)}</select></label>
+                <label id="co-inst-lines-label">Lines per institution: <select id="co-inst-lines">${opts([[1, 'To its top hub'], [3, 'To its top 3 hubs'],
+                    [5, 'To its top 5 hubs'], [0, 'To all its hubs']], st.instLinesPer)}</select></label>
                 <label>Labels: <select id="co-labels">${opts([['auto', 'Largest hubs'], ['all', 'As many as fit'],
                     ['none', 'None']], st.labels)}</select></label>
             </div>
@@ -237,11 +320,37 @@ class CollabTab {
             }
             this.render();
         });
-        on('co-measure', 'change', set('measure'));
+        on('co-measure', 'change', e => {
+            st.measure = e.target.value;
+            // The minimum is in different units for each measure.
+            st.minLink = 0;
+            document.getElementById('co-minlink').innerHTML = opts(this._minLinkOptions(), 0);
+            this.render();
+        });
         on('co-counting', 'change', set('counting'));
-        on('co-from', 'change', set('from', Number));
-        on('co-to', 'change', set('to', Number));
+        on('co-from', 'change', e => { this._stopPlay(); set('from', Number)(e); });
+        on('co-to', 'change', e => { this._stopPlay(); set('to', Number)(e); });
+        on('co-play', 'click', () => (this._playTimer ? this._stopPlay() : this._play()));
         on('co-topn', 'change', set('topN', Number));
+        on('co-minlink', 'change', set('minLink', Number));
+        on('co-colorby', 'change', async e => {
+            st.colorBy = e.target.value;
+            if (st.colorBy === 'rcr') await this._loadAttributes();
+            this.render();
+        });
+        on('co-sizeby', 'change', set('sizeBy'));
+        on('co-region', 'change', e => {
+            st.region = e.target.value;
+            this.zoomT = d3.zoomIdentity;
+            this.render();
+        });
+        on('co-curved', 'change', e => { st.curved = e.target.checked; this.render(); });
+        on('co-shade', 'change', async e => {
+            st.shadeStates = e.target.checked;
+            if (st.shadeStates) await this._loadInstitutions();
+            this.render();
+        });
+        on('co-show-hubs', 'change', e => { st.showHubs = e.target.checked; this.render(); });
         on('co-partners', 'change', set('partnersShown', Number));
         on('co-inst-type', 'change', set('instType'));
         on('co-inst-min', 'change', set('instMin', Number));
@@ -375,6 +484,26 @@ class CollabTab {
         this.render();
     }
 
+    /** Step the To year forward from the From year, keeping every other setting. */
+    _play() {
+        const st = this.state, last = this.years[this.years.length - 1];
+        const show = () => { document.getElementById('co-to').value = st.to; this.render(); };
+        if (st.to >= last) { st.to = st.from; show(); }   // start over from the first year
+        document.getElementById('co-play').textContent = '❚❚ Pause';
+        this._playTimer = setInterval(() => {
+            st.to++;
+            show();
+            if (st.to >= last) this._stopPlay();
+        }, PLAY_MS);
+    }
+
+    _stopPlay() {
+        clearInterval(this._playTimer);
+        this._playTimer = null;
+        const btn = document.getElementById('co-play');
+        if (btn) btn.textContent = '▶ Play years';
+    }
+
     _renderHiddenChips() {
         const row = document.getElementById('co-hidden-row');
         row.style.display = this.hidden.size ? '' : 'none';
@@ -432,6 +561,8 @@ class CollabTab {
         const st = this.state, n = this.n, N = this.data.papers.y.length;
         const W = new Float64Array(n * n), F = new Uint32Array(n * n);
         const papers = new Uint32Array(n), cross = new Uint32Array(n);
+        // Mean RCR per hub, once paper details are loaded.
+        const rcr10 = this.attrs?.rcr10, rcrSum = new Float64Array(n), rcrN = new Uint32Array(n);
         let nPapers = 0, nMulti = 0;
         for (let i = 0; i < N; i++) {
             const hs = this._paperHubs(i);
@@ -439,6 +570,7 @@ class CollabTab {
             const k = hs.length;
             nPapers++;
             for (const h of hs) papers[h]++;
+            if (rcr10 && rcr10[i] >= 0) for (const h of hs) { rcrSum[h] += rcr10[i] / 10; rcrN[h]++; }
             if (k < 2) continue;
             nMulti++;
             const w = st.counting === 'fractional' ? 1 / (k - 1) : 1;
@@ -470,9 +602,15 @@ class CollabTab {
         }
         const relative = st.measure === 'relative';
         const value = l => (relative ? l.rel : l.w);
-        const ranked = links.filter(l => !relative || l.f >= MIN_SHARED_FOR_RELATIVE)
+        // Ranked links feed the map, the panel and the table: the strength
+        // minimum and the region apply to all three. × expected stays national.
+        const R = this._regionSet;
+        const inRegion = i => !R || R.has(this.hubs[i].state);
+        const ranked = links.filter(l => (!relative || l.f >= MIN_SHARED_FOR_RELATIVE) && value(l) >= st.minLink &&
+                                         inRegion(l.a) && inRegion(l.b))
             .sort((x, y) => value(y) - value(x));
-        return { papers, cross, strength, links, ranked, value, nPapers, nMulti };
+        const rcrMean = rcr10 ? Array.from(rcrSum, (s, h) => (rcrN[h] ? s / rcrN[h] : NaN)) : null;
+        return { papers, cross, strength, links, ranked, value, nPapers, nMulti, rcrMean };
     }
 
     /** Papers per institution under the current controls (and with the selected hub). */
@@ -482,18 +620,25 @@ class CollabTab {
         const n = this.n;
         const count = new Uint32Array(m), withSel = new Uint32Array(m);
         const byHub = new Uint32Array(m * n);          // papers per (institution, hub)
+        // Papers with a non-hub co-author located in each state (with the selected hub, if any).
+        const list = this.inst.institutions;
+        const stateOf = list.map(d => (d.kind === 'other' ? d.state : null));
+        const byState = new Map();
         const { rows, inst } = this.inst;
         for (let r = 0; r < rows.length; r++) {
             const hs = this._paperHubs(rows[r]);
             if (!hs) continue;
             const has = sel != null && hs.includes(sel);
+            const seen = new Set();
             for (const id of inst[r]) {
                 count[id]++;
                 if (has) withSel[id]++;
                 for (const h of hs) byHub[id * n + h]++;
+                if (stateOf[id] && (sel == null || has)) seen.add(stateOf[id]);
             }
+            for (const s of seen) byState.set(s, (byState.get(s) || 0) + 1);
         }
-        return { count, withSel, byHub };
+        return { count, withSel, byHub, byState };
     }
 
     // ---------------------------------------------------------------- render
@@ -509,8 +654,17 @@ class CollabTab {
             : '';
         this._active = this._filtersActive();
         this._renderActiveFilters();
+        this._regionSet = this._regionStates();
         this.net = this.compute();
-        this.instNet = (st.showPartner || st.showOther) ? this.computeInstitutions() : null;
+        this.instNet = (st.showPartner || st.showOther || st.shadeStates) ? this.computeInstitutions() : null;
+        // Lines per institution applies only to institution lines with no hub selected.
+        const perOn = (st.partnerLines || st.otherLines) && this.selected == null;
+        const per = document.getElementById('co-inst-lines-label');
+        document.getElementById('co-inst-lines').disabled = !perOn;
+        per.classList.toggle('co-disabled', !perOn);
+        per.title = perOn ? 'How many hubs each institution draws lines to'
+            : this.selected != null ? 'With a hub selected, each institution has one line: to that hub'
+            : 'Turn on lines to partner or other non-hub institutions to use this';
         const { nPapers, nMulti, links } = this.net;
         const pairs = this.n - this.hidden.size;
         document.getElementById('co-summary').textContent =
@@ -537,8 +691,9 @@ class CollabTab {
 
     _positions(projection) {
         // Hubs in the same city share a Gazetteer point; spread them on a small
-        // circle so each stays visible and clickable.
-        const pts = this.hubs.map(h => (h.lat == null ? null : projection([h.lon, h.lat])));
+        // circle so each stays visible and clickable. Hubs outside the region in focus get no position.
+        const R = this._regionSet;
+        const pts = this.hubs.map(h => (h.lat == null || (R && !R.has(h.state)) ? null : projection([h.lon, h.lat])));
         const groups = new Map();
         pts.forEach((p, i) => {
             if (!p || this.hidden.has(i)) return;
@@ -566,10 +721,10 @@ class CollabTab {
         const st = this.state, sel = this.selected;
         const { count, withSel } = this.instNet;
         const val = sel == null ? count : withSel;
-        const list = this.inst.institutions;
+        const list = this.inst.institutions, R = this._regionSet;
         const pick = kind => list.map((d, id) => id).filter(id => {
             const d = list[id];
-            if (d.kind !== kind || !val[id]) return false;
+            if (d.kind !== kind || !val[id] || (R && !R.has(d.state))) return false;
             if (kind === 'other') return (st.instType === 'all' || d.type === st.instType) && val[id] >= st.instMin;
             return true;
         }).sort((a, b) => val[b] - val[a]);
@@ -623,19 +778,69 @@ class CollabTab {
         return out.sort((a, b) => a.c - b.c);   // strongest on top
     }
 
+    /** A link's path: straight, or (with curved lines on) bowed to one side by
+     *  an eighth of its length, always the same way so parallel links stay apart. */
+    _arc(p, q) {
+        const r = v => Math.round(v * 10) / 10;
+        if (!this.state.curved) return `M${r(p[0])},${r(p[1])}L${r(q[0])},${r(q[1])}`;
+        const [a, b] = p[0] <= q[0] ? [p, q] : [q, p];
+        const cx = (a[0] + b[0]) / 2 + 0.25 * (b[1] - a[1]), cy = (a[1] + b[1]) / 2 - 0.25 * (b[0] - a[0]);
+        return `M${r(a[0])},${r(a[1])}Q${r(cx)},${r(cy)} ${r(b[0])},${r(b[1])}`;
+    }
+
+    /** Per-hub values for a hub size key, or for a hub color key with
+     *  `color` set (NaN where unknown). */
+    _hubValues(key, color = false) {
+        const { papers, cross, rcrMean } = this.net;
+        const num = v => (v == null || v === '' ? NaN : +v);
+        return this.hubs.map((h, i) => {
+            switch (key) {
+                case 'papers': return papers[i];
+                case 'cross': return !color ? cross[i] : (papers[i] ? 100 * cross[i] / papers[i] : NaN);
+                case 'dollars': return h.award_total || 0;
+                case 'nonhub': return num(h.outreach?.pct_with_nonhub_coauthor);
+                case 'rcr': return rcrMean ? rcrMean[i] : NaN;
+                case 'first': return num(h.award_first);
+                default: return NaN;
+            }
+        });
+    }
+
     _drawMap() {
         const wrap = document.getElementById('co-map-wrap');
-        const width = Math.max(320, wrap.clientWidth - 16);
+        const st = this.state;
+        const width = this._layoutWidth || Math.max(320, wrap.clientWidth - 16);
         const height = Math.round(width * 0.6);
         const svg = d3.select('#co-map').attr('viewBox', `0 0 ${width} ${height}`)
             .attr('width', width).attr('height', height);
         svg.selectAll('*').remove();
         const root = svg.append('g');
 
-        const projection = d3.geoAlbersUsa().fitSize([width, height], this.geo);
+        // A region in focus fills the map. Alaska and Hawaii are insets, so they
+        // are left out of the fit.
+        const R = this._regionSet;
+        const code = f => f.properties.stusps;
+        const focus = R ? { type: 'FeatureCollection', features: this.geo.features.filter(f =>
+            R.has(code(f)) && code(f) !== 'AK' && code(f) !== 'HI') } : this.geo;
+        const projection = R ? d3.geoAlbersUsa().fitExtent([[12, 12], [width - 12, height - 12]], focus)
+            : d3.geoAlbersUsa().fitSize([width, height], this.geo);
         const path = d3.geoPath(projection);
+        const byState = st.shadeStates && this.instNet ? this.instNet.byState : null;
+        const stateMax = byState ? Math.max(1, ...[...byState].filter(([s]) => !R || R.has(s)).map(([, v]) => v)) : 1;
+        this._stateMax = byState ? stateMax : null;
         root.append('g').attr('class', 'co-states').selectAll('path')
-            .data(this.geo.features).join('path').attr('d', path);
+            .data(this.geo.features).join('path').attr('d', path)
+            .classed('co-state-out', f => R && !R.has(code(f)))
+            .style('fill', f => (byState && (!R || R.has(code(f)))
+                ? COLLAB_STATE_RAMP(Math.sqrt((byState.get(code(f)) || 0) / stateMax)) : null))
+            .on('pointermove', byState ? (e, f) => {
+                if (R && !R.has(code(f))) return this._tip(null);
+                const v = byState.get(code(f)) || 0;
+                this._tip(e, [[`${v.toLocaleString()} papers`, 'strong'],
+                    [`with a co-author at a non-hub institution in ${f.properties.name}`, ''],
+                    ...(this.selected != null ? [[`and ${this.hubs[this.selected].label}`, 'muted']] : [])]);
+            } : null)
+            .on('pointerleave', byState ? () => this._tip(null) : null);
 
         const pos = this._positions(projection);
         this.pos = pos;
@@ -659,16 +864,14 @@ class CollabTab {
         // Link strokes keep their screen width when zoomed (vector-effect in CSS).
         const gl = root.append('g').attr('class', 'co-links');
         if (!this.state.showHubLinks) shown = [];
-        gl.selectAll(null).data([...shown].reverse()).join('line')
-            .attr('x1', l => pos[l.a][0]).attr('y1', l => pos[l.a][1])
-            .attr('x2', l => pos[l.b][0]).attr('y2', l => pos[l.b][1])
+        gl.selectAll(null).data([...shown].reverse()).join('path')
+            .attr('d', l => this._arc(pos[l.a], pos[l.b])).attr('fill', 'none')
             .attr('stroke', l => COLLAB_RAMP(this._linkT(l))).attr('stroke-linecap', 'round')
             .attr('stroke-width', l => 0.8 + 6.2 * this._linkT(l))
             .attr('stroke-opacity', l => 0.35 + 0.6 * this._linkT(l));
         // Wide transparent strokes so a thin link is still easy to hover.
-        gl.selectAll(null).data(shown).join('line').attr('class', 'co-link-hit')
-            .attr('x1', l => pos[l.a][0]).attr('y1', l => pos[l.a][1])
-            .attr('x2', l => pos[l.b][0]).attr('y2', l => pos[l.b][1])
+        gl.selectAll(null).data(shown).join('path').attr('class', 'co-link-hit')
+            .attr('d', l => this._arc(pos[l.a], pos[l.b])).attr('fill', 'none')
             .attr('stroke', 'transparent').attr('stroke-width', 9)
             .on('pointermove', (e, l) => this._tip(e, this._linkTip(l)))
             .on('pointerleave', () => this._tip(null))
@@ -680,12 +883,12 @@ class CollabTab {
         this._instLineMax = Math.max(1, ...instLines.map(d => d.c));
         const iw = c => 0.5 + 3.5 * Math.sqrt(c / this._instLineMax);
         const gil = root.append('g').attr('class', 'co-links co-inst-links');
-        gil.selectAll(null).data(instLines).join('line')
-            .attr('x1', d => d.m.x).attr('y1', d => d.m.y).attr('x2', d => pos[d.h][0]).attr('y2', d => pos[d.h][1])
+        gil.selectAll(null).data(instLines).join('path')
+            .attr('d', d => this._arc([d.m.x, d.m.y], pos[d.h])).attr('fill', 'none')
             .attr('stroke', d => COLLAB_COLORS[d.m.d.kind]).attr('stroke-linecap', 'round')
             .attr('stroke-width', d => iw(d.c)).attr('stroke-opacity', d => 0.2 + 0.5 * Math.sqrt(d.c / this._instLineMax));
-        gil.selectAll(null).data(instLines).join('line').attr('class', 'co-link-hit')
-            .attr('x1', d => d.m.x).attr('y1', d => d.m.y).attr('x2', d => pos[d.h][0]).attr('y2', d => pos[d.h][1])
+        gil.selectAll(null).data(instLines).join('path').attr('class', 'co-link-hit')
+            .attr('d', d => this._arc([d.m.x, d.m.y], pos[d.h])).attr('fill', 'none')
             .attr('stroke', 'transparent').attr('stroke-width', 7)
             .on('pointermove', (e, d) => this._tip(e, [[`${d.c.toLocaleString()} shared papers`, 'strong'],
                 [`${d.m.d.name} – ${this.hubs[d.h].label}`, 'muted']]))
@@ -699,14 +902,28 @@ class CollabTab {
             .on('pointerleave', () => this._tip(null))
             .on('click', (e, m) => { this.selectedInst = m.id; this.selectedLink = null; this._renderPanel(); });
 
-        const visible = this.hubs.map((_, i) => i).filter(i => pos[i] && !this.hidden.has(i) && papers[i]);
-        const maxP = Math.max(1, ...visible.map(i => papers[i]));
-        const radius = i => 3 + 16 * Math.sqrt(papers[i] / maxP);
+        // Hubs on the map. Scales use all of them, so sizes and colors hold
+        // when the hub dots are switched off and only the selected hub shows.
+        const onMap = this.hubs.map((_, i) => i).filter(i => pos[i] && !this.hidden.has(i) && papers[i]);
+        const visible = st.showHubs ? onMap : onMap.filter(i => i === sel);
+        const sizeV = this._hubValues(st.sizeBy);
+        const maxP = Math.max(1, ...onMap.map(i => sizeV[i] || 0));
+        const radius = i => 3 + 16 * Math.sqrt((sizeV[i] || 0) / maxP);
+        this._hubSize = { max: maxP };
+        let fill = () => COLLAB_COLORS.hub;
+        this._hubColor = null;
+        if (st.colorBy !== 'none') {
+            const cv = this._hubValues(st.colorBy, true);
+            const known = onMap.map(i => cv[i]).filter(Number.isFinite);
+            const lo = Math.min(...known), hi = Math.max(...known);
+            fill = i => (Number.isFinite(cv[i]) ? COLLAB_METRIC_RAMP(hi > lo ? (cv[i] - lo) / (hi - lo) : 0.5) : COLLAB_NO_VALUE);
+            this._hubColor = { lo, hi, missing: known.length < onMap.length, values: cv };
+        }
         const dim = i => sel != null && i !== sel && !partners.has(i);
         const gn = root.append('g').attr('class', 'co-nodes');
         const dots = gn.selectAll('circle').data(visible).join('circle')
             .attr('cx', i => pos[i][0]).attr('cy', i => pos[i][1])
-            .attr('fill', COLLAB_COLORS.hub)
+            .attr('fill', fill)
             .attr('fill-opacity', i => (dim(i) ? 0.25 : 0.95))
             .attr('stroke', i => (i === sel ? COLLAB_SELECT : '#fff'));
         // 24px hit areas, focusable, with the same tooltip on hover and focus.
@@ -725,10 +942,11 @@ class CollabTab {
 
         const bySize = [...visible].sort((a, b) => papers[b] - papers[a]);
         const mode = this.state.labels;
-        const order = mode === 'none' ? []
+        const isVisible = new Set(visible);
+        const order = (mode === 'none' ? []
             : sel != null ? [sel, ...this.shownLinks.slice(0, mode === 'all' ? this.shownLinks.length : 10).map(l => (l.a === sel ? l.b : l.a)),
                              ...(mode === 'all' ? bySize : [])]
-            : (mode === 'all' ? bySize : bySize.slice(0, width < 560 ? 7 : 14));
+            : (mode === 'all' ? bySize : bySize.slice(0, width < 560 ? 7 : 14))).filter(i => isVisible.has(i));
         const labels = this._labelLayout(order, sel, radius, width, height);
         const texts = root.append('g').attr('class', 'co-labels').selectAll('text').data(labels).join('text')
             .attr('text-anchor', d => d.anchor).attr('class', d => d.cls).text(d => d.text);
@@ -798,12 +1016,24 @@ class CollabTab {
         const r = v => 3 + 16 * Math.sqrt(v / maxP);
         const dot = (radius, color, label) => ({ type: 'dot', r: radius, color, label });
         const groups = [];
-        const kinds = [dot(5, COLLAB_COLORS.hub, 'CTSA hub')];
+        const hubsShown = st.showHubs || sel != null;
+        const hubFill = this._hubColor ? COLLAB_METRIC_RAMP(0.5) : COLLAB_COLORS.hub;
+        const kinds = [];
+        if (hubsShown) kinds.push(dot(5, hubFill, st.showHubs ? 'CTSA hub' : 'Selected hub'));
         if (st.showPartner) kinds.push(dot(4, COLLAB_COLORS.partner, 'Partner institution'));
         if (st.showOther) kinds.push(dot(4, COLLAB_COLORS.other, 'Other non-hub institution'));
-        groups.push({ title: null, items: kinds });
-        groups.push({ title: 'Hub size: papers', items: [maxP, maxP / 4, maxP / 16].map(v =>
-            dot(r(v), COLLAB_COLORS.hub, Math.round(v).toLocaleString())) });
+        if (kinds.length) groups.push({ title: null, items: kinds });
+        if (hubsShown) {
+            const size = HUB_SIZE_BY[st.sizeBy];
+            groups.push({ title: `Hub size: ${size.label}`, items: [maxP, maxP / 4, maxP / 16].map(v =>
+                dot(r(v), hubFill, size.fmt(v))) });
+            if (this._hubColor && Number.isFinite(this._hubColor.lo)) {
+                const { lo, hi, missing } = this._hubColor, color = HUB_COLOR_BY[st.colorBy];
+                const items = [lo, (lo + hi) / 2, hi].map((v, k) => dot(5, COLLAB_METRIC_RAMP(k / 2), color.fmt(v)));
+                if (missing) items.push(dot(5, COLLAB_NO_VALUE, 'No data'));
+                groups.push({ title: `Hub color: ${color.label}`, items });
+            }
+        }
         if (st.showHubLinks) {
             const top = this._linkTop;
             const fake = v => this._linkT(relative ? { rel: v } : { w: v });
@@ -830,6 +1060,12 @@ class CollabTab {
             groups.push({ title: `Institution size: papers ${sel == null ? 'with hubs' : 'with the selected hub'}`,
                           items: [{ type: 'text', label: `${marks.length.toLocaleString()} shown, from ${this.inst.from_year}` }] });
         }
+        if (this._stateMax) {
+            const mx = this._stateMax;
+            groups.push({ title: `State shading: papers with a non-hub co-author there${sel != null ? ' (and the selected hub)' : ''}`,
+                          items: [mx / 16, mx / 4, mx].map(v => ({ type: 'box', color: COLLAB_STATE_RAMP(Math.sqrt(v / mx)),
+                                                                   label: Math.max(1, Math.round(v)).toLocaleString() })) });
+        }
         return groups;
     }
 
@@ -845,6 +1081,10 @@ class CollabTab {
             if (it.type === 'line') {
                 return `<svg width="30" height="16" aria-hidden="true"><line x1="2" x2="28" y1="8" y2="8" stroke="${it.color}"
                     stroke-linecap="round" stroke-opacity="${it.opacity}" stroke-width="${it.width}"/></svg>`;
+            }
+            if (it.type === 'box') {
+                return `<svg width="18" height="14" aria-hidden="true"><rect x="1" y="2" width="16" height="10" rx="2"
+                    fill="${it.color}" stroke="#c9d3dc"/></svg>`;
             }
             return '';
         };
@@ -864,6 +1104,10 @@ class CollabTab {
         if (st.noConsortium) parts.push(`papers naming ${this.data.consortium_hubs}+ hubs left out`);
         const lines = [parts.join(' · ')];
         const more = [];
+        if (this._regionSet) more.push(`region: ${this._regionLabel()}`);
+        if (st.minLink) more.push(`links of at least ${st.measure === 'relative' ? `×${st.minLink} expected` : `${st.minLink} papers`}`);
+        if (st.sizeBy !== 'papers') more.push(`hub size: ${HUB_SIZE_BY[st.sizeBy].label}`);
+        if (st.colorBy !== 'none') more.push(`hub color: ${HUB_COLOR_BY[st.colorBy].label}`);
         if (this.selected != null) more.push(`selected: ${this.hubs[this.selected].label}`);
         if (this.hidden.size) more.push(`hidden: ${[...this.hidden].map(i => this.hubs[i].label).join(', ')}`);
         if (this._active) {
@@ -881,8 +1125,9 @@ class CollabTab {
     }
 
     /** The figure as a standalone SVG: title, caption, the map as shown
-     *  (including zoom), legend and source line. */
-    _exportSvg() {
+     *  (including zoom), legend and source line. `mm` gives the file a
+     *  physical width for print. */
+    _exportSvg(title = 'CTSA hub collaboration', mm = null) {
         const map = document.getElementById('co-map');
         const mw = +map.getAttribute('width'), mh = +map.getAttribute('height');
         const pad = 20, W = mw + 2 * pad, cw = 5.7;                 // cw: approx. px per 11px legend character
@@ -897,8 +1142,11 @@ class CollabTab {
             return out;
         };
         const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-        let y = pad + 18;
-        let out = `<text x="${pad}" y="${y}" class="x-title">CTSA hub collaboration</text>`;
+        let y = pad - 4, out = '';
+        for (const line of wrap(title || ' ', 18)) {
+            y += 22;
+            out += `<text x="${pad}" y="${y}" class="x-title">${esc(line)}</text>`;
+        }
         y += 8;
         for (const line of this._captionLines().flatMap(l => wrap(l, 11))) {
             y += 15;
@@ -912,8 +1160,8 @@ class CollabTab {
         let x = pad;
         for (const g of this._legend || []) {
             const titleW = g.title ? g.title.length * cw + 10 : 0;
-            const itemsW = g.items.reduce((sum, it) => sum + (it.type === 'dot' ? 2 * it.r + 8 : it.type === 'line' ? 34 : 0)
-                                                           + it.label.length * cw + 14, 0);
+            const markW = it => (it.type === 'dot' ? 2 * it.r + 8 : it.type === 'line' ? 34 : it.type === 'box' ? 22 : 0);
+            const itemsW = g.items.reduce((sum, it) => sum + markW(it) + it.label.length * cw + 14, 0);
             if (x > pad && x + titleW + itemsW > W - pad) { x = pad; y += 26; }
             if (g.title) { out += `<text x="${x}" y="${y + 4}" class="x-leg-t">${esc(g.title)}</text>`; x += titleW; }
             for (const it of g.items) {
@@ -924,6 +1172,9 @@ class CollabTab {
                     out += `<line x1="${x}" x2="${x + 26}" y1="${y}" y2="${y}" stroke="${it.color}" stroke-linecap="round"
                         stroke-opacity="${it.opacity}" stroke-width="${it.width}"/>`;
                     x += 34;
+                } else if (it.type === 'box') {
+                    out += `<rect x="${x}" y="${y - 5}" width="16" height="10" rx="2" fill="${it.color}" stroke="#c9d3dc"/>`;
+                    x += 22;
                 }
                 out += `<text x="${x}" y="${y + 4}" class="x-leg">${esc(it.label)}</text>`;
                 x += it.label.length * cw + 14;
@@ -940,7 +1191,8 @@ class CollabTab {
         const H = y + pad;
         const style = `
             .co-states path { fill: #eef2f5; stroke: #c9d3dc; stroke-width: 0.8; vector-effect: non-scaling-stroke; }
-            .co-links line { vector-effect: non-scaling-stroke; }
+            .co-states path.co-state-out { fill: #f7f9fa; stroke: #e1e7ec; }
+            .co-links path { vector-effect: non-scaling-stroke; }
             .co-label { font-family: Helvetica, Arial, sans-serif; fill: #2c3e50; paint-order: stroke; stroke: #fff; stroke-linejoin: round; }
             .co-label-sel { font-weight: 700; }
             text.x-title { font: 700 18px Helvetica, Arial, sans-serif; fill: #1a5276; }
@@ -948,14 +1200,36 @@ class CollabTab {
             text.x-leg-t { font: 700 11px Helvetica, Arial, sans-serif; fill: #7f8c8d; }
             text.x-leg { font: 11px Helvetica, Arial, sans-serif; fill: #7f8c8d; }
             text.x-src { font: 10px Helvetica, Arial, sans-serif; fill: #7f8c8d; }`;
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
+        const size = mm ? `width="${mm}mm" height="${(mm * H / W).toFixed(1)}mm"` : `width="${W}" height="${H}"`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" ${size} viewBox="0 0 ${W} ${H}">` +
                     `<style>${style}</style><rect width="${W}" height="${H}" fill="#fff"/>${out}</svg>`;
         return { svg, W, H };
     }
 
-    /** Rasterize the export SVG at `scale` times its size. */
-    async _exportCanvas(scale = 3) {
-        const { svg, W, H } = this._exportSvg();
+    /** The export SVG for a figure size. Other sizes redraw the map at that
+     *  width (keeping the view, zoom included), then restore the screen map. */
+    _figureSvg(sizeKey, title) {
+        const size = FIGURE_SIZES[sizeKey];
+        if (!size.width) return this._exportSvg(title);
+        const keep = { t: this.zoomT || d3.zoomIdentity, w: this.zoomWidth };
+        const mapW = Math.max(320, size.width - 40);   // the figure adds 20px margins
+        const s = keep.w ? mapW / keep.w : 1;
+        this._layoutWidth = mapW;
+        this.zoomT = d3.zoomIdentity.translate(keep.t.x * s, keep.t.y * s).scale(keep.t.k);
+        this.zoomWidth = mapW;
+        try {
+            this._drawMap();
+            return this._exportSvg(title, size.mm);
+        } finally {
+            this._layoutWidth = null;
+            this.zoomT = keep.t;
+            this.zoomWidth = keep.w;
+            this._drawMap();
+        }
+    }
+
+    /** Rasterize an export SVG at `scale` times its size. */
+    async _exportCanvas({ svg, W, H }, scale = 3) {
         const img = new Image();
         await new Promise((resolve, reject) => {
             img.onload = resolve;
@@ -973,15 +1247,22 @@ class CollabTab {
     }
 
     async _downloadFigure(format) {
-        const name = `${this._filename()}_map`;
+        const sizeKey = document.getElementById('co-fig-size').value;
+        const title = document.getElementById('co-fig-title').value.trim();
+        const size = FIGURE_SIZES[sizeKey];
+        const name = `${this._filename()}_map${sizeKey === 'shown' ? '' : `_${sizeKey}`}`;
+        const fig = this._figureSvg(sizeKey, title);
         if (format === 'svg') {
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([this._exportSvg().svg], { type: 'image/svg+xml' }));
+            a.href = URL.createObjectURL(new Blob([fig.svg], { type: 'image/svg+xml' }));
             a.download = `${name}.svg`;
             a.click();
             return;
         }
-        const { canvas, W, H } = await this._exportCanvas(3);
+        const { W, H } = fig;
+        // Print sizes rasterize at 300 dpi; the slide size at 1920 px wide.
+        const scale = size.mm ? (size.mm / 25.4) * 300 / W : size.px ? size.px / W : 3;
+        const { canvas } = await this._exportCanvas(fig, scale);
         const png = canvas.toDataURL('image/png');
         if (format === 'png') {
             const a = document.createElement('a');
@@ -990,9 +1271,10 @@ class CollabTab {
             a.click();
         } else {
             const { jsPDF } = window.jspdf;
-            // Compressed: without it jsPDF stores the 3x image raw (about 16 MB).
-            const pdf = new jsPDF({ orientation: W >= H ? 'landscape' : 'portrait', unit: 'pt', format: [W, H], compress: true });
-            pdf.addImage(png, 'PNG', 0, 0, W, H, undefined, 'FAST');
+            const pw = size.mm ? size.mm * 72 / 25.4 : W, ph = pw * H / W;   // page size in points
+            // Compressed: without it jsPDF stores the image raw (about 16 MB at 3x).
+            const pdf = new jsPDF({ orientation: pw >= ph ? 'landscape' : 'portrait', unit: 'pt', format: [pw, ph], compress: true });
+            pdf.addImage(png, 'PNG', 0, 0, pw, ph, undefined, 'FAST');
             pdf.save(`${name}.pdf`);
         }
     }
@@ -1001,10 +1283,17 @@ class CollabTab {
 
     _hubTip(i) {
         const { papers, cross } = this.net;
-        const h = this.hubs[i];
-        return [[`${papers[i].toLocaleString()} papers`, 'strong'],
-                [`${cross[i].toLocaleString()} with another hub (${papers[i] ? Math.round(100 * cross[i] / papers[i]) : 0}%)`, ''],
-                [h.label, 'muted'], [`${h.city}, ${h.state}`, 'muted']];
+        const h = this.hubs[i], st = this.state;
+        const lines = [[`${papers[i].toLocaleString()} papers`, 'strong'],
+                       [`${cross[i].toLocaleString()} with another hub (${papers[i] ? Math.round(100 * cross[i] / papers[i]) : 0}%)`, '']];
+        if (st.sizeBy === 'dollars') {
+            lines.push([`${HUB_SIZE_BY[st.sizeBy].label}: ${HUB_SIZE_BY[st.sizeBy].fmt(this._hubValues(st.sizeBy)[i])}`, '']);
+        }
+        if (this._hubColor && st.colorBy !== 'cross') {
+            const v = this._hubColor.values[i];
+            lines.push([`${HUB_COLOR_BY[st.colorBy].label}: ${Number.isFinite(v) ? HUB_COLOR_BY[st.colorBy].fmt(v) : 'no data'}`, '']);
+        }
+        return lines.concat([[h.label, 'muted'], [`${h.city}, ${h.state}`, 'muted']]);
     }
 
     _linkTip(l) {
@@ -1054,6 +1343,12 @@ class CollabTab {
         this.selected = i;
         this.selectedLink = null;
         this.selectedInst = null;
+        // A hub picked from a list may be outside the region in focus: show the whole US.
+        if (i != null && this._regionSet && !this._regionSet.has(this.hubs[i].state)) {
+            this.state.region = 'all';
+            this.zoomT = d3.zoomIdentity;
+            document.getElementById('co-region').value = 'all';
+        }
         this.render();
     }
 
@@ -1145,7 +1440,8 @@ class CollabTab {
             el.innerHTML = `
                 <h3>${escHtml(h.label)}</h3>
                 <p class="data-note">${escHtml(h.city)}, ${escHtml(h.state)}
-                    ${h.award_first ? `· CTSA award ${h.award_first}–${h.award_last}` : ''}</p>
+                    ${h.award_first ? `· CTSA award ${h.award_first}–${h.award_last}` : ''}
+                    ${h.award_total ? `· ${fmtDollars(h.award_total)} in NCATS awards` : ''}</p>
                 <dl class="co-stats">
                     <dt>Papers</dt><dd>${papers[i].toLocaleString()}</dd>
                     <dt>With another hub</dt><dd>${cross[i].toLocaleString()} (${papers[i] ? (100 * cross[i] / papers[i]).toFixed(1) : 0}%)</dd>
@@ -1229,7 +1525,8 @@ class CollabTab {
         const frac = this.state.counting === 'fractional';
         const rows = this.net.ranked.slice(0, 25);
         document.getElementById('co-pairs').innerHTML = `
-            <p class="data-note">Ranked by the link strength chosen above.</p>
+            <p class="data-note">Ranked by the link strength chosen above${this._regionSet
+                ? `; pairs with both hubs in the ${escHtml(this._regionLabel())}` : ''}.</p>
             <div class="table-scroll"><table class="data-table">
                 <thead><tr><th>#</th><th>Hub</th><th>Hub</th><th>× expected</th>
                     <th>Shared papers</th>${frac ? '<th>Fractional papers</th>' : ''}</tr></thead>
@@ -1250,15 +1547,19 @@ class CollabTab {
         const el = document.getElementById('co-downloads');
         if (el.dataset.ready) return;
         el.dataset.ready = '1';
-        el.innerHTML = `<div class="download-bar"><span>Figure:</span>
+        el.innerHTML = `<div class="download-bar co-figure-bar"><span>Figure:</span>
+            <label>Title <input type="text" id="co-fig-title" value="CTSA hub collaboration" size="30"></label>
+            <label>Size <select id="co-fig-size">${Object.entries(FIGURE_SIZES).map(([k, v]) =>
+                `<option value="${k}">${escHtml(v.label)}</option>`).join('')}</select></label>
             <button class="download-btn" data-fig="png">PNG</button>
             <button class="download-btn" data-fig="pdf">PDF</button>
-            <button class="download-btn" data-fig="svg">SVG</button>
-            <span>Data:</span>
+            <button class="download-btn" data-fig="svg">SVG</button></div>
+            <div class="download-bar"><span>Data:</span>
             <button class="download-btn" data-dl="links">Links CSV</button>
             <button class="download-btn" data-dl="hubs">Hubs CSV</button>
             <button class="download-btn" data-dl="insts">Institutions CSV</button></div>
-            <p class="data-note">The figure is the map exactly as shown (including zoom), with a legend and a caption listing the settings.</p>`;
+            <p class="data-note">The figure is the map as shown (same view and zoom), with a legend and a caption listing the settings.
+                Journal sizes are laid out for about 7-point text at 85 or 180 mm wide and saved at 300 dpi.</p>`;
         el.querySelectorAll('[data-dl]').forEach(b => b.addEventListener('click', () => this._download(b.dataset.dl)));
         el.querySelectorAll('[data-fig]').forEach(b => b.addEventListener('click', async () => {
             b.disabled = true;
@@ -1275,7 +1576,7 @@ class CollabTab {
     }
 
     async _download(kind) {
-        const { papers, cross, strength, links } = this.net;
+        const { papers, cross, strength, links, rcrMean } = this.net;
         if (kind === 'links') {
             ChartManager.downloadCSV([
                 ['hub_a', 'hub_b', 'state_a', 'state_b', 'times_expected', 'shared_papers', 'weight'],
@@ -1283,9 +1584,12 @@ class CollabTab {
                                    this.hubs[l.b].state, l.rel.toFixed(4), l.f, l.w.toFixed(4)])], `${this._filename()}_links`);
         } else if (kind === 'hubs') {
             ChartManager.downloadCSV([
-                ['hub', 'city', 'state', 'lat', 'lon', 'papers', 'cross_hub_papers', 'link_strength', 'hidden'],
+                ['hub', 'city', 'state', 'lat', 'lon', 'papers', 'cross_hub_papers', 'link_strength',
+                 'ncats_award_dollars', 'first_ctsa_award_year', 'mean_rcr', 'hidden'],
                 ...this.hubs.map((h, i) => [h.label, h.city, h.state, h.lat, h.lon, papers[i], cross[i],
-                                            strength[i].toFixed(4), this.hidden.has(i) ? 1 : 0])], `${this._filename()}_hubs`);
+                                            strength[i].toFixed(4), h.award_total ?? '', h.award_first ?? '',
+                                            rcrMean && Number.isFinite(rcrMean[i]) ? rcrMean[i].toFixed(3) : '',
+                                            this.hidden.has(i) ? 1 : 0])], `${this._filename()}_hubs`);
         } else if (kind === 'insts') {
             await this._loadInstitutions();
             if (!this.inst) return;
