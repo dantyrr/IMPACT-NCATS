@@ -26,10 +26,16 @@ institution layers, loaded only when they are switched on:
                         author's affiliation that names one
   other non-hub         institutions of authors who match no hub, as parsed by
                         the non-hub analysis (src/ncats/affil_institution.py)
-Each has a US map point (Census Gazetteer city), and the papers it appears on,
-2014 on, as positions in collaboration.json's paper arrays. Only US
-institutions with a located city can be mapped; other non-hub institutions
-need at least MIN_INST_PAPERS papers.
+Each has a US map point and the papers it appears on, 2014 on, as positions
+in collaboration.json's paper arrays. Only US institutions with a located city
+can be mapped; other non-hub institutions need at least MIN_INST_PAPERS papers.
+Spellings and sub-units of one non-hub institution are merged into one node
+(src/ncats/institution_merge.py, with the curated data/institution_aliases.csv).
+
+Map points, for hubs and institutions alike, are Census Gazetteer centroids:
+the most common ZIP (ZCTA) in the affiliations when it lies near the city,
+else the city's own point. ZIPs separate institutions in one city, such as
+Northwestern on Chicago's lakefront and the University of Chicago in Hyde Park.
 
 A third file, collaboration_papers.json, holds per-paper attributes for the
 tab's extra filters and click-through, loaded only when first needed: PMID,
@@ -40,12 +46,13 @@ last authors.
 Run after export_ncats_json.py, which writes the slugs this links to.
 
 Usage:
-    python scripts/export_collaboration_json.py
+    python scripts/export_collaboration_json.py [--merges-csv institution_merges.csv]
 """
 
-import sys, os, json, logging
+import sys, os, re, csv, json, argparse, logging
 from collections import Counter, defaultdict
 from datetime import date
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -56,6 +63,7 @@ from src.ncats.hub_matching import HubMatcher, load_aliases
 from src.ncats.gazetteer import Gazetteer
 from src.ncats.affil_institution import describe, institution_type
 from src.ncats.affil_location import USA
+from src.ncats.institution_merge import MERGE_KM, km, load_institution_aliases, merge_institutions
 from scripts.build_hub_network import _years, cofunding_hub_sets, hub_active_years, CONSORTIUM_HUBS
 import scripts.build_nonhub_collaboration as nonhub
 from scripts.export_themes import tri_class
@@ -66,6 +74,10 @@ log = logging.getLogger(__name__)
 FROM_YEAR = 2012
 COAUTHOR_RELIABLE_FROM = 2014
 MIN_INST_PAPERS = 3
+ZIP_KM = 30              # a ZIP centroid farther than this from the city point is a typo
+MIN_ZIP_VOTES = 2        # institutions; hubs need MIN_HUB_ZIP_VOTES
+MIN_HUB_ZIP_VOTES = 20
+_STATE_ZIP = re.compile(r"\b([A-Z]{2}),?\s+(\d{5})(?:-\d{4})?\b")
 TRI_CODES = {"human": 0, "animal": 1, "molecular_cellular": 2, "mixed": 3}
 FUNDING_BITS = {"hub": 1, "training": 2, "research": 4, "small_business": 8}
 SMALL_BUSINESS = {"R41", "R42", "R43", "R44", "U43", "U44", "SB1"}
@@ -99,23 +111,82 @@ def nonhub_outreach(hubs, gaz, matcher):
     return summary, by_paper, labels
 
 
-def institution_layer(conn, gaz, matcher, by_paper, labels, layer_pos, hub_idx):
+def place_of(points, zips, gaz, min_votes=MIN_ZIP_VOTES):
+    """(lat, lon, city, state): the most common ZIP centroid among the
+    affiliations when it is near the most common city point, else that city
+    point. points: Counter{(lat, lon, city, state)}; zips: Counter{zip5}."""
+    lat, lon, city, state = points.most_common(1)[0][0]
+    for z, n in zips.most_common(3):
+        if n < min_votes:
+            break
+        q = gaz.zip_point(z)
+        if q and km((lat, lon), (q.lat, q.lon)) <= ZIP_KM:
+            return q.lat, q.lon, city, state
+    return lat, lon, city, state
+
+
+def hub_points(conn, hubs, gaz):
+    """{hub_id: (lat, lon)} from the ZIPs in the affiliations of authors at
+    exactly one hub (its own institution), where the ZIP is in the hub's state."""
+    zips = defaultdict(Counter)
+    for aff, hub in conn.execute("""
+            SELECT af.affiliation, h.hub_id FROM pub_author_affils af
+            JOIN (SELECT pmid, position, MIN(hub_id) AS hub_id FROM pub_author_hubs
+                  GROUP BY pmid, position HAVING COUNT(*) = 1 AND MIN(tier) = 'core') h
+            USING(pmid, position)"""):
+        for st, z in _STATE_ZIP.findall(aff or ""):
+            if st == hubs[hub]["state"]:
+                zips[hub][z] += 1
+    out = {}
+    for h, hub in hubs.items():
+        pt = gaz.city_point(hub["city"], hub["state"])
+        if pt:
+            lat, lon, _, _ = place_of(Counter({(pt.lat, pt.lon, hub["city"], hub["state"]): 1}),
+                                      zips[h], gaz, MIN_HUB_ZIP_VOTES)
+            out[h] = (lat, lon)
+    return out
+
+
+def institution_layer(conn, gaz, matcher, by_paper, labels, layer_pos, hub_idx, aliases=()):
     """Partner and other non-hub institutions with a US map point, and the
     papers each appears on. layer_pos {pmid: position in the paper arrays}."""
-    papers = defaultdict(set)              # key -> pmids
-    points = defaultdict(Counter)          # key -> (lat, lon, city, state) -> count
-    types = {}
-
+    # Other non-hub institutions: one entry per name and place. A name seen in
+    # cities more than MERGE_KM apart is a different campus or site in each.
+    sites = defaultdict(lambda: {"pmids": set(), "points": Counter(), "zips": Counter(), "types": Counter()})
+    centers = defaultdict(list)
     for pmid, parts in by_paper.items():
         if pmid not in layer_pos:
             continue
         for p in parts:
             if p.country == USA and p.point and p.inst_key:
-                key = ("other", p.inst_key, None)
-                papers[key].add(pmid)
-                points[key][(p.point.lat, p.point.lon, p.city, p.state)] += 1
-                types[key] = p.inst_type
+                ll = (p.point.lat, p.point.lon)
+                cs = centers[p.inst_key]
+                j = next((j for j, c in enumerate(cs) if km(c, ll) <= MERGE_KM), None)
+                if j is None:
+                    cs.append(ll)
+                    j = len(cs) - 1
+                site = sites[(p.inst_key, j)]
+                site["pmids"].add(pmid)
+                site["points"][(*ll, p.city, p.state)] += 1
+                if p.zip:
+                    site["zips"][p.zip] += 1
+                site["types"][p.inst_type] += 1
+    keys = list(sites)
+    entries = []
+    for k in keys:
+        lat, lon, _, state = sites[k]["points"].most_common(1)[0][0]
+        entries.append({"label": labels.get(k[0], k[0]), "key": k[0], "state": state, "lat": lat, "lon": lon,
+                        "weight": len(sites[k]["pmids"])})
+    group_of, groups = merge_institutions(entries, aliases)
+    merged = [{"pmids": set(), "points": Counter(), "zips": Counter(), "types": Counter()} for _ in groups]
+    for e, gs in enumerate(group_of):
+        for g in gs:
+            for f in merged[g]:
+                merged[g][f].update(sites[keys[e]][f])
+    log.info("merged %d non-hub institution names and places into %d institutions", len(entries), len(groups))
 
+    # Partner institutions, from hub authors' affiliations that name one.
+    partners = defaultdict(lambda: {"pmids": set(), "points": Counter(), "zips": Counter()})
     cache = {}
     for pmid, aff in conn.execute("""
             SELECT af.pmid, af.affiliation FROM pub_author_affils af
@@ -124,39 +195,61 @@ def institution_layer(conn, gaz, matcher, by_paper, labels, layer_pos, hub_idx):
             continue
         hit = cache.get(aff)
         if hit is None:
-            found, pt = matcher.partners_found(aff), None
+            found, pt, z = matcher.partners_found(aff), None, None
             if found:
                 for d in describe(aff):
                     q = nonhub.map_point(gaz, d.location)
                     if q:
-                        pt = (q.lat, q.lon, d.location.city, d.location.state)
+                        pt, z = (q.lat, q.lon, d.location.city, d.location.state), d.location.zip
                         break
-            hit = cache[aff] = (found, pt)
+            hit = cache[aff] = (found, pt, z)
         for name, hub in hit[0]:
-            key = ("partner", name, hub)
-            papers[key].add(pmid)
+            rec = partners[(name, hub)]
+            rec["pmids"].add(pmid)
             if hit[1]:
-                points[key][hit[1]] += 1
+                rec["points"][hit[1]] += 1
+                if hit[2]:
+                    rec["zips"][hit[2]] += 1
 
-    keep = [k for k in papers if points[k] and (k[0] == "partner" or len(papers[k]) >= MIN_INST_PAPERS)]
-    keep.sort(key=lambda k: (k[0] != "partner", -len(papers[k])))
-    institutions, ids = [], {}
-    for k in keep:
-        lat, lon, city, state = points[k].most_common(1)[0][0]
-        ids[k] = len(institutions)
+    nodes = [("partner", name, hub, rec) for (name, hub), rec in partners.items() if rec["points"]]
+    members = defaultdict(list)
+    for e, gs in enumerate(group_of):
+        for g in gs:
+            members[g].append(e)
+    for g, rec in enumerate(merged):
+        rec["members"] = sorted(members[g], key=lambda e: -entries[e]["weight"])
+    nodes += [("other", groups[g]["label"], None, rec) for g, rec in enumerate(merged)
+              if rec["points"] and len(rec["pmids"]) >= MIN_INST_PAPERS]
+    nodes.sort(key=lambda n: (n[0] != "partner", -len(n[3]["pmids"]), n[1]))
+    institutions = []
+    for kind, name, hub, rec in nodes:
+        lat, lon, city, state = place_of(rec["points"], rec["zips"], gaz)
         institutions.append({
-            "name": k[1] if k[0] == "partner" else labels.get(k[1], k[1]),
-            "kind": k[0], "type": types.get(k) or institution_type(k[1]),
+            "name": name, "kind": kind,
+            "type": (rec["types"].most_common(1)[0][0] if kind == "other" and rec["types"] else None)
+                    or institution_type(name),
             "city": (city or "").title(), "state": state,
             "lat": round(lat, 4), "lon": round(lon, 4),
-            "hub": hub_idx.get(k[2]) if k[0] == "partner" else None,
-            "papers": len(papers[k])})
+            "hub": hub_idx.get(hub) if kind == "partner" else None,
+            "papers": len(rec["pmids"])})
+    # One name in several places (University of California): add the city.
+    seen = Counter(d["name"] for d in institutions)
+    for d in institutions:
+        if seen[d["name"]] > 1:
+            d["name"] = f"{d['name']} ({d['city']})"
     on_paper = defaultdict(list)
-    for k in keep:
-        for pmid in papers[k]:
-            on_paper[layer_pos[pmid]].append(ids[k])
+    for i, (_, _, _, rec) in enumerate(nodes):
+        for pmid in rec["pmids"]:
+            on_paper[layer_pos[pmid]].append(i)
     rows = sorted(on_paper)
-    return {"institutions": institutions, "rows": rows, "inst": [sorted(on_paper[r]) for r in rows]}
+    # For review: each mapped institution that joins several spellings or places.
+    merges = [{"institution": d["name"], "city": d["city"], "state": d["state"], "papers": d["papers"],
+               "spellings": len(rec["members"]),
+               "joined": " | ".join(f"{entries[e]['label']} [{sites[keys[e]]['points'].most_common(1)[0][0][2] or ''}, "
+                                    f"{entries[e]['state']}] ({entries[e]['weight']})" for e in rec["members"])}
+              for d, (kind, _, _, rec) in zip(institutions, nodes) if kind == "other" and len(rec["members"]) > 1]
+    return {"institutions": institutions, "rows": rows, "inst": [sorted(on_paper[r]) for r in rows],
+            "_merges": merges}
 
 
 def funding_group(activity_code, core_project_num):
@@ -241,7 +334,7 @@ def paper_attributes(conn, pmids, hubs, idx):
             "lead_core": [sorted(s) for s in lead_core], "lead_broad": [sorted(s) for s in lead_broad]}
 
 
-def build(conn, hubs, gaz, slugs, outreach):
+def build(conn, hubs, gaz, slugs, outreach, points=None):
     order = sorted(hubs, key=lambda k: hubs[k]["label"])
     idx = {h: i for i, h in enumerate(order)}
     active = hub_active_years(conn, hubs)
@@ -255,11 +348,13 @@ def build(conn, hubs, gaz, slugs, outreach):
 
     hub_rows = []
     for h in order:
-        pt = gaz.city_point(hubs[h]["city"], hubs[h]["state"]) if gaz else None
+        pt = (points or {}).get(h)
+        if pt is None and gaz and (c := gaz.city_point(hubs[h]["city"], hubs[h]["state"])):
+            pt = (c.lat, c.lon)
         yrs = sorted(active.get(h, ()))
         hub_rows.append({
             "id": h, "label": hubs[h]["label"], "city": hubs[h]["city"], "state": hubs[h]["state"],
-            "lat": round(pt.lat, 4) if pt else None, "lon": round(pt.lon, 4) if pt else None,
+            "lat": round(pt[0], 4) if pt else None, "lon": round(pt[1], 4) if pt else None,
             "award_first": yrs[0] if yrs else None, "award_last": yrs[-1] if yrs else None,
             "award_total": round(dollars.get(h, 0.0)),
             "slug": slugs.get(h), "outreach": outreach.get(h)})
@@ -286,6 +381,10 @@ def build(conn, hubs, gaz, slugs, outreach):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--merges-csv", type=Path,
+                    help="also write the institution merges (spellings joined into one map node) for review")
+    args = ap.parse_args()
     conn = connect_ncats()
     hubs = load_hubs()
     try:
@@ -301,10 +400,12 @@ def main():
         log.warning("no %s; run export_ncats_json.py first for Site Detail links", index_path)
     matcher = HubMatcher(load_aliases())
     outreach, by_paper, labels = nonhub_outreach(hubs, gaz, matcher)
-    data, pmids, hub_idx = build(conn, hubs, gaz, slugs, outreach)
+    points = hub_points(conn, hubs, gaz) if gaz else None
+    data, pmids, hub_idx = build(conn, hubs, gaz, slugs, outreach, points)
     years = dict(zip(pmids, data["papers"]["y"]))
     layer_pos = {p: i for i, p in enumerate(pmids) if years[p] >= COAUTHOR_RELIABLE_FROM}
-    layer = institution_layer(conn, gaz, matcher, by_paper, labels, layer_pos, hub_idx) if gaz else None
+    layer = (institution_layer(conn, gaz, matcher, by_paper, labels, layer_pos, hub_idx,
+                               load_institution_aliases()) if gaz else None)
     attrs = paper_attributes(conn, pmids, hubs, hub_idx)
     conn.close()
     data["build"] = f"{data['generated']}-{data['n_papers']}"
@@ -322,6 +423,13 @@ def main():
     log.info("wrote %s: %d themes, %d grants, %d PIs, %d KB", out3, len(attrs["themes"]),
              len(attrs["grant_list"]), len(attrs["pis"]), out3.stat().st_size // 1024)
     if layer:
+        merges = layer.pop("_merges")
+        if args.merges_csv:
+            with open(args.merges_csv, "w", newline="") as fh:
+                w = csv.DictWriter(fh, fieldnames=list(merges[0]))
+                w.writeheader()
+                w.writerows(merges)
+            log.info("wrote %s: %d merged institutions", args.merges_csv, len(merges))
         layer.update({"build": data["build"], "from_year": COAUTHOR_RELIABLE_FROM,
                       "min_papers": MIN_INST_PAPERS})
         out2 = WEBSITE_DATA_DIR / "collaboration_institutions.json"

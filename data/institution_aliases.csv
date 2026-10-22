@@ -1,0 +1,38 @@
+pattern,state,canonical,note
+\bstroger\b|\bcook county (health|hospital|bureau)|hospital of cook county|\bhektoen\b,IL,Cook County Health,"Stroger Hospital is Cook County Health's main hospital; Hektoen Institute is its research institute"
+^rush (university|medical|college|hospital|alzheimer)|^rush$,IL,Rush University Medical Center,includes Rush Medical College and Rush University
+^broad institute|^eli and edythe l broad institute,MA,Broad Institute of MIT and Harvard,
+^mit$|^massachusetts institute of technology,MA,Massachusetts Institute of Technology,
+^(eunice kennedy shriver )?national (institutes? of health|cancer institute|eye institute|heart lung and blood institute|human genome research institute|library of medicine|center for (advancing translational|complementary and integrative|biotechnology information)|institute (on aging|on alcohol abuse|of allergy|of arthritis|of biomedical imaging|of child health|on deafness|of dental|of diabetes|on drug abuse|of environmental health|of general medical|of mental health|on minority health|of neurological|of nursing))|^nih\b|^fogarty international|^warren grant magnuson|^rocky mountain lab|^frederick national lab|^(nci|nhlbi|niddk|niaid|nimh|nia|nichd|ninds|nida|niaaa|nhgri|ncats|nccih|nimhd|ninr|nidcr|nidcd|nibib|niehs|nigms|nlm)$,,National Institutes of Health,"NIH institutes and centers count as NIH, one node per state (Bethesda, NIEHS in North Carolina, Rocky Mountain Labs...)"
+^(h )?lee moffitt|^moffitt,FL,Moffitt Cancer Center,
+^city of hope|beckman research institute of (the )?city of hope,CA,City of Hope,
+^henry ford,MI,Henry Ford Health,
+karmanos cancer,MI,Karmanos Cancer Institute,
+^feinstein institutes? for medical research|^northwell|^zucker (hillside|school of medicine)|^donald and barbara zucker school|^hofstra northwell|^north shore long island jewish|^cohen children s medical center,NY,Northwell Health,"Feinstein Institutes, Zucker Hillside Hospital and the Hofstra/Northwell school are Northwell"
+suny downstate|state university of new york downstate|^downstate (medical center|health sciences)|^kings county hospital,NY,SUNY Downstate Health Sciences University,Kings County Hospital is Downstate's teaching hospital
+suny upstate|state university of new york upstate|^upstate medical university,NY,SUNY Upstate Medical University,
+^augusta university|^georgia regents|^medical college of georgia|^georgia cancer center,GA,Augusta University,Georgia Regents University is Augusta University's former name
+^st jude|^saint jude|^st jude s,TN,St. Jude Children's Research Hospital,
+^tulane,LA,Tulane University,
+^houston methodist|^the methodist hospital|^methodist hospital research institute,TX,Houston Methodist,
+^loyola university (chicago|medical center|health|stritch|school of medicine)|^loyola (school of medicine|university)$|^stritch school of medicine,IL,Loyola University Chicago,
+^(thomas )?jefferson university|^sidney kimmel (medical college|cancer center at (thomas )?jefferson)|^jefferson (health|medical college),PA,Thomas Jefferson University,
+^(lewis katz school of medicine at )?temple university|^fox chase cancer center temple,PA,Temple University,
+^stony brook|^renaissance school of medicine,NY,Stony Brook University,
+^(warren )?alpert (brown )?medical school|^alpert brown|^brown (university|school of public health|alpert),RI,Brown University,
+^larner college of medicine|^university of vermont|^m d college of medicine at the university of vermont,VT,University of Vermont,
+^dell medical school|^university of texas at austin,TX,University of Texas at Austin,
+^texas a and m,TX,Texas A&M University,
+^uniformed services university,MD,Uniformed Services University,
+^children s (hospital )?(of )?alabama,AL,Children's of Alabama,
+^kaiser permanente (northern california|division of research|oakland|san francisco|santa clara|sacramento),CA,Kaiser Permanente Northern California,
+^kaiser permanente (southern california|of southern california|los angeles|san diego|bernard j tyson)|^southern california permanente,CA,Kaiser Permanente Southern California,
+^centers? (for|of) disease control,GA,Centers for Disease Control and Prevention,
+^(va|veterans affairs|department of veterans affairs) boston|^boston va,MA,VA Boston Healthcare System,
+^(louis stokes )?cleveland (va|veterans affairs|department of veterans affairs)|^louis stokes,OH,Louis Stokes Cleveland VA Medical Center,
+^(va|veterans affairs) (greater los angeles|west los angeles)|^greater los angeles va,CA,VA Greater Los Angeles Healthcare System,
+^(san francisco )?(va|veterans affairs)( medical center| health care system)? san francisco|^san francisco (va|veterans affairs),CA,San Francisco VA Health Care System,
+^(va|veterans affairs) san diego,CA,VA San Diego Healthcare System,
+^(va|veterans affairs) pittsburgh,PA,VA Pittsburgh Healthcare System,
+^atlanta (va|veterans affairs)|^atlanta department of veterans affairs,GA,Atlanta VA Medical Center,
+^nathan (s )?kline institute,NY,Nathan S. Kline Institute for Psychiatric Research,

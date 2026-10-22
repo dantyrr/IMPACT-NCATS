@@ -128,3 +128,55 @@ def test_paper_attributes(conn):
     assert d["pis"] == [{"name": "Jane A Doe", "g": [nums.index("UL1A")]}]
     assert d["lead_core"] == [[1], [], []]          # first author at hub 10 (index 1)
     assert d["lead_broad"] == [[0, 1], [], []]      # plus the partner-tier last author at hub 20
+
+
+def test_institution_layer_merges_spellings_and_prefers_a_nearby_zip(conn):
+    from scripts.export_collaboration_json import institution_layer
+    from scripts.build_nonhub_collaboration import Part
+    from src.ncats.gazetteer import Point
+    from src.ncats.hub_matching import HubMatcher
+
+    chicago = Point(41.84, -87.68, "c", "Chicago city", "place")
+    zips = {"60612": Point(41.88, -87.69, "z", "ZCTA 60612", "zcta"),
+            "90210": Point(34.10, -118.41, "z2", "ZCTA 90210", "zcta")}   # a typo, far away
+
+    class FakeGazetteer:
+        def city_point(self, city, state):
+            return None
+
+        def zip_point(self, zip5):
+            return zips.get(zip5)
+
+    def rush(pmid, key, zip5):
+        return Part(pmid, 2, 1, country="USA", state="IL", city="Chicago", zip=zip5, inst_key=key,
+                    inst_name=key, inst_type="hospital", point=chicago)
+
+    by_paper = {1: [rush(1, "rush university", "60612")], 2: [rush(2, "rush university medical center", "60612")],
+                3: [rush(3, "rush university medical center", "90210")]}
+    labels = {"rush university": "Rush University", "rush university medical center": "Rush University Medical Center"}
+    layer = institution_layer(conn, FakeGazetteer(), HubMatcher([]), by_paper, labels,
+                              layer_pos={1: 0, 2: 1, 3: 2}, hub_idx={20: 0, 10: 1})
+    [d] = layer["institutions"]
+    assert (d["name"], d["papers"]) == ("Rush University Medical Center", 3)
+    assert (d["lat"], d["lon"]) == (41.88, -87.69)          # ZIP 60612, not the city point or the typo
+    assert layer["inst"] == [[0], [0], [0]]
+
+
+def test_hub_points_use_the_most_common_nearby_zip(conn):
+    from scripts.export_collaboration_json import hub_points
+    from src.ncats.gazetteer import Point
+
+    class FakeGazetteer:
+        def city_point(self, city, state):
+            return Point(36.0, -78.9, "c", city, "place")
+
+        def zip_point(self, zip5):
+            return {"27710": Point(36.01, -78.94, "z", "ZCTA 27710", "zcta")}.get(zip5)
+
+    conn.executemany("INSERT INTO pub_author_affils (pmid, position, affil_order, affiliation) VALUES (?,?,1,?)",
+                     [(10 + i, 1, "Duke University School of Medicine, Durham, NC 27710, USA") for i in range(25)])
+    conn.executemany("INSERT INTO pub_author_hubs (pmid, position, hub_id, tier) VALUES (?,1,10,'core')",
+                     [(10 + i,) for i in range(25)])
+    pts = hub_points(conn, HUBS, FakeGazetteer())
+    assert pts[10] == (36.01, -78.94)        # 25 ZIP votes
+    assert pts[20] == (36.0, -78.9)          # no votes: the city point
