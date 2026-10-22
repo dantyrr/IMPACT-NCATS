@@ -470,3 +470,19 @@ hub_id,hub_label,alias,tier,institution,requires,note
 578404,UT Southwestern Medical Center,University of Texas SouthWestern,core,,,capital-W spelling
 353201,Virginia Commonwealth University,Virginia CommonWealth University,core,,,capital-W spelling
 577505,UCLA,Los Angeles BioMedical Research Institute,partner,The Lundquist Institute,,capital-M spelling
+1288803,University of Alabama at Birmingham,University of Alabama in Birmingham,core,,,"variant of 'at Birmingham'"
+1288803,University of Alabama at Birmingham,University of Birmingham at Alabama,core,,,transposed spelling seen in PubMed
+1288803,University of Alabama at Birmingham,University of Alabama,core,,birmingham,"Tuscaloosa campus strings name no Birmingham"
+,,University of Alabama in Huntsville,block,,,"keeps Huntsville from matching UAB when Birmingham also appears"
+6144650,Northwestern University,Northwestern School of Medicine,core,,chicago;illinois;evanston,
+3212902,Harvard (Harvard Catalyst),Harvard School of Medicine,core,,,
+3212902,Harvard (Harvard Catalyst),Harvard College,core,,,
+3212902,Harvard (Harvard Catalyst),Harvard Business School,core,,,part of Harvard University
+3839801,Icahn School of Medicine at Mount Sinai,Mt. Sinai School of Medicine,core,,,
+3839801,Icahn School of Medicine at Mount Sinai,Mt. Sinai,core,,new york;ny;nyc;manhattan;bronx;brooklyn;queens,
+4976101,Mayo Clinic,Mayo College of Medicine,core,,,
+578418,UT Health San Antonio,University of Texas Health at San Antonio,core,,,
+578417,UTHealth Houston,University of Texas at Houston,core,,,
+7636101,University of Southern California,Southern California Clinical and Translational Science Institute,core,,,USC's CTSA hub
+1514803,Weill Cornell Medicine,Sloan Kettering Institute,partner,Memorial Sloan Kettering Cancer Center,,MSK's research arm
+1514803,Weill Cornell Medicine,Cornell Tech,partner,Cornell University,,Cornell University's New York City campus

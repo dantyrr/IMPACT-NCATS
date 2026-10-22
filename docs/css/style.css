@@ -1656,7 +1656,8 @@ tr.row-excluded td {
 @media (max-width: 900px) {
     .co-layout { grid-template-columns: 1fr; }
 }
-.co-states path, .co-links line { vector-effect: non-scaling-stroke; }
+.co-states path, .co-links path { vector-effect: non-scaling-stroke; }
+.co-states path.co-state-out { fill: #f7f9fa; stroke: #e1e7ec; }
 #co-map { cursor: grab; }
 #co-map:active { cursor: grabbing; }
 .co-zoom { position: absolute; top: 0.75rem; right: 0.75rem; z-index: 5; display: flex; gap: 0.25rem; }
@@ -1677,3 +1678,10 @@ tr.row-excluded td {
 .co-active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.3rem 0; font-size: 0.85rem; }
 .co-active-filters:empty { display: none; }
 .co-swatch-line { width: 1rem; height: 0.25rem; border-radius: 2px; vertical-align: middle; border: none; box-shadow: none; }
+.co-swatch-box { border-radius: 2px; }
+.co-disabled { opacity: 0.5; }
+.co-play { white-space: nowrap; }
+.co-figure-bar label { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.9rem; }
+#co-fig-title { padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; max-width: 100%; }
+.co-pick-toggle { margin-left: auto; }
+.co-pick-chips { margin: 0.4rem 0; }
