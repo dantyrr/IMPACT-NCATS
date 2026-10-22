@@ -7,6 +7,10 @@
  *   gaps          — a site's theme mix against the portfolio, to surface where a
  *                   hub is over- or under-represented relative to its peers
  *
+ * A "Papers" setting shows every paper, or leaves out or shows only COVID-19
+ * papers (or COVID-19 consortium papers). The export carries the same tables
+ * for those subsets; leaving one out subtracts its rows.
+ *
  * Kept in its own file rather than added to app.js, which is already large.
  */
 
@@ -62,9 +66,14 @@ class ThemesTab {
                 </label>
                 <label>From: <select id="th-from">${yearOpts(Math.max(years[0], 2012))}</select></label>
                 <label>To: <select id="th-to">${yearOpts(years[years.length - 1])}</select></label>
+            </div>
+            <div class="controls-row">
+                <label>Papers:
+                    <select id="th-subset">${this._subsetOptions()}</select>
+                </label>
             </div>`;
 
-        ['th-view', 'th-site', 'th-topn', 'th-units', 'th-from', 'th-to'].forEach(id =>
+        ['th-view', 'th-site', 'th-topn', 'th-units', 'th-from', 'th-to', 'th-subset'].forEach(id =>
             document.getElementById(id).addEventListener('input', () => this.render()));
 
         this.renderMethods();
@@ -72,7 +81,8 @@ class ThemesTab {
         this.app._attachDownloadBar('th-downloads',
             () => this.chart,
             () => this.csvRows(),
-            () => `ncats-${document.getElementById('th-view').value}`);
+            () => `ncats-${document.getElementById('th-view').value}` +
+                  (this._subset && this._subset !== 'all' ? `-${this._subset.replace(':', '-')}` : ''));
 
         this.render();
     }
@@ -177,6 +187,16 @@ class ThemesTab {
                 <em>naming</em>, where the lag does not distort anything.
             </p>
 
+            <h4>COVID-19 papers</h4>
+            <p>
+                The "Papers" setting can leave out, or show only, papers whose title, abstract or MeSH
+                terms name COVID-19 or SARS-CoV-2
+                (${(this.data.subsets?.covid?.papers || 0).toLocaleString()} papers), or just those of them
+                with authors at ${this.data.consortium_hubs || 10} or more CTSA hubs
+                (${(this.data.subsets?.covid_consortium?.papers || 0).toLocaleString()}). Nothing is
+                removed from the data; the setting only changes what the charts count.
+            </p>
+
             <h4>Coherence</h4>
             <p>
                 The share of a theme's MeSH-indexed papers carrying its single top descriptor.
@@ -210,7 +230,66 @@ class ThemesTab {
         </details>`;
     }
 
+    _subsetOptions() {
+        const sub = this.data.subsets || {};
+        const n = k => (sub[k] ? ` (${sub[k].papers.toLocaleString()})` : '');
+        const hubs = this.data.consortium_hubs || 10;
+        return [['all', 'All papers'],
+                ['drop:covid', `Leave out COVID-19 papers${n('covid')}`],
+                ['only:covid', `Only COVID-19 papers${n('covid')}`],
+                ['drop:covid_consortium', `Leave out COVID-19 consortium papers (${hubs}+ hubs)${n('covid_consortium')}`],
+                ['only:covid_consortium', `Only COVID-19 consortium papers (${hubs}+ hubs)${n('covid_consortium')}`]]
+            .filter(([v]) => v === 'all' || sub[v.split(':')[1]])
+            .map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+    }
+
+    /** A table under the "Papers" setting: every paper, a subset only, or
+     *  every paper without the subset (its rows subtracted). */
+    _table(name) {
+        const all = this.data[name] || [];
+        const [mode, key] = this._subset.split(':');
+        if (mode === 'all') return all;
+        const sub = this.data.subsets?.[key]?.[name] || [];
+        if (mode === 'only') return sub;
+        const id = r => [r.theme_id, r.slug, r.year, r.tri].join('|');
+        const less = new Map(sub.map(r => [id(r), r]));
+        return all.map(r => {
+            const x = less.get(id(r));
+            if (!x) return r;
+            const out = { ...r, n: r.n - x.n };
+            for (const f of ['clinical', 'cited_by_clinical']) if (f in r) out[f] = (r[f] || 0) - (x[f] || 0);
+            if ('mean_apt' in r) {
+                const an = (r.apt_n || 0) - (x.apt_n || 0);
+                out.apt_n = an;
+                out.mean_apt = an > 0 && r.mean_apt != null
+                    ? (r.mean_apt * r.apt_n - (x.mean_apt || 0) * (x.apt_n || 0)) / an : null;
+            }
+            return out;
+        }).filter(r => r.n > 0);
+    }
+
+    /** Papers per theme across the portfolio, under the "Papers" setting. */
+    _portfolioTotals() {
+        const tot = {};
+        if (this._subset === 'all') {
+            for (const t of (this.data.themes || [])) tot[t.theme_id] = t.size;
+        } else {
+            for (const r of this._table('theme_year')) tot[r.theme_id] = (tot[r.theme_id] || 0) + r.n;
+        }
+        return tot;
+    }
+
+    _subsetNote() {
+        if (this._subset === 'all') return '';
+        const label = document.getElementById('th-subset').selectedOptions[0].textContent;
+        const what = label.replace(/ \([\d,]+\)$/, '');
+        return ` <strong>Showing: ${what[0].toLowerCase() + what.slice(1)}.</strong> COVID-19 papers are those whose
+            title, abstract or MeSH terms name COVID-19 or SARS-CoV-2; consortium papers have authors at
+            ${this.data.consortium_hubs || 10} or more CTSA hubs.`;
+    }
+
     _state() {
+        this._subset = document.getElementById('th-subset')?.value || 'all';
         const from = parseInt(document.getElementById('th-from').value, 10);
         const to = parseInt(document.getElementById('th-to').value, 10);
         const [lo, hi] = from <= to ? [from, to] : [to, from];
@@ -239,8 +318,8 @@ class ThemesTab {
 
     renderTranslational(st) {
         const rows = st.slug
-            ? (this.data.trans_site_year || []).filter(r => r.slug === st.slug)
-            : (this.data.trans_year || []);
+            ? this._table('trans_site_year').filter(r => r.slug === st.slug)
+            : this._table('trans_year');
 
         const byYear = {};
         for (const r of rows) {
@@ -279,14 +358,14 @@ class ThemesTab {
                 ${(cov.with_translational || 0).toLocaleString()} of
                 ${(cov.total || 0).toLocaleString()} publications are classified.
                 Recent years are still filling in on both indexing and grant reporting,
-                so the right-hand edge is provisional.
+                so the right-hand edge is provisional.${this._subsetNote()}
             </p>`;
         this.renderTransTable(st, byYear);
     }
 
     renderTransTable(st, byYear) {
         const rowsFor = st.slug
-            ? (this.data.trans_site_year || []).filter(r => r.slug === st.slug)
+            ? this._table('trans_site_year').filter(r => r.slug === st.slug)
             : null;
         const aptByYear = {};
         const clinByYear = {};
@@ -297,7 +376,7 @@ class ThemesTab {
                 clinByYear[r.year] = (clinByYear[r.year] || 0) + (r.cited_by_clinical || 0);
             }
         } else {
-            for (const r of (this.data.trans_year || [])) {
+            for (const r of this._table('trans_year')) {
                 aptByYear[r.year] = aptByYear[r.year] || [];
                 if (r.mean_apt != null) aptByYear[r.year].push([r.mean_apt, r.n]);
             }
@@ -334,10 +413,10 @@ class ThemesTab {
     // ---- theme volume over time ----
 
     _themeRows(slug) {
-        if (!slug) return this.data.theme_year || [];
+        if (!slug) return this._table('theme_year');
         // theme_site has no year dimension, so a site view needs the per-site
         // per-year table produced by the exporter.
-        return (this.data.theme_site_year || []).filter(r => r.slug === slug);
+        return this._table('theme_site_year').filter(r => r.slug === slug);
     }
 
     renderThemes(st) {
@@ -384,7 +463,7 @@ class ThemesTab {
                 into one.
                 <strong>Coherence</strong> is the share of a theme's MeSH-indexed papers carrying
                 its single top descriptor: high means the theme is one subject, low means it spans
-                several and the name only captures part of it.
+                several and the name only captures part of it.${this._subsetNote()}
             </p>`;
         this.renderThemeTable(top, totals);
     }
@@ -425,11 +504,10 @@ class ThemesTab {
         }
 
         const siteTot = {};
-        for (const r of (this.data.theme_site || [])) {
+        for (const r of this._table('theme_site')) {
             if (r.slug === st.slug) siteTot[r.theme_id] = r.n;
         }
-        const portTot = {};
-        for (const t of (this.data.themes || [])) portTot[t.theme_id] = t.size;
+        const portTot = this._portfolioTotals();
 
         const siteN = Object.values(siteTot).reduce((a, b) => a + b, 0);
         const portN = Object.values(portTot).reduce((a, b) => a + b, 0);
@@ -477,7 +555,7 @@ class ThemesTab {
                 ${portN.toLocaleString()} portfolio-wide.
                 <strong>An under-represented theme is not automatically a gap</strong> — hubs
                 specialise deliberately, and a low share may reflect a local decision or another
-                institution nearby covering it.
+                institution nearby covering it.${this._subsetNote()}
             </p>`;
 
         document.getElementById('th-table-container').innerHTML = `
@@ -504,8 +582,8 @@ class ThemesTab {
         const st = this._state();
         if (st.view === 'translational') {
             const rows = st.slug
-                ? (this.data.trans_site_year || []).filter(r => r.slug === st.slug)
-                : (this.data.trans_year || []);
+                ? this._table('trans_site_year').filter(r => r.slug === st.slug)
+                : this._table('trans_year');
             return [['year', 'triangle_class', 'papers', 'mean_apt'],
                     ...rows.filter(r => st.years.includes(r.year))
                            .map(r => [r.year, r.tri, r.n, r.mean_apt ?? ''])];
@@ -518,11 +596,12 @@ class ThemesTab {
                                       r.year, r.n])];
         }
         const siteTot = {};
-        for (const r of (this.data.theme_site || [])) {
+        for (const r of this._table('theme_site')) {
             if (r.slug === st.slug) siteTot[r.theme_id] = r.n;
         }
+        const portTot = this._portfolioTotals();
         return [['theme_id', 'theme_label', 'site_papers', 'portfolio_papers'],
                 ...(this.data.themes || []).map(t =>
-                    [t.theme_id, t.label, siteTot[t.theme_id] || 0, t.size])];
+                    [t.theme_id, t.label, siteTot[t.theme_id] || 0, portTot[t.theme_id] || 0])];
     }
 }

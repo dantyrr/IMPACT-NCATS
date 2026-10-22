@@ -14,10 +14,14 @@ award, stored as parallel arrays:
   s  the hub whose grants are the paper's only NCATS grant links, or -1. Lets
      the tab drop papers that are in the data only because they cite a hidden
      hub's grant (Yale cites its UL1 on nearly everything).
+and two short lists of paper positions, for the tab's toggles:
+  covid  papers about COVID-19 (src/ncats/paper_flags.py)
+  big    papers with BIG_AUTHOR_LIST (100) or more authors
 
 Hubs are referred to by their position in `hubs`. Each hub carries its
-location (Census Gazetteer city point), CTSA award years, dashboard slug, and
-outside-collaboration summary (scripts/build_nonhub_collaboration.py).
+location, CTSA award years, NCATS award dollars, dashboard slug, and
+outside-collaboration summary (scripts/build_nonhub_collaboration.py), also
+without papers of 100 or more authors (`outreach_u100`).
 
 A second file, collaboration_institutions.json, holds the map's optional
 institution layers, loaded only when they are switched on:
@@ -64,6 +68,7 @@ from src.ncats.gazetteer import Gazetteer
 from src.ncats.affil_institution import describe, institution_type
 from src.ncats.affil_location import USA
 from src.ncats.institution_merge import MERGE_KM, km, load_institution_aliases, merge_institutions
+from src.ncats.paper_flags import BIG_AUTHOR_LIST, covid_pmids
 from scripts.build_hub_network import _years, cofunding_hub_sets, hub_active_years, CONSORTIUM_HUBS
 import scripts.build_nonhub_collaboration as nonhub
 from scripts.export_themes import tri_class
@@ -98,6 +103,7 @@ def sole_grant_hubs(conn, to_hub):
 
 def nonhub_outreach(hubs, gaz, matcher):
     """Per-hub outside-collaboration figures (as in hub_outreach_summary.csv),
+    for all papers and for papers with fewer than BIG_AUTHOR_LIST authors,
     plus the parsed non-hub affiliation parts by paper and institution labels."""
     conn = nonhub.connect_readonly()
     years, n_authors, hub_papers, rows = nonhub.load_inputs(conn, COAUTHOR_RELIABLE_FROM)
@@ -106,9 +112,13 @@ def nonhub_outreach(hubs, gaz, matcher):
               if (pt := gaz.city_point(h["city"], h["state"])) is not None} if gaz else {}
     parts, labels = nonhub.parse_rows(rows, matcher, gaz)
     by_paper, unmatched = nonhub.outreach_parts(parts)
-    t = nonhub.hub_tables(hub_papers, by_paper, unmatched, hubs, years, n_authors, labels, points)
-    summary = {int(r["hub_id"]): {k: r.get(k) for k in OUTREACH_FIELDS} for r in t["summary"]}
-    return summary, by_paper, labels
+
+    def summarize(papers):
+        t = nonhub.hub_tables(papers, by_paper, unmatched, hubs, years, n_authors, labels, points)
+        return {int(r["hub_id"]): {k: r.get(k) for k in OUTREACH_FIELDS} for r in t["summary"]}
+
+    small = {p: hs for p, hs in hub_papers.items() if (n_authors.get(p) or 0) < BIG_AUTHOR_LIST}
+    return summarize(hub_papers), summarize(small), by_paper, labels
 
 
 def place_of(points, zips, gaz, min_votes=MIN_ZIP_VOTES):
@@ -334,7 +344,7 @@ def paper_attributes(conn, pmids, hubs, idx):
             "lead_core": [sorted(s) for s in lead_core], "lead_broad": [sorted(s) for s in lead_broad]}
 
 
-def build(conn, hubs, gaz, slugs, outreach, points=None):
+def build(conn, hubs, gaz, slugs, outreach, points=None, outreach_u100=None):
     order = sorted(hubs, key=lambda k: hubs[k]["label"])
     idx = {h: i for i, h in enumerate(order)}
     active = hub_active_years(conn, hubs)
@@ -357,7 +367,8 @@ def build(conn, hubs, gaz, slugs, outreach, points=None):
             "lat": round(pt[0], 4) if pt else None, "lon": round(pt[1], 4) if pt else None,
             "award_first": yrs[0] if yrs else None, "award_last": yrs[-1] if yrs else None,
             "award_total": round(dollars.get(h, 0.0)),
-            "slug": slugs.get(h), "outreach": outreach.get(h)})
+            "slug": slugs.get(h), "outreach": outreach.get(h),
+            "outreach_u100": (outreach_u100 or {}).get(h)})
 
     years = _years(conn)
     core, partner = defaultdict(set), defaultdict(set)
@@ -374,6 +385,10 @@ def build(conn, hubs, gaz, slugs, outreach, points=None):
               "p": [sorted(partner.get(p, ())) for p in pmids],
               "f": [sorted(fund.get(p, ())) for p in pmids],
               "s": [idx.get(sole.get(p), -1) for p in pmids]}
+    covid = covid_pmids(conn)
+    n_authors = dict(conn.execute("SELECT pmid, n_authors FROM pub_author_fetch"))
+    papers["covid"] = [i for i, p in enumerate(pmids) if p in covid]
+    papers["big"] = [i for i, p in enumerate(pmids) if (n_authors.get(p) or 0) >= BIG_AUTHOR_LIST]
     return {"generated": date.today().isoformat(),
             "from_year": FROM_YEAR, "coauthor_reliable_from": COAUTHOR_RELIABLE_FROM,
             "consortium_hubs": CONSORTIUM_HUBS,
@@ -399,9 +414,9 @@ def main():
     else:
         log.warning("no %s; run export_ncats_json.py first for Site Detail links", index_path)
     matcher = HubMatcher(load_aliases())
-    outreach, by_paper, labels = nonhub_outreach(hubs, gaz, matcher)
+    outreach, outreach_u100, by_paper, labels = nonhub_outreach(hubs, gaz, matcher)
     points = hub_points(conn, hubs, gaz) if gaz else None
-    data, pmids, hub_idx = build(conn, hubs, gaz, slugs, outreach, points)
+    data, pmids, hub_idx = build(conn, hubs, gaz, slugs, outreach, points, outreach_u100)
     years = dict(zip(pmids, data["papers"]["y"]))
     layer_pos = {p: i for i, p in enumerate(pmids) if years[p] >= COAUTHOR_RELIABLE_FROM}
     layer = (institution_layer(conn, gaz, matcher, by_paper, labels, layer_pos, hub_idx,

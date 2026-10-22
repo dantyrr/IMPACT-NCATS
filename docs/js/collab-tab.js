@@ -37,6 +37,7 @@ const FUNDING_LABELS = { hub: 'Hub awards (UL1/UM1)', training: 'Career & traini
 const TRI_LABELS = ['Human', 'Animal', 'Molecular/cellular', 'Mixed'];
 const DEFAULT_FILTERS = { theme: -1, funding: 'all', grant: null, role: 'any', researchOnly: false, rcrMin: 0, tri: -1 };
 const PUBMED_MAX = 200;   // PubMed shows at most 200 results per page
+const BIG_AUTHOR_LIST = 100;   // as in src/ncats/paper_flags.py
 
 // Hub color by a metric: one purple hue, light (low) to dark (high), so it
 // reads apart from the blue hub links. The light end keeps 2.5:1 on the states.
@@ -207,8 +208,10 @@ class CollabTab {
             showPartner: false, showOther: false, instType: 'all', instMin: 5, instTop: 250,
             showHubLinks: true, partnerLines: false, otherLines: false, instLinesPer: 3, labels: 'auto',
             showHubs: true, colorBy: 'none', sizeBy: 'papers', region: 'all', curved: false,
-            minLink: 0, shadeStates: false, pickMode: false,
+            minLink: 0, shadeStates: false, pickMode: false, dropBig: false, covid: 'all',
         };
+        this._covid = new Set(P.covid || []);   // paper positions about COVID-19
+        this._big = new Set(P.big || []);       // paper positions with BIG_AUTHOR_LIST+ authors
     }
 
     /** The states of the region in focus ('r:South', 'd:Pacific'), or null for the whole US. */
@@ -245,8 +248,8 @@ class CollabTab {
                 <button class="download-btn co-play" id="co-play" title="Step the To year forward from the From year, one year at a time">▶ Play years</button>
             </div>
             <div class="controls-row">
-                <label>Link strength: <select id="co-measure">${opts([
-                    ['relative', 'Relative to expected'], ['papers', 'Shared papers']], st.measure)}</select></label>
+                <label title="Normalized: shared papers over the number expected from each hub's overall collaboration, so large hubs such as Yale don't dominate">Link strength: <select id="co-measure">${opts([
+                    ['relative', 'Normalized (relative to expected)'], ['papers', 'Not normalized (shared papers)']], st.measure)}</select></label>
                 <label>Count: <select id="co-counting">${opts([
                     ['fractional', 'Fractional (each paper counts once)'], ['full', 'Full (1 per shared paper)']], st.counting)}</select></label>
                 <label>Links shown: <select id="co-topn">${opts([[30, 'Top 30'], [60, 'Top 60'], [120, 'Top 120'], [250, 'Top 250'], [0, 'All']], st.topN)}</select></label>
@@ -267,6 +270,10 @@ class CollabTab {
             <div class="controls-row">
                 <label class="co-check"><input type="checkbox" id="co-noconsortium"${st.noConsortium ? ' checked' : ''}>
                     Leave out papers naming ${this.data.consortium_hubs}+ hubs</label>
+                <label class="co-check"><input type="checkbox" id="co-nobig"${st.dropBig ? ' checked' : ''}>
+                    Leave out papers with ${BIG_AUTHOR_LIST}+ authors</label>
+                <label title="Papers whose title, abstract or MeSH terms name COVID-19 or SARS-CoV-2">COVID-19 papers: <select id="co-covid">${opts([
+                    ['all', 'Include'], ['drop', 'Leave out'], ['only', 'Only these']], st.covid)}</select></label>
                 <label>Hide a hub: <select id="co-hide">
                     <option value="">Choose…</option>${opts(this.hubs.map((h, i) => [i, h.label]))}
                 </select></label>
@@ -366,6 +373,8 @@ class CollabTab {
         on('co-inst-min', 'change', set('instMin', Number));
         on('co-inst-top', 'change', set('instTop', Number));
         on('co-noconsortium', 'change', e => { st.noConsortium = e.target.checked; this.render(); });
+        on('co-nobig', 'change', e => { st.dropBig = e.target.checked; this.render(); });
+        on('co-covid', 'change', set('covid'));
         on('co-dropsole', 'change', e => { st.dropSole = e.target.checked; this.render(); });
         const layer = key => async e => {
             st[key] = e.target.checked;
@@ -539,6 +548,8 @@ class CollabTab {
         if (!raw.length) return null;
         if (st.noConsortium && raw.length >= this.data.consortium_hubs) return null;
         if (st.dropSole && P.s[i] >= 0 && this.hidden.has(P.s[i])) return null;
+        if (st.dropBig && this._big.has(i)) return null;
+        if (st.covid !== 'all' && this._covid.has(i) !== (st.covid === 'only')) return null;
         if (this._active) {
             const A = this.attrs, f = this.filters;
             if (f.theme >= 0 && A.theme[i] !== f.theme) return null;
@@ -1228,6 +1239,9 @@ class CollabTab {
             st.measure === 'relative' ? 'link strength relative to expected' : 'link strength in shared papers',
             `${st.counting} counting`, `${st.from}–${st.to}`];
         if (st.noConsortium) parts.push(`papers naming ${this.data.consortium_hubs}+ hubs left out`);
+        if (st.dropBig) parts.push(`papers with ${BIG_AUTHOR_LIST}+ authors left out`);
+        if (st.covid === 'drop') parts.push('COVID-19 papers left out');
+        if (st.covid === 'only') parts.push('COVID-19 papers only');
         const lines = [parts.join(' · ')];
         const more = [];
         if (this._regionSet) more.push(`region: ${this._regionLabel()}`);
@@ -1698,7 +1712,7 @@ class CollabTab {
             const h = this.hubs[i];
             const mine = ranked.filter(l => l.a === i || l.b === i);
             const nPartners = links.filter(l => l.a === i || l.b === i).length;
-            const o = h.outreach;
+            const o = st.dropBig && h.outreach_u100 ? h.outreach_u100 : h.outreach;
             const pct = v => (v == null || v === '' ? '–' : `${(+v).toFixed(1)}%`);
             let instHtml = '';
             if (this.instNet) {
@@ -1731,7 +1745,9 @@ class CollabTab {
                 }).join('') || '<li class="data-note">No links with these settings.</li>'}</ol>
                 ${instHtml}
                 ${o ? `<h4>Outside the hubs</h4>
-                <p class="data-note">Papers from 2014 on; not affected by the controls. International and in-state shares are of papers with a located non-hub co-author.</p>
+                <p class="data-note">Papers from 2014 on${st.dropBig ? `, without papers of ${BIG_AUTHOR_LIST}+ authors` : ''};
+                    only the ${BIG_AUTHOR_LIST}+ author setting changes these figures. International and in-state shares
+                    are of papers with a located non-hub co-author.</p>
                 <dl class="co-stats">
                     <dt>With a non-hub co-author</dt><dd>${pct(o.pct_with_nonhub_coauthor)}</dd>
                     <dt>International co-author</dt><dd>${pct(o.pct_international_of_located)}</dd>
@@ -1846,7 +1862,8 @@ class CollabTab {
     _filename() {
         const st = this.state;
         return `hub_${st.network}_${st.measure}_${st.counting}_${st.from}-${st.to}` +
-               (st.noConsortium ? '_no-consortium' : '') + (this.hidden.size ? '_some-hidden' : '');
+               (st.noConsortium ? '_no-consortium' : '') + (st.dropBig ? `_under-${BIG_AUTHOR_LIST}-authors` : '') +
+               (st.covid !== 'all' ? `_covid-${st.covid}` : '') + (this.hidden.size ? '_some-hidden' : '');
     }
 
     async _download(kind) {

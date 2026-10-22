@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMPACT-NCATS — Publication Impact of the NCATS Portfolio</title>
-    <link rel="stylesheet" href="css/style.css?v=25">
+    <link rel="stylesheet" href="css/style.css?v=26">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -142,13 +142,19 @@
                     also one of its affiliated hospitals or institutes. Names come from a curated list.</li>
                 <li><strong>Co-funding:</strong> a hub is on a paper when the paper cites that hub's
                     CTSA program award (hub award, KL2/TL1, K12/T32) in NIH RePORTER.</li>
-                <li><strong>Relative link strength</strong> (association strength): a pair's shared
+                <li><strong>Normalized link strength</strong> (relative to expected; association strength): a pair's shared
                     papers divided by the number expected if each hub spread its collaboration across
                     the others in proportion to their size. ×1 is as expected; ×3 is three times as many
                     shared papers as expected. Pairs need at least 10 shared papers to be ranked this way.</li>
                 <li><strong>Counting:</strong> full counting adds 1 for each paper two hubs share.
                     Fractional counting gives each pair on a paper with <em>k</em> hubs 1/(<em>k</em>−1),
                     so a 40-hub consortium paper weighs as much in total as a two-hub paper.</li>
+                <li><strong>Large author lists and COVID-19:</strong> "Leave out papers with 100+ authors"
+                    drops papers whose byline has 100 or more authors (such as large genetics and physics
+                    consortia), everywhere on the tab, including the "Outside the hubs" figures. "COVID-19 papers"
+                    can leave out, or show only, papers whose title, abstract or MeSH terms name COVID-19 or
+                    SARS-CoV-2. With "Only these" and papers naming 10+ hubs included, the map shows the COVID-19
+                    consortium papers. Nothing is removed from the data.</li>
                 <li><strong>Before 2014</strong> PubMed recorded only the first author's affiliation,
                     so co-authorship starts in 2014 by default.</li>
                 <li><strong>Which papers:</strong> papers linked to any NCATS grant. A hub that
@@ -215,13 +221,13 @@
     </section>
 </main>
 
-<script src="js/data-loader.js?v=25"></script>
-<script src="js/site-picker.js?v=25"></script>
-<script src="js/chart-manager.js?v=25"></script>
-<script src="js/metrics-def.js?v=25"></script>
-<script src="js/search-tab.js?v=25"></script>
-<script src="js/themes-tab.js?v=25"></script>
-<script src="js/collab-tab.js?v=25"></script>
-<script src="js/app.js?v=25"></script>
+<script src="js/data-loader.js?v=26"></script>
+<script src="js/site-picker.js?v=26"></script>
+<script src="js/chart-manager.js?v=26"></script>
+<script src="js/metrics-def.js?v=26"></script>
+<script src="js/search-tab.js?v=26"></script>
+<script src="js/themes-tab.js?v=26"></script>
+<script src="js/collab-tab.js?v=26"></script>
+<script src="js/app.js?v=26"></script>
 </body>
 </html>
