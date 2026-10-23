@@ -53,6 +53,15 @@ def test_build_orders_hubs_by_label_and_encodes_papers(conn):
     assert p["f"] == [[0, 1], [1], [0]]
     assert p["s"] == [-1, 1, -1]
     assert d["n_papers"] == 3
+    assert p["covid"] == [] and p["big"] == []
+
+
+def test_build_lists_covid_and_big_author_list_papers(conn):
+    conn.execute("INSERT INTO pub_metrics (pmid, title) VALUES (2, 'Hospital outcomes of COVID-19')")
+    conn.execute("UPDATE pub_author_fetch SET n_authors = 150 WHERE pmid = 3")
+    d, pmids, _ = build(conn, HUBS, gaz=None, slugs={}, outreach={})
+    assert pmids == [1, 2, 3]
+    assert d["papers"]["covid"] == [1] and d["papers"]["big"] == [2]
 
 
 def test_institution_layer_places_partners_and_other_institutions(conn):

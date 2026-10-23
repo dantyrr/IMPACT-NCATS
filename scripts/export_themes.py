@@ -4,7 +4,9 @@ per-paper CSV for independent analysis.
 
 Two outputs:
   docs/data/themes.json   - aggregates for the site (theme x year, theme x site,
-                            translational mix per site and year)
+                            translational mix per site and year), repeated for
+                            COVID-19 papers and COVID-19 consortium papers so
+                            the tab can leave them out or show only them
   exports/*.csv           - per-paper and per-site tables for R/Python
 
 Translational grouping follows the Triangle of Biomedicine (Weber 2013), which
@@ -24,6 +26,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.ncats.schema import connect_ncats
 from src.ncats.hub_merge import merge_hub_sites
 from src.ncats.config import WEBSITE_DATA_DIR, PROJECT_ROOT
+from src.ncats.paper_flags import covid_pmids
+from scripts.build_hub_network import CONSORTIUM_HUBS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -44,6 +48,78 @@ def tri_class(human, animal, mol):
     if best < VERTEX_THRESHOLD:
         return "mixed"
     return "human" if best == h else ("animal" if best == a else "molecular_cellular")
+
+
+def aggregates(conn, keep=None):
+    """Theme and translational tables for the site, over all papers or only
+    those whose PMID is in the table `keep`."""
+    only = (lambda alias: f" AND {alias}.pmid IN (SELECT pmid FROM {keep})") if keep else (lambda alias: "")
+    out = {}
+    # Theme x year, portfolio-wide.
+    out["theme_year"] = [
+        {"theme_id": r[0], "year": r[1], "n": r[2]}
+        for r in conn.execute(f"""
+            SELECT pt.theme_id, pm.pub_year, COUNT(*)
+            FROM pub_themes pt JOIN pub_metrics pm ON pm.pmid = pt.pmid
+            WHERE pm.pub_year IS NOT NULL{only("pt")}
+            GROUP BY 1, 2 ORDER BY 1, 2""")
+    ]
+    # Theme x site: which hubs work on what.
+    out["theme_site"] = [
+        {"theme_id": r[0], "slug": r[1], "n": r[2]}
+        for r in conn.execute(f"""
+            SELECT pt.theme_id, s.slug, COUNT(DISTINCT pt.pmid)
+            FROM pub_themes pt
+            JOIN grant_pubs gp ON gp.pmid = pt.pmid
+            JOIN grants g ON g.core_project_num = gp.core_project_num
+            JOIN sites s ON s.ipf_code = g.ipf_code
+            WHERE s.is_ctsa_hub = 1{only("pt")}
+            GROUP BY 1, 2""")
+    ]
+    # Theme x site x year, needed for the per-site themes view.
+    out["theme_site_year"] = [
+        {"theme_id": r[0], "slug": r[1], "year": r[2], "n": r[3]}
+        for r in conn.execute(f"""
+            SELECT pt.theme_id, s.slug, pm.pub_year, COUNT(DISTINCT pt.pmid)
+            FROM pub_themes pt
+            JOIN pub_metrics pm ON pm.pmid = pt.pmid
+            JOIN grant_pubs gp ON gp.pmid = pt.pmid
+            JOIN grants g ON g.core_project_num = gp.core_project_num
+            JOIN sites s ON s.ipf_code = g.ipf_code
+            WHERE s.is_ctsa_hub = 1 AND pm.pub_year IS NOT NULL{only("pt")}
+            GROUP BY 1, 2, 3""")
+    ]
+    # Translational mix per site per year. apt_n counts the papers with an APT,
+    # so a mean can be taken back out when a subset is left out.
+    out["trans_site_year"] = [
+        {"slug": r[0], "year": r[1], "tri": r[2], "n": r[3],
+         "mean_apt": r[4], "apt_n": r[5], "clinical": r[6], "cited_by_clinical": r[7]}
+        for r in conn.execute(f"""
+            SELECT s.slug, pm.pub_year,
+                   tri_class(pm.human, pm.animal, pm.molecular_cellular),
+                   COUNT(DISTINCT pm.pmid), AVG(pm.apt), COUNT(DISTINCT CASE WHEN pm.apt IS NOT NULL THEN pm.pmid END),
+                   SUM(CASE WHEN pm.is_clinical=1 THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN pm.clin_citations>0 THEN 1 ELSE 0 END)
+            FROM pub_metrics pm
+            JOIN grant_pubs gp ON gp.pmid = pm.pmid
+            JOIN grants g ON g.core_project_num = gp.core_project_num
+            JOIN sites s ON s.ipf_code = g.ipf_code
+            WHERE s.is_ctsa_hub = 1 AND pm.human IS NOT NULL
+              AND pm.pub_year IS NOT NULL{only("pm")}
+            GROUP BY 1, 2, 3""")
+    ]
+    # Portfolio-wide translational mix per year.
+    out["trans_year"] = [
+        {"year": r[0], "tri": r[1], "n": r[2], "mean_apt": r[3], "apt_n": r[4]}
+        for r in conn.execute(f"""
+            SELECT pm.pub_year,
+                   tri_class(pm.human, pm.animal, pm.molecular_cellular),
+                   COUNT(*), AVG(pm.apt), COUNT(pm.apt)
+            FROM pub_metrics pm
+            WHERE pm.human IS NOT NULL AND pm.pub_year IS NOT NULL{only("pm")}
+            GROUP BY 1, 2 ORDER BY 1""")
+    ]
+    return out
 
 
 def main():
@@ -69,59 +145,23 @@ def main():
     ]
     log.info("themes: %d", len(themes))
 
-    # Theme x year, portfolio-wide.
-    theme_year = [
-        {"theme_id": r[0], "year": r[1], "n": r[2]}
-        for r in conn.execute("""
-            SELECT pt.theme_id, pm.pub_year, COUNT(*)
-            FROM pub_themes pt JOIN pub_metrics pm ON pm.pmid = pt.pmid
-            WHERE pm.pub_year IS NOT NULL
-            GROUP BY 1, 2 ORDER BY 1, 2""")
-    ]
+    tables = aggregates(conn)
 
-    # Theme x site: which hubs work on what.
-    theme_site = [
-        {"theme_id": r[0], "slug": r[1], "n": r[2]}
-        for r in conn.execute("""
-            SELECT pt.theme_id, s.slug, COUNT(DISTINCT pt.pmid)
-            FROM pub_themes pt
-            JOIN grant_pubs gp ON gp.pmid = pt.pmid
-            JOIN grants g ON g.core_project_num = gp.core_project_num
-            JOIN sites s ON s.ipf_code = g.ipf_code
-            WHERE s.is_ctsa_hub = 1
-            GROUP BY 1, 2""")
-    ]
-
-    # Translational mix per site per year.
-    trans_site_year = [
-        {"slug": r[0], "year": r[1], "tri": r[2], "n": r[3],
-         "mean_apt": r[4], "clinical": r[5], "cited_by_clinical": r[6]}
-        for r in conn.execute("""
-            SELECT s.slug, pm.pub_year,
-                   tri_class(pm.human, pm.animal, pm.molecular_cellular),
-                   COUNT(DISTINCT pm.pmid), AVG(pm.apt),
-                   SUM(CASE WHEN pm.is_clinical=1 THEN 1 ELSE 0 END),
-                   SUM(CASE WHEN pm.clin_citations>0 THEN 1 ELSE 0 END)
-            FROM pub_metrics pm
-            JOIN grant_pubs gp ON gp.pmid = pm.pmid
-            JOIN grants g ON g.core_project_num = gp.core_project_num
-            JOIN sites s ON s.ipf_code = g.ipf_code
-            WHERE s.is_ctsa_hub = 1 AND pm.human IS NOT NULL
-              AND pm.pub_year IS NOT NULL
-            GROUP BY 1, 2, 3""")
-    ]
-
-    # Portfolio-wide translational mix per year.
-    trans_year = [
-        {"year": r[0], "tri": r[1], "n": r[2], "mean_apt": r[3]}
-        for r in conn.execute("""
-            SELECT pm.pub_year,
-                   tri_class(pm.human, pm.animal, pm.molecular_cellular),
-                   COUNT(*), AVG(pm.apt)
-            FROM pub_metrics pm
-            WHERE pm.human IS NOT NULL AND pm.pub_year IS NOT NULL
-            GROUP BY 1, 2 ORDER BY 1""")
-    ]
+    # The same tables for COVID-19 papers alone, and for COVID-19 consortium
+    # papers (CONSORTIUM_HUBS or more hubs with their own authors), so the tab
+    # can show them, leave them out, or show only them.
+    covid = covid_pmids(conn)
+    consortium = {p for (p,) in conn.execute(
+        "SELECT pmid FROM pub_hubs WHERE n_core > 0 GROUP BY pmid HAVING COUNT(*) >= ?", (CONSORTIUM_HUBS,))}
+    subsets = {"covid": covid, "covid_consortium": covid & consortium}
+    subset_tables = {}
+    for name, pmids in subsets.items():
+        conn.execute("DROP TABLE IF EXISTS temp.keep")
+        conn.execute("CREATE TEMP TABLE keep (pmid INTEGER PRIMARY KEY)")
+        conn.executemany("INSERT INTO temp.keep VALUES (?)", [(p,) for p in pmids])
+        subset_tables[name] = {**aggregates(conn, "temp.keep"), "papers": len(pmids)}
+        log.info("subset %s: %d papers", name, len(pmids))
+    conn.execute("DROP TABLE IF EXISTS temp.keep")
 
     coverage = dict(conn.execute("""
         SELECT 'total', COUNT(*) FROM pub_metrics WHERE in_impact_db=1
@@ -143,20 +183,6 @@ def main():
             GROUP BY 1 ORDER BY 1""")
     ]
 
-    # Theme x site x year, needed for the per-site themes view.
-    theme_site_year = [
-        {"theme_id": r[0], "slug": r[1], "year": r[2], "n": r[3]}
-        for r in conn.execute("""
-            SELECT pt.theme_id, s.slug, pm.pub_year, COUNT(DISTINCT pt.pmid)
-            FROM pub_themes pt
-            JOIN pub_metrics pm ON pm.pmid = pt.pmid
-            JOIN grant_pubs gp ON gp.pmid = pt.pmid
-            JOIN grants g ON g.core_project_num = gp.core_project_num
-            JOIN sites s ON s.ipf_code = g.ipf_code
-            WHERE s.is_ctsa_hub = 1 AND pm.pub_year IS NOT NULL
-            GROUP BY 1, 2, 3""")
-    ]
-
     # Parameters of the clustering run, so the published methods description is
     # generated from what actually ran.
     run = dict(conn.execute("SELECT key, value FROM theme_run"))
@@ -170,11 +196,9 @@ def main():
     payload = {
         "themes": themes,
         "run": run,
-        "theme_site_year": theme_site_year,
-        "theme_year": theme_year,
-        "theme_site": theme_site,
-        "trans_site_year": trans_site_year,
-        "trans_year": trans_year,
+        **tables,
+        "subsets": subset_tables,
+        "consortium_hubs": CONSORTIUM_HUBS,
         "mesh_by_year": mesh_by_year,
         "coverage": coverage,
         "vertex_threshold": VERTEX_THRESHOLD,
